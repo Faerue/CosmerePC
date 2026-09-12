@@ -604,13 +604,13 @@ const EXPERTISES = {
 
 const ARMORS = [
   {name:'No armor', deflect:0, tags:[]},
-  {name:'Uniform', deflect:0, tags:[]},
+  {name:'Uniform', deflect:0, tags:['Presentable']},
   {name:'Leather Armor', deflect:1, tags:[]},
-  {name:'Chain Armor', deflect:2, cumbersome:2, tags:['Cumbersome [2]']},
-  {name:'Breastplate', deflect:2, cumbersome:2, tags:['Cumbersome [2]', 'Presentable']},
-  {name:'Half Plate', deflect:3, cumbersome:3, tags:['Cumbersome [3]']},
-  {name:'Full Plate', deflect:4, cumbersome:4, tags:['Cumbersome [4]']},
-  {name:'Shardplate', deflect:5, tags:['4 Charges', 'Dangerous']},
+  {name:'Chain Armor', deflect:2, cumbersome:3, tags:['Cumbersome [3]']},
+  {name:'Breastplate', deflect:2, cumbersome:3, tags:['Cumbersome [3]', 'Presentable']},
+  {name:'Half Plate', deflect:3, cumbersome:4, tags:['Cumbersome [4]']},
+  {name:'Full Plate', deflect:4, cumbersome:5, tags:['Cumbersome [5]']},
+  {name:'Shardplate', deflect:5, cumbersomeDepleted:6, tags:['4 Charges', 'Dangerous']},
   {name:'Shardplate (Radiant)', deflect:5, tags:['Weightless']}
 ];
 
@@ -627,7 +627,10 @@ const SINGER_FORMS = {
   'Envoyform':       {bonus:{pre:1, int:1}, desc:'A rare diplomatic form, prized for negotiation between peoples.'},
   'Willshaperform':  {bonus:{wil:1}, desc:'Resolute and unyielding — rare, and little understood by scholars.'},
   'Stormform':       {bonus:{str:1, spd:1, deflect:1}, desc:'A Fused war-form crackling with the Everstorm’s power, carapace crowned with living lightning.'},
-  'Direform':        {bonus:{str:1, wil:1, deflect:2}, desc:'A monstrous, terror-inducing Fused form, armored in thick black carapace.'}
+  'Direform':        {bonus:{str:2, deflect:2}, desc:'A monstrous, terror-inducing Fused form, armored in thick black carapace.'},
+  'Relayform':       {bonus:{spd:2}, desc:'A Fused courier-form, built for tireless, blistering speed across long distances.'},
+  'Decayform':       {bonus:{wil:2}, desc:'A Fused form of grim resolve, said to carry a whisper of Odium’s own will.'},
+  'Nightform':       {bonus:{}, desc:'A rare Fused form of quiet cunning, favoring stealth and subtlety over the battlefield.'}
 };
 
 /* ---------- radiant orders ---------- */
@@ -676,13 +679,20 @@ const COMBAT_ACTIONS = [
   {name:'Use a Surge', desc:'Spend Focus or Investiture to invoke a Radiant Surge.'}
 ];
 const CONDITION_BLURBS = {
-  Afflicted:'Suffering an ongoing malady — poison, disease, or curse.', Determined:'A rare boon condition — advantage on Discipline tests to push through.',
-  Disoriented:'Confused and unable to act reliably; disadvantage on most tests.', Empowered:'A boon granting bonus dice or effect on a specific action.',
-  Enhanced:'A temporary boost to an attribute or skill.', Exhausted:'Worn thin; penalties to physical tests until rested.',
-  Focused:'A boon condition sharpening concentration for a task.', Immobilized:'Unable to move from your current position.',
-  Prone:'Knocked down; disadvantage on most physical actions until you stand.', Restrained:'Bound or held; movement and some actions are blocked.',
-  Slowed:'Movement rate is reduced.', Stunned:'Unable to take actions until the condition clears.',
-  Surprised:'Caught off guard at the start of a conflict; act later, react less.', Unconscious:'Insensate and helpless.'
+  Afflicted:'Take specified damage at the end of each turn.',
+  Determined:'Add an Opportunity to a failed test, then clear condition.',
+  Disoriented:'Senses obscured, no reactions, disadvantage on Perception.',
+  Empowered:'Advantage on all tests, Investiture refills each turn.',
+  Enhanced:'Temporary attribute score bonus (+1/+2).',
+  Exhausted:'Subtract penalty [-1, -2, etc.] from all test results.',
+  Focused:'Reduce focus cost of all abilities by 1.',
+  Immobilized:'Movement rate = 0 ft.',
+  Prone:'Slowed, melee attacks against you gain advantage.',
+  Restrained:'Movement = 0 ft, disadvantage on all tests except escaping.',
+  Slowed:'Movement rate is halved.',
+  Stunned:'Lose reactions, gain 2 fewer actions on your turn.',
+  Surprised:'No fast turn, lose reactions, -1 action on first turn.',
+  Unconscious:'Movement = 0, Prone, drop items, can only Breathe Stormlight / Regenerate.'
 };
 const SURGE_BLURBS = [
   {name:'Adhesion', desc:'Binds surfaces and objects together, or a person to a surface.'},
@@ -696,6 +706,196 @@ const SURGE_BLURBS = [
   {name:'Cohesion', desc:'Softens or hardens matter, letting it be reshaped like clay.'},
   {name:'Tension', desc:'Reinforces the surface of an object, letting it hold enormous stress.'}
 ];
+
+/* ---------- talent database (drives the talent picker, tooltips, and prerequisite checker) ---------- */
+const TALENT_DATABASE = {
+  // --- HEROIC PATHS: SCHOLAR ---
+  "Erudition": {category:"Heroic Path", path:"Scholar", specialty:"Key Talent", activation:"★", reqText:"None (Scholar Key)",
+    flavor:"You've conditioned your mind to quickly assimilate, archive, and recall information.",
+    effect:"Gain 1 cultural/utility expertise and 2 cognitive non-surge skill ranks. Reassignable after a long rest with library access."},
+  "Efficient Engineer": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"∞", reqText:"Crafting 1+, Erudition Key",
+    flavor:"Solid work begins with practice and fundamentals like measuring twice before each cut.",
+    effect:"Gain utility expertise in Armor, Equipment, or Weapon Crafting, plus 1 starting fabrial. Crafting Opportunity range expands by 2; raw material cost is halved."},
+  "Prized Acquisition": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"∞", reqText:"Erudition Key",
+    flavor:"Through good fortune or hard work, you've acquired a gemstone of sufficient quality to practice crafting fabrials.",
+    effect:"Gain specialist expertise in Fabrial Crafting and a specially cut gem of your Tier to craft a unique fabrial. You can reuse this gem."},
+  "Deep Study": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"∞", reqText:"Efficient Engineer",
+    flavor:"Driven by academic inquiry, you love nothing more than getting lost in an archive of books and dusty secrets.",
+    effect:"Erudition grants +1 additional expertise and +2 additional cognitive non-surge skill ranks."},
+  "Inventive Design": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"∞", reqText:"Crafting 2+, Prized Acquisition",
+    flavor:"Your custom fabrials integrate novel functionalities thanks to your deep knowledge of stone and gemstones.",
+    effect:"When crafting a fabrial with your Prized Acquisition gem, select an effect 1 tier higher than your current character tier."},
+  "Fine Handiwork": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"∞", reqText:"Efficient Engineer",
+    flavor:"Your dedication to quality ensures that your designs stand out from the crowd.",
+    effect:"When crafting an item or fabrial, spend 1 upgrade to apply an advanced feature instead of 2. (Once per item)."},
+  "Overcharge": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"★", reqText:"Crafting 3+, Prized Acquisition",
+    flavor:"You push fabrials to their limits, overcharging them beyond conventional use or safe practice.",
+    effect:"Once per turn, raise the stakes on a fabrial attack. Spend Opportunity to Strike as a Free Action. GM can spend Complication to add a temporary drawback."},
+  "Experimental Tinkering": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"★", reqText:"Fine Handiwork",
+    flavor:"You've honed your instinct for when to sacrifice one feature to enhance another.",
+    effect:"Opportunity range expands by 1 and crafting time is halved. Reconfigure your Prized Acquisition fabrial during a long rest without new materials."},
+  "Overwhelm With Detail": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"▶", reqText:"Lore 3+, Experimental Tinkering",
+    flavor:"When speaking about a topic you're passionate about, you do so with unsurpassed authority.",
+    effect:"Spend 2 focus to make a cognitive or spiritual test using your Lore modifier instead of the usual skill modifier."},
+  "Field Medicine": {category:"Heroic Path", path:"Scholar", specialty:"Surgeon", activation:"▶", reqText:"Medicine 1+, Erudition Key",
+    flavor:"You treat a minor wound by bandaging a gash, applying salves, or resetting a dislocated joint.",
+    effect:"Spend 1 focus to make a DC 15 Medicine test to treat a conscious ally. On success, target recovers health equal to recovery die roll + Medicine ranks."},
+  "Emotional Intelligence": {category:"Heroic Path", path:"Scholar", specialty:"Surgeon", activation:"∞", reqText:"Erudition Key",
+    flavor:"You hone your intuition, enabling you to spot hidden symptoms and complicated feelings.",
+    effect:"Gain Diagnosis utility expertise. Erudition can now select spiritual skills."},
+  "Anatomical Insight": {category:"Heroic Path", path:"Scholar", specialty:"Surgeon", activation:"★", reqText:"Field Medicine",
+    flavor:"Knowledge of anatomy aids you in striking vital points to incapacitate enemies with minimal permanent harm.",
+    effect:"On an unarmed hit, spend 1 focus or Free Action to apply Exhausted [penalty = half Medicine ranks, rounded up]."},
+  "Swift Healer": {category:"Heroic Path", path:"Scholar", specialty:"Surgeon", activation:"▶", reqText:"Medicine 2+, Field Medicine",
+    flavor:"Your practiced hands quickly dress wounds amid the ebb and flow of battle.",
+    effect:"Use Field Medicine as 1 action (▶). Healing abilities restore additional health equal to Medicine ranks."},
+  // --- HEROIC PATHS: AGENT ---
+  "Opportunist": {category:"Heroic Path", path:"Agent", specialty:"Key Talent", activation:"★", reqText:"None (Agent Key)",
+    flavor:"You instinctively sense moments of consequence and push your luck.",
+    effect:"Once per round, when you roll a plot die, you can reroll that result."},
+  "Hardy": {category:"Heroic Path", path:"Agent", specialty:"Investigator", activation:"∞", reqText:"Baleful (or Warrior/Hunter equivalent)",
+    flavor:"You've trained your body to endure pain and fatigue, keeping you in the fight.",
+    effect:"Increase maximum and current health by +1 per level (applied retroactively and prospectively)."},
+  // --- HEROIC PATHS: ENVOY ---
+  "Rousing Presence": {category:"Heroic Path", path:"Envoy", specialty:"Key Talent", activation:"▶", reqText:"None (Envoy Key)",
+    flavor:"With a gesture or a few words, you inspire others to excel.",
+    effect:"Choose an ally you can influence; they become Determined until they benefit from it or scene ends."},
+  "Composed": {category:"Heroic Path", path:"Envoy", specialty:"Faithful", activation:"∞", reqText:"Galvanize (or Leader/Scholar equivalent)",
+    flavor:"Through practiced composure, you push your limits without becoming distracted.",
+    effect:"Increase maximum and current Focus by a number equal to your Tier of Play."},
+  // --- HEROIC PATHS: WARRIOR ---
+  "Vigilant Stance": {category:"Heroic Path", path:"Warrior", specialty:"Key Talent", activation:"▶", reqText:"None (Warrior Key)",
+    flavor:"You study special fighting styles. Vigilant Stance emphasizes alertness and quick responses.",
+    effect:"Enter Vigilant Stance: Reduce focus cost of Dodge and Reactive Strike by 1, and switch stances as a Free Action."},
+  "Bloodstance": {category:"Heroic Path", path:"Warrior", specialty:"Shardbearer", activation:"▶", reqText:"Athletics 2+, Mighty or Shard Training",
+    flavor:"You assume a reckless, violent stance that trades defense for deadly power.",
+    effect:"Opportunity range for attacks and physical tests expands by 2, but Physical, Cognitive, and Spiritual Defenses decrease by 2."},
+  "Shard Training": {category:"Heroic Path", path:"Warrior", specialty:"Shardbearer", activation:"∞", reqText:"Access to Shardblade and Shardplate",
+    flavor:"You've learned to deal blows for maximum effect and absorb strikes efficiently with Shardic relics.",
+    effect:"Gain Shardplate expertise + 1 weapon expertise (Grandbows, Shardblades, Warhammers). Shardplate gains +2 charges. Shardblade Strikes graze extra targets equal to skill ranks."},
+  // --- SINGER ANCESTRY ---
+  "Change Form": {category:"Singer Ancestry", path:"Singer", specialty:"Singer Key", activation:"★", reqText:"Singer Ancestry",
+    flavor:"You learn to bond a spren during highstorms and change your form.",
+    effect:"During a highstorm, transform into Dullform, Mateform, or any unlocked form. Gain temporary form stats."},
+  "Forms of Resolve": {category:"Singer Ancestry", path:"Singer", specialty:"Specialty Tree", activation:"∞", reqText:"Change Form Key",
+    flavor:"Gain Warform and Workform.",
+    effect:"Warform: STR +1, Deflect +1, leap full movement. Workform: WIL +1, ignore Exhausted, pass as parshman."},
+  "Forms of Destruction": {category:"Singer Ancestry", path:"Singer", specialty:"Specialty Tree", activation:"∞", reqText:"Ambitious Mind",
+    flavor:"Gain Direform and Stormform.",
+    effect:"Direform: STR +2, Deflect +2, Grapple on Reactive Strike. Stormform: STR +1, SPD +1, Deflect +1, Unleash Lightning (2d8 energy, 60ft)."},
+  // --- RADIANT PATHS ---
+  "First Ideal (Radiant Key)": {category:"Radiant Path", path:"All Orders", specialty:"First Ideal", activation:"★", reqText:"Level 2+",
+    flavor:"Life before death. Strength before weakness. Journey before destination.",
+    effect:"Unlock Investiture pool (2 + max(AWA, PRE)) and Stormlight actions (Breathe Stormlight, Enhance, Regenerate). Goal: Speak First Ideal → grants 2 Surge skills."},
+  "Invested": {category:"Radiant Path", path:"All Orders", specialty:"Bond Tree", activation:"∞", reqText:"Order-specific prerequisite",
+    flavor:"You learn to hold and wield greater quantities of Stormlight within yourself.",
+    effect:"Increase maximum and current Investiture by a number equal to your Tier of Play."}
+};
+
+const ACTIVATION_ICONS = {'▶':'Action', '▷':'Free Action', '↻':'Reaction', '★':'Special', '∞':'Always Active'};
+
+/* Talents that grant an automatic bonus expertise slot when known (checked via hasTalent()) */
+const TALENT_EXPERTISE_BONUS = {
+  'Erudition': 1, 'Deep Study': 1, 'Prized Acquisition': 1, 'Efficient Engineer': 1,
+  'Cover Story': 1, 'High Society Contacts': 1, 'Customary Garb': 1
+};
+
+/* Category -> Path -> Specialty -> [talent names], derived from TALENT_DATABASE for the cascading picker */
+const TALENT_TREE = Object.entries(TALENT_DATABASE).reduce((tree, [name, t]) => {
+  (tree[t.category] = tree[t.category] || {});
+  (tree[t.category][t.path] = tree[t.category][t.path] || {});
+  (tree[t.category][t.path][t.specialty] = tree[t.category][t.path][t.specialty] || []).push(name);
+  return tree;
+}, {});
+
+/* ---------- weapons, equipment & fabrial catalog ---------- */
+const GAME_SKILL_KEY = {'Light Weaponry':'lightWeapons', 'Heavy Weaponry':'heavyWeapons', 'Athletics':'athletics'};
+
+const GAME_DATABASE = {
+  weapons: {
+    "Knife":            {skill:"Light Weaponry", damage:"1d4 keen", range:"Melee", traits:"Discreet", expertTraits:"Offhand, Thrown (20/60)", weight:1, price:8, category:"Light"},
+    "Javelin":          {skill:"Light Weaponry", damage:"1d6 keen", range:"Melee, Thrown (30/120)", traits:"Indirect", expertTraits:"Indirect", weight:2, price:20, category:"Light"},
+    "Mace":             {skill:"Light Weaponry", damage:"1d6 impact", range:"Melee", traits:"None", expertTraits:"Momentum", weight:3, price:20, category:"Light"},
+    "Rapier":           {skill:"Light Weaponry", damage:"1d6 keen", range:"Melee", traits:"Quickdraw", expertTraits:"Defensive", weight:2, price:100, category:"Light"},
+    "Shortspear":       {skill:"Light Weaponry", damage:"1d8 keen", range:"Melee", traits:"Two-Handed", expertTraits:"Loses Two-Handed", weight:3, price:10, category:"Light"},
+    "Sidesword":        {skill:"Light Weaponry", damage:"1d6 keen", range:"Melee", traits:"Quickdraw", expertTraits:"Offhand", weight:2, price:40, category:"Light"},
+    "Staff":            {skill:"Light Weaponry", damage:"1d6 impact", range:"Melee", traits:"Discreet, Two-Handed", expertTraits:"Defensive", weight:4, price:1, category:"Light"},
+    "Shortbow":         {skill:"Light Weaponry", damage:"1d6 keen", range:"Ranged (80/320)", traits:"Two-Handed", expertTraits:"Quickdraw", weight:2, price:80, category:"Light"},
+    "Sling":            {skill:"Light Weaponry", damage:"1d4 impact", range:"Ranged (30/120)", traits:"Discreet", expertTraits:"Indirect", weight:1, price:2, category:"Light"},
+    "Axe":              {skill:"Heavy Weaponry", damage:"1d6 keen", range:"Melee, Thrown (20/60)", traits:"None", expertTraits:"Offhand", weight:2, price:20, category:"Heavy"},
+    "Greatsword":       {skill:"Heavy Weaponry", damage:"1d10 keen", range:"Melee", traits:"Two-Handed", expertTraits:"Deadly", weight:7, price:200, category:"Heavy"},
+    "Hammer":           {skill:"Heavy Weaponry", damage:"1d10 impact", range:"Melee", traits:"Two-Handed", expertTraits:"Momentum", weight:8, price:40, category:"Heavy"},
+    "Longspear":        {skill:"Heavy Weaponry", damage:"1d8 keen", range:"Melee (+5ft)", traits:"Two-Handed", expertTraits:"Defensive", weight:9, price:15, category:"Heavy"},
+    "Longsword":        {skill:"Heavy Weaponry", damage:"1d8 keen", range:"Melee", traits:"Quickdraw, Two-Handed", expertTraits:"Loses Two-Handed", weight:3, price:60, category:"Heavy"},
+    "Poleaxe":          {skill:"Heavy Weaponry", damage:"1d10 keen", range:"Melee", traits:"Two-Handed", expertTraits:"Melee (+5ft)", weight:5, price:40, category:"Heavy"},
+    "Shield":           {skill:"Heavy Weaponry", damage:"1d4 impact", range:"Melee", traits:"Defensive", expertTraits:"Offhand", weight:2, price:10, category:"Heavy"},
+    "Crossbow":         {skill:"Heavy Weaponry", damage:"1d8 keen", range:"Ranged (100/400)", traits:"Loaded (1), Two-Handed", expertTraits:"Deadly", weight:7, price:200, category:"Heavy"},
+    "Longbow":          {skill:"Heavy Weaponry", damage:"1d6 keen", range:"Ranged (150/600)", traits:"Two-Handed", expertTraits:"Indirect", weight:3, price:100, category:"Heavy"},
+    "Improvised Weapon":{skill:"Athletics", damage:"1d4 impact", range:"Melee", traits:"Inconsistent", expertTraits:"", weight:2, price:0, category:"Special"},
+    "Unarmed Attack":   {skill:"Athletics", damage:"Strength-based", range:"Melee", traits:"Always Available, Strength Training", expertTraits:"Momentum, Offhand", weight:0, price:0, category:"Special"},
+    "Half-Shard":       {skill:"Heavy Weaponry", damage:"2d4 impact", range:"Melee", traits:"Defensive, Two-Handed, 1 Charge (+10 Deflect)", expertTraits:"Momentum", weight:10, price:2000, category:"Special"},
+    "Shardblade":       {skill:"Heavy Weaponry", damage:"2d8 spirit", range:"Melee", traits:"Dangerous, Deadly, 10 Heartbeats, Spiritual Injury", expertTraits:"Loses Dangerous", weight:4, price:0, category:"Special"},
+    "Shardblade (Radiant)": {skill:"Heavy Weaponry", damage:"2d8 spirit", range:"Melee", traits:"Deadly, Instant Summoning, Malleable Form", expertTraits:"Malleable Form", weight:0, price:0, category:"Special"},
+    "Warhammer":        {skill:"Heavy Weaponry", damage:"1d10 impact", range:"Melee", traits:"Two-Handed, Momentum", expertTraits:"Deadly", weight:9, price:120, category:"Special"},
+    "Grandbow":         {skill:"Heavy Weaponry", damage:"1d10 keen", range:"Ranged (200/800)", traits:"Two-Handed, Cumbersome [4]", expertTraits:"Deadly", weight:6, price:400, category:"Special"}
+  },
+  equipment: {
+    "Survival & Outdoor": {
+      "Backpack":                 {weight:2, price:2,  desc:"Carries your gear; most kit assumes you have one."},
+      "Bedroll / Blanket":        {weight:3, price:1,  desc:"A night's sleep off the bare ground."},
+      "Tent (2-person)":          {weight:8, price:5,  desc:"Shelter from weather for you and a companion."},
+      "Rope (50ft)":              {weight:5, price:2,  desc:"Sturdy hempen rope for climbing, hauling, or binding."},
+      "Grappling Hook":           {weight:4, price:5,  desc:"Paired with rope to scale walls and cliffs."},
+      "Flint & Steel / Sparkflicker": {weight:0.5, price:1, desc:"Starts a fire without a source of flame at hand."},
+      "Waterskin":                {weight:1, price:1,  desc:"Holds about a day's water."},
+      "Rations":                  {weight:2, price:2,  desc:"A day of preserved food per unit."},
+      "Torches / Lanterns":       {weight:1, price:1,  desc:"Portable light; a torch burns roughly an hour, a lantern longer on oil."}
+    },
+    "Tools & Scholarly": {
+      "Surgical Supplies":  {weight:3, price:10, desc:"Grants Advantage on Medicine tests to treat serious injuries."},
+      "Lockpick":           {weight:0.5, price:5, desc:"Fine tools for defeating mundane locks."},
+      "Reference Book":     {weight:2, price:8,  desc:"A text on a specific subject; grants Advantage on related Lore tests."},
+      "Ink & Pen":          {weight:0.5, price:1, desc:"For writing, sketching, or forging correspondence."},
+      "Magnifying Lens":    {weight:0.5, price:6, desc:"Reveals fine detail; useful for Deduction and craftwork."},
+      "Spyglass":           {weight:1, price:30, desc:"Extends effective Perception range for sight at a distance."},
+      "Tuning Fork":        {weight:0.5, price:15, desc:"Used to recharge certain fabrials by striking it against Stormlight-infused gemstones."},
+      "Scale":              {weight:1, price:4,  desc:"A precision balance for weighing gemstones, spheres, and reagents."}
+    },
+    "Alchemy & Medical": {
+      "Antiseptic (Weak, 1d6)":   {weight:0.5, price:5,  desc:"Cleans a wound; restores 1d6 health when properly applied."},
+      "Antiseptic (Potent, 2d6)": {weight:0.5, price:20, desc:"A stronger tincture; restores 2d6 health when properly applied."},
+      "Anesthetic":               {weight:0.5, price:15, desc:"Numbs pain, easing the strain of surgery or a painful procedure."},
+      "Poison (Weak)":            {weight:0.25, price:10, desc:"A mild toxin; minor penalty to the victim's tests or a small amount of ongoing damage."},
+      "Poison (Effectual)":       {weight:0.25, price:30, desc:"A reliable toxin causing a meaningful, lingering effect."},
+      "Poison (Potent)":          {weight:0.25, price:80, desc:"A dangerous, fast-acting toxin — rare and expensive to acquire."},
+      "Wine / Alcohol (Pink to Violet)": {weight:1, price:3, desc:"Roshar's Horneater-scale spirits, ranked mild (pink) to dangerously strong (violet)."}
+    },
+    "Fabrials": {
+      "Alerter":            {weight:1, price:50,  desc:"Chimes or glows when triggered by motion or a set condition nearby."},
+      "Attractor":          {weight:1, price:60,  desc:"Pulls ferromantically toward paired metal at range."},
+      "Clock Fabrial":      {weight:1, price:40,  desc:"Keeps precise time, wound and powered by a trapped spren."},
+      "Drainer":            {weight:1, price:70,  desc:"Slowly siphons Stormlight from a gemstone nearby."},
+      "Emotion Bracelet":   {weight:0.5, price:80, desc:"Projects or senses a simple emotional state to a paired twin."},
+      "Freechair":          {weight:15, price:400, desc:"A chair fitted with a Lashing-and-Basic Conjoined pair, letting it roll without friction."},
+      "Heatrial":           {weight:2, price:35,  desc:"Radiates gentle warmth for as long as it holds a charge."},
+      "Painrial (Amplifying)": {weight:1, price:90, desc:"Transfers pain from a bonded twin fabrial to the wearer, amplified."},
+      "Painrial (Numbing)": {weight:1, price:90,  desc:"Draws pain away from the wearer into a bonded twin fabrial."},
+      "Repeller":           {weight:1, price:60,  desc:"Pushes ferromantically away from paired metal at range."},
+      "Spanreed":           {weight:0.5, price:150, desc:"Writes in real time whatever its paired spanreed writes elsewhere, for instant long-distance correspondence."},
+      "Suppressor":         {weight:1, price:100, desc:"Dampens Investiture-based effects within its radius while active."}
+    }
+  }
+};
+
+/* Weapon name -> the EXPERTISES entry that unlocks its Expert Traits */
+const WEAPON_EXPERTISE_NAME = {
+  'Knife':'Knives', 'Javelin':'Javelins', 'Mace':'Maces', 'Rapier':'Rapiers', 'Shortspear':'Shortspears',
+  'Sidesword':'Sideswords', 'Staff':'Staves', 'Shortbow':'Shortbows', 'Sling':'Slings',
+  'Axe':'Axes', 'Greatsword':'Greatswords', 'Hammer':'Hammers', 'Longspear':'Longspears', 'Longsword':'Longswords',
+  'Poleaxe':'Poleaxes', 'Shield':'Shields', 'Crossbow':'Crossbows', 'Longbow':'Longbows',
+  'Improvised Weapon':'Improvised Weapons', 'Unarmed Attack':'Unarmed Attacks', 'Half-Shard':'Half-Shards',
+  'Shardblade':'Shardblades', 'Shardblade (Radiant)':'Shardblades', 'Warhammer':'Warhammers', 'Grandbow':'Grandbows'
+};
 
 const TABLES = {
   lifting:[[0,'100 lbs'],[1,'200 lbs'],[3,'500 lbs'],[5,'1,000 lbs'],[7,'5,000 lbs'],[9,'10,000 lbs']],
@@ -733,12 +933,13 @@ function newCharacter(name){
     investiture:{current:0, bonus:0},
     radiant:false,
     spren:{name:'', order:'', ideals: IDEAL_NAMES.map(n => ({name:n, text:'', ticks:[false,false,false]}))},
-    armor:'No armor', deflectBonus:0,
+    armor:'No armor', armorHandKey:null, deflectBonus:0, shardplateCharges:4,
     expertises:[], expertiseBonus:0,
-    talents:'',
+    talents:'', talentIds:[],
+    stances:{collected:false, customaryGarb:false, ambitiousMind:false, vinestance:false, bloodstance:false},
     weapons:[],
     conditions:{}, injuries:[],
-    squires:[], fabrials:[], gearWeight:0,
+    squires:[], fabrials:[], gearWeight:0, gear:[],
     spheres:{chips:0, marks:0, broams:0, notes:''}, purpose:'', obstacle:'',
     goals:[{text:'', ticks:[false,false,false]}],
     appearance:'', equipment:'', connections:'', notes:'',
@@ -754,7 +955,8 @@ function isBlankDefaultChar(c){
 }
 
 /* ---------- derived values ---------- */
-const tierOf = lvl => Math.max(1, Math.min(5, Math.ceil((lvl || 1) / 4)));
+const tierOf = lvl => Math.max(1, Math.min(5, Math.ceil((lvl || 1) / 5)));
+const tierSkillRankCap = tier => tier <= 1 ? 2 : tier === 2 ? 3 : tier === 3 ? 4 : 5;
 
 function attrBudgetForLevel(level){
   const lvl = level || 1;
@@ -777,32 +979,99 @@ function armorTagsHTML(armor){
   return (armor.tags || []).map(t => `<span class="badge">${esc(t)}</span>`).join(' ');
 }
 
+/* A talent counts as "known" if picked in the structured talent picker, or typed
+   anywhere in the freeform Talents/Notes text — keeps old freeform sheets working
+   with every new automatic rule below. */
+function hasTalent(c, name){
+  if ((c.talentIds || []).includes(name)) return true;
+  const text = (c.talents || '') + ' ' + (c.notes || '');
+  const re = new RegExp('\\b' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+  return re.test(text);
+}
+
+function talentExpertiseBonus(c){
+  return (c.talentIds || []).reduce((sum, t) => sum + (TALENT_EXPERTISE_BONUS[t] || 0), 0);
+}
+
+/* Health Calculation Engine — tier-scaled per-level progression, not a flat multiplier. */
+function baseHealthForLevel(level, str){
+  let hp = 10 + str;
+  const lvl = clamp(level || 1, 1, 99);
+  for (let l = 2; l <= lvl; l++){
+    if (l <= 5) hp += 5;
+    else if (l === 6) hp += 4 + str;
+    else if (l <= 10) hp += 4;
+    else if (l === 11) hp += 3 + str;
+    else if (l <= 15) hp += 3;
+    else if (l === 16) hp += 2 + str;
+    else if (l <= 20) hp += 2;
+    else hp += 1;
+  }
+  return hp;
+}
+
+function resolveArmor(c){
+  if (c.armor === 'Custom / Hand-Key' && c.armorHandKey){
+    const hk = c.armorHandKey;
+    return {name: hk.name || 'Custom armor', deflect: hk.deflect || 0, cumbersome: hk.cumbersome || 0,
+            weight: hk.weight || 0, price: hk.price || 0, tags: hk.traits ? [hk.traits] : [], handKey:true};
+  }
+  return ARMORS.find(x => x.name === c.armor) || ARMORS[0];
+}
+
 function derive(c){
   const fb = formBonus(c);
   const a = {}; for (const k in c.attributes) a[k] = c.attributes[k] + (fb[k] | 0);
+  const tier = tierOf(c.level);
+  const armor = resolveArmor(c);
+  const stances = c.stances || {};
+  const presentable = (armor.tags || []).includes('Presentable');
+  const stancePhys = (stances.customaryGarb && presentable ? 2 : 0) + (stances.vinestance ? 1 : 0) + (stances.bloodstance ? -2 : 0);
+  const stanceCog = (stances.collected ? 2 : 0) + (stances.ambitiousMind ? 2 : 0) + (stances.vinestance ? 1 : 0) + (stances.bloodstance ? -2 : 0);
+  const stanceSpirit = (stances.collected ? 2 : 0) + (stances.customaryGarb && presentable ? 2 : 0) + (stances.bloodstance ? -2 : 0);
+
   const d = {
-    tier: tierOf(c.level),
+    tier,
     formBonus: fb,
-    physicalDefense: 10 + a.str + a.spd + (c.defenseBonus.physical|0),
-    cognitiveDefense: 10 + a.int + a.wil + (c.defenseBonus.cognitive|0),
-    spiritualDefense: 10 + a.awa + a.pre + (c.defenseBonus.spiritual|0),
+    physicalDefense: 10 + a.str + a.spd + (c.defenseBonus.physical|0) + stancePhys,
+    cognitiveDefense: 10 + a.int + a.wil + (c.defenseBonus.cognitive|0) + stanceCog,
+    spiritualDefense: 10 + a.awa + a.pre + (c.defenseBonus.spiritual|0) + stanceSpirit,
     lifting: lookup(TABLES.lifting, a.str),
     movement: lookup(TABLES.movement, a.spd),
     recovery: lookup(TABLES.recovery, a.wil),
     senses: lookup(TABLES.senses, a.awa),
+    skillRankCap: tierSkillRankCap(tier),
     skills:{}
   };
   d.liftingLbs = parseInt(d.lifting.replace(/[^0-9]/g, ''), 10) || 0;
-  d.maxHealth = 10 + a.str + (d.tier - 1) * 10 + (c.health.bonus|0);
-  d.maxFocus = 2 + a.wil + (c.focus.bonus|0);
-  d.maxInvestiture = c.radiant ? 2 + Math.max(a.awa, a.pre) + (c.investiture.bonus|0) : 0;
-  const armor = ARMORS.find(x => x.name === c.armor) || ARMORS[0];
+
+  d.maxHealth = baseHealthForLevel(c.level, a.str) + (c.health.bonus|0) + (hasTalent(c, 'Hardy') ? c.level : 0);
+
+  const nimbleOrNight = c.singer && (c.form === 'Nimbleform' || c.form === 'Nightform');
+  d.maxFocus = 2 + a.wil + (c.focus.bonus|0) + (hasTalent(c, 'Composed') ? tier : 0) + (nimbleOrNight ? 2 : 0);
+
+  d.radiantActive = c.radiant || hasTalent(c, 'First Ideal (Radiant Key)');
+  d.maxInvestiture = d.radiantActive
+    ? 2 + Math.max(a.awa, a.pre) + (c.investiture.bonus|0) + (hasTalent(c, 'Invested') ? tier : 0)
+    : 0;
+
   d.armor = armor;
   d.deflect = Math.max(armor.deflect, fb.deflect || 0) + (c.deflectBonus|0);
-  d.cumbersomeWarning = (armor.cumbersome && a.str < armor.cumbersome)
-    ? `Cumbersome (Slowed / Disadvantage on Speed tests) — Strength ${a.str} is below the ${armor.name} threshold of ${armor.cumbersome}.`
+  const hasArmorExpertise = c.expertises.includes(armor.name);
+  const depleted = armor.name === 'Shardplate' && (c.shardplateCharges|0) <= 0;
+  const cumbersomeThreshold = depleted ? (armor.cumbersomeDepleted || 0) : (armor.cumbersome || 0);
+  d.cumbersomeWarning = (cumbersomeThreshold && !hasArmorExpertise && a.str < cumbersomeThreshold)
+    ? `Cumbersome (Slowed / Disadvantage on Speed tests) — Strength ${a.str} is below the ${armor.name}${depleted ? ' (depleted)' : ''} threshold of ${cumbersomeThreshold}.`
     : '';
-  d.expertiseSlots = 2 + (a.int >= 1 ? a.int : 0) + (c.expertiseBonus|0);
+
+  d.expertiseTalentBonus = talentExpertiseBonus(c);
+  d.expertiseBaseSlots = 2 + (a.int >= 1 ? a.int : 0);
+  d.expertiseSlots = d.expertiseBaseSlots + (c.expertiseBonus|0) + d.expertiseTalentBonus;
+
+  d.gearListWeight = (c.gear || []).reduce((sum, g) => sum + (g.weight||0) * (g.qty||1), 0);
+  d.gearListPrice = (c.gear || []).reduce((sum, g) => sum + (g.price||0) * (g.qty||1), 0);
+  d.totalCarriedWeight = d.gearListWeight + (c.gearWeight|0);
+
   ALL_SKILLS.forEach(sk => {
     const s = c.skills[sk.key];
     d.skills[sk.key] = s.ranks + a[sk.attr] + (s.bonus|0);
@@ -812,6 +1081,22 @@ function derive(c){
     d.skills['custom_' + r.key] = s.ranks + (a[s.attr] || 0) + (s.bonus|0);
   });
   return d;
+}
+
+/* Cross-references a weapon against known expertises to compute its effective
+   (expert-trait-augmented) traits, unless the row was hand-keyed by the player. */
+function weaponDisplay(c, w){
+  const catalog = !w.handKey && w.catalogName ? GAME_DATABASE.weapons[w.catalogName] : null;
+  const expertiseName = catalog ? WEAPON_EXPERTISE_NAME[w.catalogName] : null;
+  const hasExpertise = expertiseName && c.expertises.includes(expertiseName);
+  let traits = w.traits || '';
+  if (catalog && hasExpertise && catalog.expertTraits){
+    traits = traits ? `${traits}, ${catalog.expertTraits} (expert)` : `${catalog.expertTraits} (expert)`;
+  }
+  const isOffhand = /\boffhand\b/i.test(traits);
+  const signatureBonus = hasTalent(c, 'Signature Weapon') ? (hasExpertise ? 2 : 1) : 0;
+  return {catalog, expertiseName, hasExpertise, traits, isOffhand,
+          offhandFocusCost: isOffhand ? 1 : 2, signatureBonus};
 }
 
 /* ---------- app state & persistence ---------- */
@@ -922,6 +1207,11 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, m => ({'&':'&amp
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const sgn = n => (n >= 0 ? '+' : '') + n;
 const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+
+/* transient UI-only state for the cascading talent picker — never persisted */
+let talentPick = {category:'', path:'', specialty:'', talent:''};
+let weaponPick = {category:'', weapon:''};
+let gearPick = {category:'', item:''};
 
 let toastTimer;
 function toast(msg, duration){
@@ -1059,25 +1349,106 @@ function weaponsHTML(c, d){
   const defOpts = w => ['physical','cognitive','spiritual']
     .map(k => `<option value="${k}" ${w.defense === k ? 'selected' : ''}>vs ${k[0].toUpperCase() + k.slice(1)}</option>`).join('');
 
-  const rows = c.weapons.map((w, i) => `<div class="row wrow" data-widx="${i}">
+  const rows = c.weapons.map((w, i) => {
+    const disp = weaponDisplay(c, w);
+    const isCatalog = !!disp.catalog;
+    const notes = [];
+    if (disp.hasExpertise) notes.push(`Expertise match: <b>${esc(disp.expertiseName)}</b> — expert traits applied`);
+    if (disp.signatureBonus) notes.push(`Signature Weapon: Opportunity range +${disp.signatureBonus}`);
+    notes.push(`Offhand Strike: ${disp.offhandFocusCost} Focus${disp.isOffhand ? ' (has Offhand trait)' : ''}`);
+    return `<div class="row wrow" data-widx="${i}">
       <input type="text" value="${esc(w.name)}" data-path="weapons.${i}.name" placeholder="Weapon" aria-label="Weapon name">
       <select data-path="weapons.${i}.skill" aria-label="Skill used">${skillOpts(w)}</select>
       <input type="number" value="${w.bonus}" data-path="weapons.${i}.bonus" title="Extra attack bonus" aria-label="Attack bonus">
-      <input type="text" value="${esc(w.damage)}" data-path="weapons.${i}.damage" placeholder="1d6 + STR" aria-label="Damage">
-      <input type="text" value="${esc(w.traits)}" data-path="weapons.${i}.traits" placeholder="Traits" aria-label="Traits">
+      ${isCatalog
+        ? `<input type="text" value="${esc(disp.catalog.damage)}" readonly title="From catalog" aria-label="Damage">`
+        : `<input type="text" value="${esc(w.damage)}" data-path="weapons.${i}.damage" placeholder="1d6 + STR" aria-label="Damage">`}
+      ${isCatalog
+        ? `<input type="text" value="${esc(disp.traits)}" readonly title="Auto-computed from catalog and expertise" aria-label="Traits">`
+        : `<input type="text" value="${esc(w.traits)}" data-path="weapons.${i}.traits" placeholder="Traits" aria-label="Traits">`}
       <select data-path="weapons.${i}.defense" aria-label="Target defense">${defOpts(w)}</select>
       <span style="display:flex;gap:.25rem">
+        <button class="iconbtn" data-action="show-weapon-info" data-i="${i}" aria-label="Weapon details" title="View traits and rules">ⓘ</button>
         ${state.settings.diceMode !== 'disabled' ? `<button class="iconbtn" data-action="roll-weapon" data-i="${i}" title="${state.settings.diceMode === 'info' ? 'Show what to roll' : 'Roll attack and damage'}">${state.settings.diceMode === 'info' ? 'Show roll' : 'Roll'}</button>` : ''}
         <button class="iconbtn" data-action="del-weapon" data-i="${i}" aria-label="Remove weapon">✕</button>
       </span>
-    </div>`).join('');
+    </div>
+    <p class="hint" style="margin:.1rem 0 .5rem">${notes.join(' · ')}</p>`;
+  }).join('');
+
+  const catNames = ['Light', 'Heavy', 'Special'];
+  const catOpts = catNames.map(cat => `<option value="${esc(cat)}" ${weaponPick.category === cat ? 'selected' : ''}>${esc(cat)} Weaponry</option>`).join('');
+  const weaponsInCat = weaponPick.category
+    ? Object.entries(GAME_DATABASE.weapons).filter(([, w]) => w.category === weaponPick.category).map(([n]) => n) : [];
+  const weaponOpts = weaponsInCat.map(n => `<option value="${esc(n)}" ${weaponPick.weapon === n ? 'selected' : ''}>${esc(n)}</option>`).join('');
 
   return `<div class="card">
     <h3>Weapons <span class="hint">Attack = d20 + skill + bonus</span></h3><hr class="rule">
+    <p class="hint">An offhand Strike costs 2 Focus (1 Focus if the weapon has the Offhand trait).</p>
     <div class="row wrow thead"><span>Weapon</span><span>Skill</span><span>Bonus</span><span>Damage</span><span>Traits</span><span>Target</span><span></span></div>
     <div class="rows">${rows || '<p class="empty">No weapons yet. Add one to roll attacks from the sheet.</p>'}</div>
-    <button class="btn addbtn" data-action="add-weapon">Add weapon</button>
+    <div class="row" style="grid-template-columns:1fr 1fr auto;margin-top:.5rem;align-items:end">
+      <div class="f"><label>Category</label><select id="weaponCatSel"><option value="">— Choose —</option>${catOpts}</select></div>
+      <div class="f"><label>Handbook weapon</label><select id="weaponPickSel" ${weaponsInCat.length ? '' : 'disabled'}><option value="">— Choose —</option>${weaponOpts}</select></div>
+      <button class="btn addbtn" data-action="add-weapon-catalog" ${weaponPick.weapon ? '' : 'disabled'}>Add from catalog</button>
+    </div>
+    <button class="btn addbtn" data-action="add-weapon" style="margin-top:.4rem">Add hand-key / custom weapon</button>
   </div>`;
+}
+
+function bindWeaponPicker(){
+  const catSel = $('#weaponCatSel'), pickSel = $('#weaponPickSel');
+  if (!catSel) return;
+  catSel.addEventListener('change', () => { weaponPick.category = catSel.value; weaponPick.weapon = ''; renderFront(); });
+  if (pickSel) pickSel.addEventListener('change', () => { weaponPick.weapon = pickSel.value; renderFront(); });
+}
+
+function openWeaponModal(c, i){
+  const w = c.weapons[i];
+  if (!w) return;
+  const disp = weaponDisplay(c, w);
+  const cat = disp.catalog;
+  const title = w.catalogName || w.name || 'Weapon';
+  const special = w.catalogName === 'Shardblade'
+    ? 'Summoning a Shardblade takes 10 heartbeats of concentration; dismissing it is instant. A hit deals Spiritual Injury, which recovery-die healing cannot fix.'
+    : w.catalogName === 'Shardblade (Radiant)'
+    ? 'A Radiant summons and dismisses their Shardblade instantly, and it can reshape into other bladed forms (Malleable Form).'
+    : w.catalogName === 'Half-Shard'
+    ? 'Has 1 charge; spending it grants +10 Deflect until the start of your next turn.'
+    : '';
+  openModal(`
+    <h2>${esc(title)}</h2>
+    ${w.name && w.name !== title ? `<p class="hint">Sheet name: ${esc(w.name)}</p>` : ''}
+    <hr class="rule">
+    ${cat ? `
+    <section><h4>Range &amp; Damage</h4><p>${esc(cat.range)} · ${esc(cat.damage)}</p></section>
+    <section><h4>Base Traits</h4><p>${esc(cat.traits) || 'None'}</p></section>
+    <section><h4>Expert Traits</h4><p>${esc(cat.expertTraits) || 'None'}${disp.hasExpertise ? ' — <b style="color:var(--accent)">active</b> (matching expertise known)' : cat.expertTraits ? ` — requires the ${esc(disp.expertiseName)} expertise` : ''}</p></section>
+    <section><h4>Weight / Price</h4><p>${cat.weight} lbs · ${cat.price} Diamond Marks</p></section>
+    ` : `
+    <section><h4>Traits</h4><p>${esc(w.traits) || 'None'}</p></section>
+    <section><h4>Damage</h4><p>${esc(w.damage) || 'Not set'}</p></section>
+    `}
+    <section><h4>Offhand Strike</h4><p>${disp.offhandFocusCost} Focus${disp.isOffhand ? ' (this weapon has the Offhand trait)' : ''}</p></section>
+    ${special ? `<section><h4>Special Rules</h4><p>${esc(special)}</p></section>` : ''}
+    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">Close</button></div>
+  `);
+}
+
+function openArmorModal(c){
+  const d = derive(c);
+  const armor = d.armor;
+  const hasExpertise = c.expertises.includes(armor.name);
+  openModal(`
+    <h2>${esc(armor.name)}</h2>
+    <p class="hint">Deflect ${armor.deflect}${armor.tags && armor.tags.length ? ' — ' + esc(armor.tags.join(', ')) : ''}</p>
+    <hr class="rule">
+    <section><h4>Deflect</h4><p>Reduces incoming damage before it is applied. Effective Deflect is the higher of worn-armor Deflect and any Singer Form carapace bonus (they do not stack), plus any Extra Deflect you have entered.</p></section>
+    ${armor.cumbersome || armor.cumbersomeDepleted ? `<section><h4>Cumbersome</h4><p>Requires Strength ${armor.cumbersome || armor.cumbersomeDepleted}${armor.cumbersomeDepleted ? ' once Shardplate charges are depleted' : ''} or you are Slowed with Disadvantage on Speed tests.${hasExpertise ? ` You have the ${esc(armor.name)} expertise, which removes this penalty.` : ''}</p></section>` : ''}
+    ${armor.name === 'Shardplate' ? `<section><h4>Charges</h4><p>Shardplate has 4 charges. Spending one grants +10 Deflect until the start of your next turn. At 0 charges remaining it becomes Cumbersome ${armor.cumbersomeDepleted} until recharged. Currently: ${c.shardplateCharges|0} of 4.</p></section>` : ''}
+    ${armor.name === 'Shardplate (Radiant)' ? `<section><h4>Weightless</h4><p>Worn by a Radiant with an active Stormlight bond — no charges to track, no Cumbersome penalty, and no weight.</p></section>` : ''}
+    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">Close</button></div>
+  `);
 }
 
 function expertisesHTML(c, d){
@@ -1088,18 +1459,130 @@ function expertisesHTML(c, d){
       <button data-action="del-expertise" data-i="${i}" aria-label="Remove ${esc(e)}">✕</button></span>`;
   }).join('');
   return `<div class="card">
-    <h3>Expertises <span class="slots"><b data-derived="expUsed">${c.expertises.length}</b> of <b data-derived="expSlots">${d.expertiseSlots}</b> slots</span></h3>
+    <h3>Expertises</h3>
+    <p class="hint" id="expertiseSummary" style="margin:-.1rem 0 .5rem">${expertiseSummaryText(c, d)}</p>
     <hr class="rule">
     <div class="chips">${chips || '<span class="empty">Two cultural expertises come free, plus one per point of Intellect.</span>'}</div>
     <div class="combo">
       <input type="text" id="expinput" placeholder="Search expertises, or type your own and press Enter" autocomplete="off" aria-label="Add expertise">
       <div class="menu" id="expmenu" hidden></div>
     </div>
-    <div class="f" style="margin-top:.5rem;max-width:12rem">
-      <label>Extra slots from talents</label>
+    <div class="f" style="margin-top:.5rem;max-width:16rem">
+      <label>Manual bonus slots (other talents)</label>
       <input type="number" value="${c.expertiseBonus}" data-path="expertiseBonus">
     </div>
   </div>`;
+}
+
+function expertiseSummaryText(c, d){
+  const bonus = (c.expertiseBonus|0) + d.expertiseTalentBonus;
+  return `${c.expertises.length} Expertise${c.expertises.length === 1 ? '' : 's'} Active (Base: ${d.expertiseBaseSlots}, Bonus/Talents: ${bonus})`;
+}
+
+/* ---------- talent prerequisite checker (heuristic — informs, never blocks; GM overrides always allowed) ---------- */
+function checkPrereq(c, reqText){
+  if (!reqText || /^none/i.test(reqText.trim())) return {met:true};
+  const lvlMatch = reqText.match(/Level\s+(\d+)\+/i);
+  if (lvlMatch && c.level < parseInt(lvlMatch[1], 10)){
+    return {met:false, reason:`Requires Level ${lvlMatch[1]}+ (currently ${c.level}).`};
+  }
+  for (const sk of ALL_SKILLS){
+    const m = reqText.match(new RegExp('\\b' + sk.name + '\\s+(\\d+)\\+', 'i'));
+    if (m){
+      const need = parseInt(m[1], 10), have = c.skills[sk.key].ranks;
+      if (have < need) return {met:false, reason:`Requires ${sk.name} rank ${need}+ (currently ${have}).`};
+    }
+  }
+  const keyRefs = [...reqText.matchAll(/\b([A-Z][A-Za-z ]*?)\s+Key\b/g)].map(m => m[1]);
+  const namedTalents = Object.keys(TALENT_DATABASE).filter(n => reqText.includes(n));
+  const candidates = [...new Set([...keyRefs, ...namedTalents])];
+  if (candidates.length && !candidates.some(t => hasTalent(c, t))){
+    return {met:false, reason:`Requires ${candidates[0]} (not yet known).`};
+  }
+  return {met:true};
+}
+
+function talentBadgeHTML(c, name, i){
+  const t = TALENT_DATABASE[name];
+  if (!t) return `<span class="chip"><span>${esc(name)}</span><button data-action="del-talent" data-i="${i}" aria-label="Remove ${esc(name)}">✕</button></span>`;
+  const prereq = checkPrereq(c, t.reqText);
+  return `<span class="chip talentchip" data-action="show-talent-info" data-talent="${esc(name)}" role="button" tabindex="0" title="View talent details">
+    <span>${t.activation} ${esc(name)}${!prereq.met ? ' <span style="color:var(--warn)">⚠️</span>' : ''}<span class="kind"> ${esc(t.specialty)}</span></span>
+    <button data-action="del-talent" data-i="${i}" aria-label="Remove ${esc(name)}">✕</button>
+  </span>`;
+}
+
+function talentPickerHTML(c, d){
+  const badges = (c.talentIds || []).map((name, i) => talentBadgeHTML(c, name, i)).join('');
+  const categories = Object.keys(TALENT_TREE);
+  const catOpts = categories.map(cat => `<option value="${esc(cat)}" ${talentPick.category === cat ? 'selected' : ''}>${esc(cat)}</option>`).join('');
+  const paths = talentPick.category && TALENT_TREE[talentPick.category] ? Object.keys(TALENT_TREE[talentPick.category]) : [];
+  const pathOpts = paths.map(p => `<option value="${esc(p)}" ${talentPick.path === p ? 'selected' : ''}>${esc(p)}</option>`).join('');
+  const specs = talentPick.path && TALENT_TREE[talentPick.category] && TALENT_TREE[talentPick.category][talentPick.path]
+    ? Object.keys(TALENT_TREE[talentPick.category][talentPick.path]) : [];
+  const specOpts = specs.map(s => `<option value="${esc(s)}" ${talentPick.specialty === s ? 'selected' : ''}>${esc(s)}</option>`).join('');
+  const talents = talentPick.specialty && specs.includes(talentPick.specialty)
+    ? TALENT_TREE[talentPick.category][talentPick.path][talentPick.specialty] : [];
+  const talentOpts = talents.map(n => `<option value="${esc(n)}">${esc(n)}${(c.talentIds||[]).includes(n) ? ' (known)' : ''}</option>`).join('');
+  const preview = talentPick.talent && TALENT_DATABASE[talentPick.talent] ? TALENT_DATABASE[talentPick.talent] : null;
+  const previewPrereq = preview ? checkPrereq(c, preview.reqText) : null;
+
+  return `<div class="card">
+    <h3>Talents <span class="hint">Cascading picker with prerequisite checks</span></h3><hr class="rule">
+    <div class="chips">${badges || '<span class="empty">No talents picked yet.</span>'}</div>
+    <div class="row" style="grid-template-columns:repeat(4,1fr);margin-top:.6rem">
+      <div class="f"><label>Category</label><select id="talentCatSel"><option value="">— Choose —</option>${catOpts}</select></div>
+      <div class="f"><label>Path</label><select id="talentPathSel" ${paths.length ? '' : 'disabled'}><option value="">— Choose —</option>${pathOpts}</select></div>
+      <div class="f"><label>Sub-Tree / Key</label><select id="talentSpecSel" ${specs.length ? '' : 'disabled'}><option value="">— Choose —</option>${specOpts}</select></div>
+      <div class="f"><label>Talent</label><select id="talentPickSel" ${talents.length ? '' : 'disabled'}><option value="">— Choose —</option>${talentOpts}</select></div>
+    </div>
+    ${preview ? `<div class="hint" style="margin-top:.5rem;padding:.5rem .6rem;border:1px solid var(--border-soft);border-radius:10px">
+      <b style="color:var(--accent)">${preview.activation} ${esc(talentPick.talent)}</b> — ${esc(preview.flavor)}<br>
+      <span>${esc(preview.effect)}</span>
+      ${!previewPrereq.met ? `<br><span style="color:var(--warn)">⚠️ Warning: Prerequisite Not Met — ${esc(previewPrereq.reason)} (GM may allow anyway.)</span>` : ''}
+    </div>` : ''}
+    <button class="btn addbtn" data-action="add-talent" ${talentPick.talent ? '' : 'disabled'}>Add talent</button>
+    <details style="margin-top:.7rem">
+      <summary class="hint" style="cursor:pointer">Other talents &amp; homebrew notes</summary>
+      <textarea data-path="talents" placeholder="Anything not covered by the picker above — homebrew talents, GM rulings, path talents from other sourcebooks." style="min-height:6rem;margin-top:.5rem">${esc(c.talents)}</textarea>
+    </details>
+  </div>`;
+}
+
+function bindTalentPicker(){
+  const catSel = $('#talentCatSel'), pathSel = $('#talentPathSel'), specSel = $('#talentSpecSel'), pickSel = $('#talentPickSel');
+  if (!catSel) return;
+  catSel.addEventListener('change', () => {
+    talentPick.category = catSel.value; talentPick.path = ''; talentPick.specialty = ''; talentPick.talent = '';
+    renderFront();
+  });
+  if (pathSel) pathSel.addEventListener('change', () => {
+    talentPick.path = pathSel.value; talentPick.specialty = ''; talentPick.talent = '';
+    renderFront();
+  });
+  if (specSel) specSel.addEventListener('change', () => {
+    talentPick.specialty = specSel.value; talentPick.talent = '';
+    renderFront();
+  });
+  if (pickSel) pickSel.addEventListener('change', () => {
+    talentPick.talent = pickSel.value;
+    renderFront();
+  });
+}
+
+function openTalentModal(name){
+  const t = TALENT_DATABASE[name];
+  if (!t) return;
+  const prereq = checkPrereq(activeChar(), t.reqText);
+  openModal(`
+    <h2>${t.activation} ${esc(name)}</h2>
+    <p class="hint">${esc(t.path)} — ${esc(t.specialty)} · ${esc(ACTIVATION_ICONS[t.activation] || '')}</p>
+    <hr class="rule">
+    <section><h4>Prerequisites</h4><p>${esc(t.reqText)}${!prereq.met ? ` — <span style="color:var(--warn)">⚠️ Warning: Prerequisite Not Met (${esc(prereq.reason)})</span>` : ''}</p></section>
+    <section><h4>Narrative</h4><p>${esc(t.flavor)}</p></section>
+    <section><h4>Mechanical Effect</h4><p>${esc(t.effect)}</p></section>
+    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">Close</button></div>
+  `);
 }
 
 function singerFormHTML(c, d){
@@ -1156,9 +1639,37 @@ function squiresHTML(c){
   </div>`;
 }
 
+function stancesHTML(c){
+  const st = c.stances || {};
+  const items = [
+    ['collected', 'Collected', '+2 Cognitive, +2 Spiritual Defense'],
+    ['customaryGarb', 'Customary Garb', '+2 Physical, +2 Spiritual Defense while wearing Presentable armor'],
+    ['ambitiousMind', 'Ambitious Mind', '+2 Cognitive Defense'],
+    ['vinestance', 'Vinestance', '+1 Physical, +1 Cognitive Defense'],
+    ['bloodstance', 'Bloodstance', '−2 Physical, −2 Cognitive, −2 Spiritual Defense']
+  ];
+  return `<div class="card">
+    <h3>Combat Stances &amp; Modifiers <span class="hint">Toggle what's active right now</span></h3><hr class="rule">
+    ${items.map(([key, label, desc]) => `<div class="switchrow">
+      <span>${esc(label)}<span class="hint" style="display:block">${esc(desc)}</span></span>
+      <button class="switch" data-toggle="stances.${key}" aria-pressed="${!!st[key]}" aria-label="${esc(label)}"></button>
+    </div>`).join('')}
+  </div>`;
+}
+
+function openConditionModal(name){
+  openModal(`
+    <h2>${esc(name)}</h2><hr class="rule">
+    <p>${esc(CONDITION_BLURBS[name] || 'No description available.')}</p>
+    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">Close</button></div>
+  `);
+}
+
 function conditionsHTML(c){
-  const conds = CONDITIONS.map(n =>
-    `<button class="cond" data-cond="${n}" aria-pressed="${!!c.conditions[n]}">${n}</button>`).join('');
+  const conds = CONDITIONS.map(n => `<span style="display:inline-flex;align-items:center;gap:.1rem">
+      <button class="cond" data-cond="${n}" aria-pressed="${!!c.conditions[n]}" title="${esc(CONDITION_BLURBS[n] || '')}">${n}</button>
+      <button class="iconbtn" data-action="show-cond-info" data-cond-name="${n}" aria-label="${n} details" title="What does ${n} do?" style="padding:.15rem .35rem;font-size:.68rem">ⓘ</button>
+    </span>`).join('');
   const injuries = c.injuries.map((inj, i) => `<div class="row" style="grid-template-columns:1fr 5.5rem auto" data-iidx="${i}">
       <input type="text" value="${esc(inj.text)}" data-path="injuries.${i}.text" placeholder="Injury" aria-label="Injury">
       <input type="number" value="${inj.days}" data-path="injuries.${i}.days" title="Days of recovery left" aria-label="Recovery days">
@@ -1178,7 +1689,8 @@ function renderFront(){
   const c = activeChar();
   if (!c){ $('#view-front').innerHTML = `<div class="card"><p class="empty">No character selected. <button class="btn" data-action="go-home">Go to your vault</button></p></div>`; return; }
   const d = derive(c);
-  const armorOpts = ARMORS.map(a => `<option value="${a.name}" ${c.armor === a.name ? 'selected' : ''}>${a.name} (deflect ${a.deflect}${a.tags && a.tags.length ? ' — ' + a.tags.join(', ') : ''})</option>`).join('');
+  const armorOpts = ARMORS.map(a => `<option value="${a.name}" ${c.armor === a.name ? 'selected' : ''}>${a.name} (deflect ${a.deflect}${a.tags && a.tags.length ? ' — ' + a.tags.join(', ') : ''})</option>`).join('')
+    + `<option value="Custom / Hand-Key" ${c.armor === 'Custom / Hand-Key' ? 'selected' : ''}>Custom / Hand-Key</option>`;
 
   $('#view-front').innerHTML = `
   <div class="card">
@@ -1190,6 +1702,7 @@ function renderFront(){
       <div class="f"><label>Level</label><input type="number" min="1" max="20" value="${c.level}" data-path="level"></div>
     </div>
     <p class="hint" id="pointsline" style="margin:.6rem 0 0"></p>
+    <p class="hint" style="margin:.2rem 0 0">Max skill rank at Tier ${d.tier}: ${d.skillRankCap}. Talents like Erudition or Scholarform can grant ranks above this without penalty.</p>
   </div>
 
   <div class="realms">
@@ -1207,19 +1720,38 @@ function renderFront(){
       <div class="f"><label>Worn armor</label><select data-path="armor">${armorOpts}</select></div>
       <div class="row" style="grid-template-columns:1fr 1fr;align-items:end">
         <div class="f"><label>Extra deflect</label><input type="number" value="${c.deflectBonus}" data-path="deflectBonus"></div>
-        <div class="lookup"><div class="lbl">Deflect</div><div class="v" data-derived="deflect">${d.deflect}</div></div>
+        <div class="lookup" data-action="show-armor-info" role="button" tabindex="0" title="View deflect and Cumbersome rules" style="cursor:pointer">
+          <div class="lbl">Deflect ⓘ</div><div class="v" data-derived="deflect">${d.deflect}</div>
+        </div>
       </div>
     </div>
+    ${c.armor === 'Custom / Hand-Key' ? `
+    <div class="row" style="grid-template-columns:repeat(3,1fr);margin-top:.5rem">
+      <div class="f"><label>Custom armor name</label><input type="text" value="${esc((c.armorHandKey||{}).name||'')}" data-path="armorHandKey.name" placeholder="Name"></div>
+      <div class="f"><label>Deflect</label><input type="number" value="${(c.armorHandKey||{}).deflect||0}" data-path="armorHandKey.deflect"></div>
+      <div class="f"><label>Cumbersome (STR needed)</label><input type="number" value="${(c.armorHandKey||{}).cumbersome||0}" data-path="armorHandKey.cumbersome"></div>
+      <div class="f"><label>Weight (lbs)</label><input type="number" value="${(c.armorHandKey||{}).weight||0}" data-path="armorHandKey.weight"></div>
+      <div class="f"><label>Price (Marks)</label><input type="number" value="${(c.armorHandKey||{}).price||0}" data-path="armorHandKey.price"></div>
+      <div class="f"><label>Traits</label><input type="text" value="${esc((c.armorHandKey||{}).traits||'')}" data-path="armorHandKey.traits" placeholder="e.g. Presentable"></div>
+    </div>` : ''}
+    ${c.armor === 'Shardplate' ? `
+    <div class="f" style="margin-top:.5rem;max-width:14rem"><label>Shardplate charges</label>
+      <div class="stepper">
+        <button data-adjust="shardplateCharges" data-by="-1" aria-label="Spend a charge">−</button>
+        <span class="val" data-derived="shardplateCharges">${c.shardplateCharges}</span>
+        <button data-adjust="shardplateCharges" data-by="1" aria-label="Restore a charge">+</button>
+      </div>
+    </div>` : ''}
     <p class="hint" id="armortags" style="margin:.5rem 0 0;${d.armor.tags && d.armor.tags.length ? '' : 'display:none'}">${armorTagsHTML(d.armor)}</p>
     <p class="hint" id="cumbersomeline" style="margin:.4rem 0 0;color:var(--warn);${d.cumbersomeWarning ? '' : 'display:none'}">${d.cumbersomeWarning}</p>
+    ${c.expertises.includes(d.armor.name) && d.armor.cumbersome ? `<p class="hint" style="margin:.3rem 0 0;color:var(--accent)">Armor expertise (${esc(d.armor.name)}) removes the Cumbersome penalty.</p>` : ''}
   </div>
+
+  ${stancesHTML(c)}
 
   ${expertisesHTML(c, d)}
 
-  <div class="card">
-    <h3>Talents</h3><hr class="rule">
-    <textarea data-path="talents" placeholder="Path talents, ancestry talents, and anything you have taken from a talent tree." style="min-height:9rem">${esc(c.talents)}</textarea>
-  </div>
+  ${talentPickerHTML(c, d)}
 
   ${singerFormHTML(c, d)}
   ${radiantIdealsHTML(c)}
@@ -1228,6 +1760,8 @@ function renderFront(){
   ${squiresHTML(c)}
   `;
   bindCombo();
+  bindTalentPicker();
+  bindWeaponPicker();
   updatePointsSpent();
 }
 
@@ -1272,9 +1806,75 @@ function sphereConverterHTML(c){
 }
 
 function weightLineText(c, d){
-  const w = c.gearWeight | 0;
-  const over = w > d.liftingLbs;
-  return `Lifting capacity: ${d.lifting}${over ? ' — overloaded! Movement and Physical tests take Disadvantage.' : '.'}`;
+  const over = d.totalCarriedWeight > d.liftingLbs;
+  return `Carrying ${d.totalCarriedWeight} lbs of ${d.lifting} capacity${over ? ' — overloaded! Slowed, with Disadvantage on Movement and Physical tests.' : '.'}`;
+}
+
+function gearHTML(c, d){
+  const rows = (c.gear || []).map((g, i) => `<div class="row" style="grid-template-columns:1.6fr auto auto auto auto" data-gidx="${i}">
+      <span data-action="show-gear-info" data-i="${i}" role="button" tabindex="0" style="cursor:pointer">${esc(g.name)}${g.custom ? ' <span class="kind">Custom</span>' : ''}</span>
+      <span class="hint">${g.weight} lbs</span>
+      <span class="hint">${g.price} Marks</span>
+      <input type="number" min="1" value="${g.qty||1}" data-path="gear.${i}.qty" title="Quantity" aria-label="Quantity" style="width:3.5rem">
+      <button class="iconbtn" data-action="del-gear" data-i="${i}" aria-label="Remove ${esc(g.name)}">✕</button>
+    </div>`).join('');
+
+  const catNames = Object.keys(GAME_DATABASE.equipment);
+  const catOpts = catNames.map(cat => `<option value="${esc(cat)}" ${gearPick.category === cat ? 'selected' : ''}>${esc(cat)}</option>`).join('');
+  const itemsInCat = gearPick.category ? Object.keys(GAME_DATABASE.equipment[gearPick.category] || {}) : [];
+  const itemOpts = itemsInCat.map(n => `<option value="${esc(n)}" ${gearPick.item === n ? 'selected' : ''}>${esc(n)}</option>`).join('');
+
+  return `<div class="card">
+    <h3>Equipment &amp; Fabrials <span class="hint">${d.gearListWeight} lbs · ${d.gearListPrice} Marks itemized</span></h3><hr class="rule">
+    <div class="rows">${rows || '<p class="empty">No itemized gear yet.</p>'}</div>
+    <div class="row" style="grid-template-columns:1fr 1fr auto;margin-top:.5rem;align-items:end">
+      <div class="f"><label>Category</label><select id="gearCatSel"><option value="">— Choose —</option>${catOpts}</select></div>
+      <div class="f"><label>Item</label><select id="gearItemSel" ${itemsInCat.length ? '' : 'disabled'}><option value="">— Choose —</option>${itemOpts}</select></div>
+      <button class="btn addbtn" data-action="add-gear-catalog" ${gearPick.item ? '' : 'disabled'}>Add item</button>
+    </div>
+    <button class="btn addbtn" data-action="add-gear-custom" style="margin-top:.4rem">Hand-Key custom item</button>
+  </div>`;
+}
+
+function bindGearPicker(){
+  const catSel = $('#gearCatSel'), itemSel = $('#gearItemSel');
+  if (!catSel) return;
+  catSel.addEventListener('change', () => { gearPick.category = catSel.value; gearPick.item = ''; renderBack(); });
+  if (itemSel) itemSel.addEventListener('change', () => { gearPick.item = itemSel.value; renderBack(); });
+}
+
+function openGearModal(c, i){
+  const g = (c.gear || [])[i];
+  if (!g) return;
+  openModal(`
+    <h2>${esc(g.name)}</h2>
+    <p class="hint">${esc(g.category || 'Custom item')} · ${g.weight} lbs · ${g.price} Diamond Marks${g.qty > 1 ? ` × ${g.qty}` : ''}</p>
+    <hr class="rule">
+    <section><h4>Description</h4><p>${esc(g.desc || 'No further rules text.')}</p></section>
+    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">Close</button></div>
+  `);
+}
+
+function openCustomGearModal(){
+  openModal(`
+    <h2>Hand-Key Custom Item</h2><hr class="rule">
+    <form data-submit-action="add-gear-custom-submit">
+      <div class="grid2">
+        <div class="f"><label>Name</label><input type="text" id="gcName" required></div>
+        <div class="f"><label>Category</label><input type="text" id="gcCategory" placeholder="e.g. Survival"></div>
+        <div class="f"><label>Weight (lbs)</label><input type="number" id="gcWeight" value="0" step="0.1"></div>
+        <div class="f"><label>Price (Marks)</label><input type="number" id="gcPrice" value="0"></div>
+        <div class="f"><label>Quantity</label><input type="number" id="gcQty" value="1" min="1"></div>
+      </div>
+      <div class="f" style="margin-top:.5rem"><label>Description / rules</label><textarea id="gcDesc" style="min-height:4rem"></textarea></div>
+      <div style="display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem">
+        <button type="button" class="btn" data-action="close-modal">Cancel</button>
+        <button type="submit" class="btn">Add item</button>
+      </div>
+    </form>
+  `);
+  const first = $('#gcName');
+  if (first) first.focus();
 }
 
 function fabrialsHTML(c){
@@ -1336,12 +1936,13 @@ function renderBack(){
     </div>
 
     <div>
+      ${gearHTML(c, d)}
       <div class="card">
-        <h3>Armor &amp; equipment</h3><hr class="rule">
-        <textarea data-path="equipment" style="min-height:12rem" placeholder="Starting kit, weapons, packs, and anything you are carrying.">${esc(c.equipment)}</textarea>
-        <div class="f" style="margin-top:.6rem"><label>Carried weight (lbs)</label>
+        <h3>Other gear notes</h3><hr class="rule">
+        <textarea data-path="equipment" style="min-height:8rem" placeholder="Starting kit, packs, and anything else you are carrying that isn't itemized above.">${esc(c.equipment)}</textarea>
+        <div class="f" style="margin-top:.6rem"><label>Extra / misc weight (lbs)</label>
           <input type="number" min="0" value="${c.gearWeight || 0}" data-path="gearWeight"></div>
-        <p class="hint" id="weightline" style="margin-top:.3rem${(c.gearWeight | 0) > d.liftingLbs ? ';color:var(--warn)' : ''}">${weightLineText(c, d)}</p>
+        <p class="hint" id="weightline" style="margin-top:.3rem${d.totalCarriedWeight > d.liftingLbs ? ';color:var(--warn)' : ''}">${weightLineText(c, d)}</p>
       </div>
       ${sphereConverterHTML(c)}
       ${fabrialsHTML(c)}
@@ -1367,6 +1968,7 @@ function renderBack(){
       </div>
     </div>
   </div>`;
+  bindGearPicker();
 }
 
 /* ============================================================
@@ -1380,10 +1982,12 @@ function syncDerived(){
   const set = (key, val) => $$(`[data-derived="${key}"]`).forEach(n => { if (n.textContent !== String(val)) n.textContent = val; });
 
   ['physicalDefense','cognitiveDefense','spiritualDefense','lifting','movement','recovery','senses','deflect'].forEach(k => set(k, d[k]));
+  set('shardplateCharges', c.shardplateCharges);
   Object.keys(ATTRS).forEach(k => set('attr.' + k, c.attributes[k]));
   Object.keys(d.skills).forEach(k => set('skill.' + k, sgn(d.skills[k])));
   set('maxhealth', d.maxHealth); set('maxfocus', d.maxFocus); set('maxinvestiture', d.maxInvestiture);
-  set('expUsed', c.expertises.length); set('expSlots', d.expertiseSlots);
+  const expSummary = $('#expertiseSummary');
+  if (expSummary) expSummary.textContent = expertiseSummaryText(c, d);
 
   [['health', d.maxHealth], ['focus', d.maxFocus], ['investiture', d.maxInvestiture]].forEach(([k, max]) => {
     const bar = $(`[data-derived="bar${k}"]`);
@@ -1391,8 +1995,6 @@ function syncDerived(){
   });
 
   if (badge) badge.textContent = `Level ${c.level} · Tier ${d.tier}`;
-  const slots = $('[data-derived="expSlots"]');
-  if (slots && slots.parentElement) slots.parentElement.style.color = c.expertises.length > d.expertiseSlots ? 'var(--warn)' : '';
 
   const tags = $('#armortags');
   if (tags){
@@ -1671,17 +2273,21 @@ document.addEventListener('input', e => {
     if (fixed !== value){ setPath(c, path, fixed); t.value = fixed; }
   }
   if (path === 'level') updatePointsSpent();
+  if (path === 'armor'){
+    if (value === 'Custom / Hand-Key' && !c.armorHandKey) c.armorHandKey = {name:'', deflect:0, cumbersome:0, weight:0, price:0, traits:''};
+    renderFront();
+  }
   if (t.dataset.renames){ renderCharPicker(); updateTabTitle(); }
   if (path.startsWith('spheres.') && path !== 'spheres.notes'){
     const el = $('#sphereTotal');
     if (el) el.textContent = sphereTotalText(c);
   }
-  if (path === 'gearWeight'){
+  if (path === 'gearWeight' || path.startsWith('gear.')){
     const d = derive(c);
     const line = $('#weightline');
     if (line){
       line.textContent = weightLineText(c, d);
-      line.style.color = (c.gearWeight | 0) > d.liftingLbs ? 'var(--warn)' : '';
+      line.style.color = d.totalCarriedWeight > d.liftingLbs ? 'var(--warn)' : '';
     }
   }
   syncDerived();
@@ -1743,6 +2349,11 @@ document.addEventListener('click', e => {
   const adj = e.target.closest('[data-adjust]');
   if (adj){
     const kind = adj.dataset.adjust, by = parseInt(adj.dataset.by, 10);
+    if (kind === 'shardplateCharges'){
+      c.shardplateCharges = clamp((c.shardplateCharges|0) + by, 0, 4);
+      syncDerived(); save();
+      return;
+    }
     const d = derive(c);
     const max = {health:d.maxHealth, focus:d.maxFocus, investiture:d.maxInvestiture}[kind];
     c[kind].current = clamp(c[kind].current + by, 0, max);
@@ -1765,9 +2376,10 @@ document.addEventListener('click', e => {
   const toggle = e.target.closest('[data-toggle]');
   if (toggle){
     const k = toggle.dataset.toggle;
-    c[k] = !c[k];
-    toggle.setAttribute('aria-pressed', String(c[k]));
-    if (k === 'radiant' && c[k]) c.investiture.current = derive(c).maxInvestiture;
+    const next = !getPath(c, k);
+    setPath(c, k, next);
+    toggle.setAttribute('aria-pressed', String(next));
+    if (k === 'radiant' && next) c.investiture.current = derive(c).maxInvestiture;
     renderFront(); syncDerived(); save();
     return;
   }
@@ -1908,19 +2520,72 @@ function handleAction(action, node, c){
     case 'export-all': exportAll(); break;
     case 'import': $('#filein').click(); break;
     case 'add-weapon':
-      c.weapons.push({name:'', skill:'lightWeapons', bonus:0, damage:'1d6', traits:'', defense:'physical'});
+      c.weapons.push({name:'', skill:'lightWeapons', bonus:0, damage:'1d6', traits:'', defense:'physical', handKey:true});
       renderFront(); save(); break;
+    case 'add-weapon-catalog': {
+      const wname = weaponPick.weapon;
+      const cat = GAME_DATABASE.weapons[wname];
+      if (cat){
+        c.weapons.push({
+          name: wname, skill: GAME_SKILL_KEY[cat.skill] || 'lightWeapons', bonus:0,
+          damage: cat.damage, traits: cat.traits === 'None' ? '' : cat.traits,
+          defense:'physical', catalogName: wname, handKey:false
+        });
+      }
+      weaponPick = {category:'', weapon:''};
+      renderFront(); save(); break;
+    }
     case 'del-weapon':
       c.weapons.splice(parseInt(node.dataset.i, 10), 1);
       renderFront(); save(); break;
     case 'roll-weapon': rollWeapon(parseInt(node.dataset.i, 10)); break;
+    case 'show-weapon-info': openWeaponModal(c, parseInt(node.dataset.i, 10)); break;
+    case 'show-armor-info': openArmorModal(c); break;
+    case 'show-cond-info': openConditionModal(node.dataset.condName); break;
     case 'add-injury': c.injuries.push({text:'', days:1}); renderFront(); save(); break;
     case 'del-injury': c.injuries.splice(parseInt(node.dataset.i, 10), 1); renderFront(); save(); break;
     case 'add-squire': c.squires.push({name:'', type:'Squire', notes:''}); renderFront(); save(); break;
     case 'del-squire': c.squires.splice(parseInt(node.dataset.i, 10), 1); renderFront(); save(); break;
     case 'add-fabrial': c.fabrials.push({name:'', type:'', maxCharge:10, charge:10, notes:''}); renderBack(); save(); break;
     case 'del-fabrial': c.fabrials.splice(parseInt(node.dataset.i, 10), 1); renderBack(); save(); break;
+    case 'add-gear-catalog': {
+      const catName = gearPick.category, itemName = gearPick.item;
+      const item = catName && GAME_DATABASE.equipment[catName] ? GAME_DATABASE.equipment[catName][itemName] : null;
+      if (item){
+        c.gear = c.gear || [];
+        c.gear.push({name:itemName, category:catName, weight:item.weight, price:item.price, qty:1, desc:item.desc, custom:false});
+      }
+      gearPick = {category:'', item:''};
+      renderBack(); syncDerived(); save();
+      break;
+    }
+    case 'add-gear-custom': openCustomGearModal(); break;
+    case 'add-gear-custom-submit': {
+      const name = val('gcName').trim();
+      if (name){
+        c.gear = c.gear || [];
+        c.gear.push({
+          name, category: val('gcCategory').trim() || 'Custom',
+          weight: parseFloat(val('gcWeight')) || 0, price: parseFloat(val('gcPrice')) || 0,
+          qty: parseInt(val('gcQty'), 10) || 1, desc: val('gcDesc').trim(), custom:true
+        });
+      }
+      closeModal(); renderBack(); syncDerived(); save();
+      break;
+    }
+    case 'del-gear': (c.gear || []).splice(parseInt(node.dataset.i, 10), 1); renderBack(); syncDerived(); save(); break;
+    case 'show-gear-info': openGearModal(c, parseInt(node.dataset.i, 10)); break;
     case 'del-expertise': c.expertises.splice(parseInt(node.dataset.i, 10), 1); renderFront(); syncDerived(); save(); break;
+    case 'add-talent': {
+      if (talentPick.talent && !(c.talentIds || []).includes(talentPick.talent)){
+        c.talentIds.push(talentPick.talent);
+      }
+      talentPick.talent = '';
+      renderFront(); syncDerived(); save();
+      break;
+    }
+    case 'del-talent': c.talentIds.splice(parseInt(node.dataset.i, 10), 1); renderFront(); syncDerived(); save(); break;
+    case 'show-talent-info': openTalentModal(node.dataset.talent); break;
     case 'add-goal': c.goals.push({text:'', ticks:[false,false,false]}); renderBack(); save(); break;
     case 'del-goal': c.goals.splice(parseInt(node.dataset.i, 10), 1); renderBack(); save(); break;
     case 'toggle-tray': {
