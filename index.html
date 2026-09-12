@@ -682,8 +682,15 @@ function newCharacter(name){
     squires:[], fabrials:[], gearWeight:0,
     spheres:{chips:0, marks:0, broams:0, notes:''}, purpose:'', obstacle:'',
     goals:[{text:'', ticks:[false,false,false]}],
-    appearance:'', equipment:'', connections:'', notes:''
+    appearance:'', equipment:'', connections:'', notes:'',
+    updatedAt: Date.now()
   };
+}
+
+function isBlankDefaultChar(c){
+  return c.name === 'Unnamed Radiant' && !c.ancestry && !c.paths && !c.playerName
+    && Object.values(c.attributes).every(v => v === 0)
+    && c.weapons.length === 0 && c.expertises.length === 0 && c.squires.length === 0;
 }
 
 /* ---------- derived values ---------- */
@@ -784,22 +791,28 @@ function migrate(c){
 }
 
 let saveTimer = null, saveState = 'saved';
+function persistLocal(){
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      characters:state.characters, activeId:state.activeId, settings:state.settings,
+      profile:state.profile, localParties:state.localParties, rolls:state.rolls.slice(0,30),
+      session:state.session, tab:state.tab
+    }));
+    setSavePill('saved');
+  } catch(err){
+    setSavePill('error');
+    toast('Browser storage is full — export a backup file.');
+  }
+}
 function save(){
   setSavePill('saving');
+  const ac = activeChar();
+  if (ac) ac.updatedAt = Date.now();
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({
-        characters:state.characters, activeId:state.activeId, settings:state.settings,
-        profile:state.profile, localParties:state.localParties, rolls:state.rolls.slice(0,30),
-        session:state.session, tab:state.tab
-      }));
-      setSavePill('saved');
-    } catch(err){
-      setSavePill('error');
-      toast('Browser storage is full — export a backup file.');
-    }
+    persistLocal();
     cloud.pushCharacter();
+    cloud.syncCharactersUp();
   }, 420);
 }
 function setSavePill(mode){
@@ -1679,6 +1692,8 @@ function handleAction(action, node, c){
     case 'auth-signin': localSignIn(val('auth-username'), val('auth-password')); break;
     case 'auth-register': localRegister(val('auth-username'), val('auth-password')); break;
     case 'auth-guest': continueAsGuest(); break;
+    case 'cloud-signin': cloud.signIn(val('cloud-email'), val('cloud-password')); break;
+    case 'cloud-signup': cloud.signUp(val('cloud-email'), val('cloud-password')); break;
     case 'sign-out-session': signOutSession(); break;
     case 'open-char': state.activeId = node.dataset.cid; switchTab('front'); break;
     case 'new-char-home': {
@@ -1755,7 +1770,7 @@ function handleAction(action, node, c){
     }
     case 'duplicate-char': {
       const copy = JSON.parse(JSON.stringify(c));
-      copy.id = uid(); copy.name = c.name + ' (copy)';
+      copy.id = uid(); copy.name = c.name + ' (copy)'; copy.updatedAt = Date.now();
       state.characters.push(copy); state.activeId = copy.id;
       closeModal(); render(); save();
       break;
@@ -1985,10 +2000,12 @@ const cloud = {
   on:false, ready:false, app:null, auth:null, db:null, user:null,
   me:{username:'', friends:[], parties:[]}, requests:[], friendProfiles:[], parties:[],
   unsubs:[], lastPatchAt:0, pushTimer:null,
+  lastPushedAt:{}, knownRemoteIds:new Set(), charPushTimer:null, attempted:false,
 
   async connect(){
     const cfg = state.settings.firebase;
     if (!cfg.apiKey || !cfg.projectId) return false;
+    this.attempted = true;
     try {
       const [appMod, authMod, fsMod] = await Promise.all([
         import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js'),
@@ -1996,22 +2013,37 @@ const cloud = {
         import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js')
       ]);
       this.fb = {...authMod, ...fsMod};
-      this.app = appMod.initializeApp(cfg, 'radiant-sheet');
+      try { this.app = appMod.initializeApp(cfg, 'radiant-sheet'); }
+      catch(e){ this.app = appMod.getApp('radiant-sheet'); }
       this.auth = authMod.getAuth(this.app);
       this.db = fsMod.getFirestore(this.app);
       this.on = true;
-      authMod.onAuthStateChanged(this.auth, user => {
-        this.user = user;
-        if (user) this.listen(); else this.stopListening();
-        renderSocial();
-        updateAccountChrome();
-        setSavePill('saved');
+      let settled = false;
+      await new Promise(resolveFirst => {
+        authMod.onAuthStateChanged(this.auth, user => {
+          this.user = user;
+          if (user){
+            if (!state.session || state.session.mode !== 'cloud') state.session = {mode:'cloud'};
+            this.listen();
+            if (settled && state.view === 'auth'){ state.tab = 'home'; switchView('main'); }
+          } else {
+            this.stopListening();
+            if (state.session && state.session.mode === 'cloud'){
+              state.session = null;
+              if (settled && state.view === 'main') switchView('auth');
+            }
+          }
+          renderSocial();
+          updateAccountChrome();
+          setSavePill('saved');
+          if (!settled){ settled = true; resolveFirst(); }
+        });
       });
       return true;
     } catch(err){
       console.error(err);
-      toast('Could not reach Firebase. Check the keys and your connection.');
       this.on = false;
+      if (state.view === 'auth') renderAuth(); else toast('Could not reach Firebase. Check the keys and your connection.');
       return false;
     }
   },
@@ -2066,9 +2098,73 @@ const cloud = {
       renderSocial();
       updateAccountChrome();
     }));
+    this.listenCharacters();
+    this.syncCharactersUp();
   },
 
-  stopListening(){ this.unsubs.forEach(u => { try{ u(); }catch(e){} }); this.unsubs = []; this.partyUnsubs = []; },
+  stopListening(){
+    this.unsubs.forEach(u => { try{ u(); }catch(e){} });
+    this.unsubs = []; this.partyUnsubs = [];
+    this.lastPushedAt = {}; this.knownRemoteIds = new Set();
+  },
+
+  listenCharacters(){
+    const uidv = this.user.uid;
+    this.unsubs.push(this.fb.onSnapshot(this.fb.collection(this.db, 'users', uidv, 'characters'), snap => {
+      let changed = false;
+      const remoteIds = new Set();
+      snap.forEach(docSnap => {
+        const remote = docSnap.data();
+        remoteIds.add(docSnap.id);
+        this.knownRemoteIds.add(docSnap.id);
+        const local = state.characters.find(c => c.id === docSnap.id);
+        if (!local){
+          migrate(remote);
+          state.characters.push(remote);
+          this.lastPushedAt[docSnap.id] = remote.updatedAt || 0;
+          changed = true;
+        } else if ((remote.updatedAt || 0) > (local.updatedAt || 0)){
+          Object.assign(local, remote);
+          this.lastPushedAt[docSnap.id] = remote.updatedAt || 0;
+          changed = true;
+        }
+      });
+      if (remoteIds.size){
+        const blanks = state.characters.filter(c =>
+          !remoteIds.has(c.id) && this.lastPushedAt[c.id] === undefined && isBlankDefaultChar(c));
+        if (blanks.length && state.characters.length - blanks.length > 0){
+          state.characters = state.characters.filter(c => !blanks.includes(c));
+          changed = true;
+        }
+      }
+      if (!state.characters.some(c => c.id === state.activeId)) state.activeId = state.characters[0].id;
+      if (changed){ persistLocal(); if (state.view === 'main') render(); }
+    }));
+  },
+
+  syncCharactersUp(){
+    if (!this.on || !this.user) return;
+    clearTimeout(this.charPushTimer);
+    this.charPushTimer = setTimeout(async () => {
+      const uidv = this.user.uid;
+      for (const c of state.characters){
+        const stamp = c.updatedAt || 0;
+        if (this.lastPushedAt[c.id] === stamp) continue;
+        try {
+          await this.fb.setDoc(this.doc('users', uidv, 'characters', c.id), c);
+          this.lastPushedAt[c.id] = stamp;
+          this.knownRemoteIds.add(c.id);
+        } catch(e){ /* offline is fine — retries on next edit */ }
+      }
+      for (const id of Array.from(this.knownRemoteIds)){
+        if (!state.characters.some(c => c.id === id)){
+          try { await this.fb.deleteDoc(this.doc('users', uidv, 'characters', id)); } catch(e){}
+          this.knownRemoteIds.delete(id);
+          delete this.lastPushedAt[id];
+        }
+      }
+    }, 700);
+  },
 
   async loadFriendProfiles(){
     const out = [];
@@ -2110,6 +2206,7 @@ const cloud = {
     c.investiture.current = mine.char.investiture.current;
     c.conditions = mine.char.conditions || {};
     if (mine.char.goals) mine.char.goals.forEach((g, i) => { if (c.goals[i]) c.goals[i].ticks = g.ticks; });
+    c.updatedAt = Date.now();
     save(); render();
     toast(`${party.name}: your game master updated this sheet.`);
   },
@@ -2381,13 +2478,26 @@ function renderAuth(){
         <b style="font-size:1.6rem">Radiant Sheet</b>
       </div>
       <p class="hint" style="text-align:center;margin-bottom:1.1rem">Character sheets and campaign tables for the Cosmere Roleplaying Game.</p>
+
+      ${cloud.on ? `
+      <p class="hint" style="margin-bottom:.5rem"><b style="color:var(--ink)">Sign in with email</b> to sync your characters and campaigns across every device.</p>
+      <div class="f"><label>Email</label><input type="email" id="cloud-email" placeholder="you@example.com" autocomplete="username"></div>
+      <div class="f" style="margin-top:.55rem"><label>Password</label><input type="password" id="cloud-password" placeholder="••••••••" autocomplete="current-password"></div>
+      <div style="display:flex;gap:.5rem;margin-top:.9rem">
+        <button class="btn primary" data-action="cloud-signin" style="flex:1">Sign in</button>
+        <button class="btn" data-action="cloud-signup" style="flex:1">Create account</button>
+      </div>
+      <hr class="rule" style="margin:1.1rem 0">
+      <p class="hint" style="text-align:center;margin-bottom:.7rem">Or use a device-only option</p>
+      ` : `<p class="hint" style="margin-bottom:.7rem">${cloud.attempted ? 'Cloud sync is unavailable right now — use a device-only option below.' : 'Connecting to cloud sync…'}</p>`}
+
       <div class="f"><label>@Username</label><input type="text" id="auth-username" placeholder="KaladinBridge4" autocomplete="username"></div>
       <div class="f" style="margin-top:.55rem"><label>Password</label><input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password"></div>
       <div style="display:flex;gap:.5rem;margin-top:.9rem">
-        <button class="btn primary" data-action="auth-signin" style="flex:1">Sign in</button>
+        <button class="btn" data-action="auth-signin" style="flex:1">Sign in</button>
         <button class="btn" data-action="auth-register" style="flex:1">Register</button>
       </div>
-      <p class="hint" style="margin-top:.6rem">Accounts made here live on this device only. Add Firebase keys in Settings to sync across devices with real accounts.</p>
+      <p class="hint" style="margin-top:.6rem">Local accounts stay on this device only — not synced across devices.</p>
       <hr class="rule" style="margin:1.1rem 0">
       <button class="btn ghost" data-action="auth-guest" style="width:100%">Continue as Guest</button>
     </div>
@@ -2768,6 +2878,7 @@ function handleSocialAction(action, node, c){
       const d = derive(target);
       const max = {health:d.maxHealth, focus:d.maxFocus, investiture:d.maxInvestiture}[kind];
       target[kind].current = clamp(target[kind].current + by, 0, max);
+      target.updatedAt = Date.now();
       renderSocial(); save(); break;
     }
     case 'local-cond': {
@@ -2776,6 +2887,7 @@ function handleSocialAction(action, node, c){
       const n = node.dataset.cond;
       target.conditions[n] = !target.conditions[n];
       if (!target.conditions[n]) delete target.conditions[n];
+      target.updatedAt = Date.now();
       renderSocial(); save(); break;
     }
     case 'local-goal': {
@@ -2784,6 +2896,7 @@ function handleSocialAction(action, node, c){
       if (!g) break;
       const t = parseInt(node.dataset.t, 10);
       g.ticks[t] = !g.ticks[t];
+      target.updatedAt = Date.now();
       renderSocial(); save(); break;
     }
 
@@ -2978,6 +3091,7 @@ async function partyPatch(node, mutate){
         own.investiture.current = m.char.investiture.current;
         own.conditions = m.char.conditions || {};
         (m.char.goals || []).forEach((g, i) => { if (own.goals[i]) own.goals[i].ticks = g.ticks; });
+        own.updatedAt = Date.now();
         save();
       }
     }
@@ -2987,11 +3101,15 @@ async function partyPatch(node, mutate){
 /* ============================================================
    START
    ============================================================ */
-load();
-applySettings();
-switchView(state.session ? 'main' : 'auth');
-if (state.settings.firebase.apiKey && state.settings.firebase.projectId) cloud.connect();
-setSavePill('saved');
+(async () => {
+  load();
+  applySettings();
+  if (state.settings.firebase.apiKey && state.settings.firebase.projectId){
+    await cloud.connect();
+  }
+  switchView(state.session ? 'main' : 'auth');
+  setSavePill('saved');
+})();
 </script>
 </body>
 </html>
