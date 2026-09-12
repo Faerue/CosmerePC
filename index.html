@@ -3888,7 +3888,22 @@ function openModal(html){
   const first = $('#modal').querySelector('input,button,select');
   if (first) first.focus();
 }
-function closeModal(){ $('#overlay').classList.remove('open'); noteEditing = null; }
+/* Closing the note editor (X, backdrop click, Escape — anything but the
+   explicit checkmark) used to discard whatever was typed. Autosave it here
+   instead, so only Delete ever throws a note away. */
+function saveNoteInProgress(){
+  if (!noteEditing) return;
+  const titleEl = $('#noteTitleInput'), textEl = $('#noteTextInput');
+  if (!titleEl && !textEl) return;
+  const c = activeChar();
+  const note = c && (c.notebook || []).find(n => n.id === noteEditing);
+  if (!note) return;
+  if (titleEl && titleEl.value.trim()) note.title = titleEl.value.trim();
+  if (textEl) note.text = textEl.value;
+  note.updatedAt = Date.now();
+  renderBack(); save();
+}
+function closeModal(){ saveNoteInProgress(); $('#overlay').classList.remove('open'); noteEditing = null; }
 $('#overlay').addEventListener('mousedown', e => { if (e.target.id === 'overlay') closeModal(); });
 
 /* ---------- styled confirm dialog (replaces native confirm()) ---------- */
