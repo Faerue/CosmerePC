@@ -411,6 +411,13 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
   width:min(400px,100%);background:var(--card-solid);border:1px solid var(--border);border-radius:22px;
   box-shadow:var(--shadow);padding:1.6rem 1.5rem 1.8rem;
 }
+.authcard details summary{
+  list-style:none;cursor:pointer;text-align:center;font-size:.85rem;color:var(--accent);
+  padding:.3rem 0;
+}
+.authcard details summary::-webkit-details-marker{display:none}
+.authcard details summary:hover{text-decoration:underline}
+.authcard details[open] summary{margin-bottom:.2rem}
 </style>
 </head>
 <body>
@@ -1775,8 +1782,6 @@ function handleAction(action, node, c){
       closeModal(); render(); save();
       break;
     }
-    case 'save-firebase': saveFirebaseConfig(); break;
-    case 'disconnect-firebase': cloud.disconnect(); break;
     case 'close-modal': closeModal(); break;
     default: handleSocialAction(action, node, c);
   }
@@ -1877,7 +1882,7 @@ function closeModal(){ $('#overlay').classList.remove('open'); }
 $('#overlay').addEventListener('mousedown', e => { if (e.target.id === 'overlay') closeModal(); });
 
 function openSettings(){
-  const s = state.settings, f = s.firebase;
+  const s = state.settings;
   openModal(`
     <h2>Settings</h2><hr class="rule">
 
@@ -1936,22 +1941,6 @@ function openSettings(){
       </div>
     </section>
 
-    <section>
-      <h4>Cloud &amp; Social Sync</h4>
-      <p class="hint" style="margin:.1rem 0 .6rem">Firebase credentials power accounts, friends, and shared party dashboards across devices. Sheets stay in this browser until these are saved and connected.</p>
-      <div class="grid2">
-        <div class="f"><label>API key</label><input type="text" id="fb-apiKey" value="${esc(f.apiKey)}" placeholder="AIza…"></div>
-        <div class="f"><label>Auth domain</label><input type="text" id="fb-authDomain" value="${esc(f.authDomain)}" placeholder="my-app.firebaseapp.com"></div>
-        <div class="f"><label>Project ID</label><input type="text" id="fb-projectId" value="${esc(f.projectId)}" placeholder="my-app"></div>
-        <div class="f"><label>Database URL</label><input type="text" id="fb-databaseURL" value="${esc(f.databaseURL)}" placeholder="https://my-app.firebaseio.com"></div>
-      </div>
-      <div style="display:flex;gap:.4rem;margin-top:.6rem;flex-wrap:wrap">
-        <button class="btn primary" data-action="save-firebase">Save Settings</button>
-        ${cloud.on ? '<button class="btn danger" data-action="disconnect-firebase">Disconnect</button>' : ''}
-      </div>
-      <p class="hint" style="margin-top:.5rem">${cloud.on ? 'Connected as ' + esc(cloud.user && cloud.user.email || 'signed in') : 'Not connected.'}</p>
-    </section>
-
     <div style="text-align:right;margin-top:1.2rem"><button class="btn" data-action="close-modal">Done</button></div>
   `);
 }
@@ -1979,18 +1968,6 @@ function applySettings(){
   const tray = $('#tray');
   if (tray) tray.hidden = state.settings.diceMode === 'disabled';
   if (state.view === 'main') render();
-}
-
-function saveFirebaseConfig(){
-  const cfg = {};
-  ['apiKey','authDomain','projectId','databaseURL'].forEach(k => cfg[k] = $('#fb-' + k).value.trim());
-  state.settings.firebase = cfg;
-  save();
-  if (!cfg.apiKey || !cfg.projectId){ toast('An API key and project ID are needed to connect.'); return; }
-  closeModal();
-  cloud.connect().then(ok => {
-    if (ok){ toast('Connected. Sign in on the campaign party tab.'); switchTab('social'); }
-  });
 }
 
 /* ============================================================
@@ -2046,15 +2023,6 @@ const cloud = {
       if (state.view === 'auth') renderAuth(); else toast('Could not reach Firebase. Check the keys and your connection.');
       return false;
     }
-  },
-
-  disconnect(){
-    this.stopListening();
-    if (this.auth) this.fb.signOut(this.auth).catch(() => {});
-    this.on = false; this.user = null;
-    state.settings.firebase = {apiKey:'', authDomain:'', projectId:'', databaseURL:''};
-    save(); closeModal(); renderSocial();
-    toast('Disconnected. Sheets stay in this browser.');
   },
 
   async signUp(email, pw){
@@ -2480,26 +2448,37 @@ function renderAuth(){
       <p class="hint" style="text-align:center;margin-bottom:1.1rem">Character sheets and campaign tables for the Cosmere Roleplaying Game.</p>
 
       ${cloud.on ? `
-      <p class="hint" style="margin-bottom:.5rem"><b style="color:var(--ink)">Sign in with email</b> to sync your characters and campaigns across every device.</p>
       <div class="f"><label>Email</label><input type="email" id="cloud-email" placeholder="you@example.com" autocomplete="username"></div>
       <div class="f" style="margin-top:.55rem"><label>Password</label><input type="password" id="cloud-password" placeholder="••••••••" autocomplete="current-password"></div>
       <div style="display:flex;gap:.5rem;margin-top:.9rem">
         <button class="btn primary" data-action="cloud-signin" style="flex:1">Sign in</button>
-        <button class="btn" data-action="cloud-signup" style="flex:1">Create account</button>
+        <button class="btn primary" data-action="cloud-signup" style="flex:1">Create account</button>
       </div>
-      <hr class="rule" style="margin:1.1rem 0">
-      <p class="hint" style="text-align:center;margin-bottom:.7rem">Or use a device-only option</p>
-      ` : `<p class="hint" style="margin-bottom:.7rem">${cloud.attempted ? 'Cloud sync is unavailable right now — use a device-only option below.' : 'Connecting to cloud sync…'}</p>`}
+      <p class="hint" style="text-align:center;margin-top:.6rem">Your characters and campaigns sync automatically across every device.</p>
 
-      <div class="f"><label>@Username</label><input type="text" id="auth-username" placeholder="KaladinBridge4" autocomplete="username"></div>
-      <div class="f" style="margin-top:.55rem"><label>Password</label><input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password"></div>
+      <details style="margin-top:1.2rem">
+        <summary>Just exploring, or want a local-only profile?</summary>
+        <p class="hint" style="margin:.6rem 0">Guest and local profiles stay on this device only and never sync anywhere — handy for a quick look, or for keeping a sheet fully offline.</p>
+        <button class="btn ghost" data-action="auth-guest" style="width:100%">Continue as Guest</button>
+        <hr class="rule" style="margin:1rem 0">
+        <div class="f"><label>Local username</label><input type="text" id="auth-username" placeholder="KaladinBridge4" autocomplete="username"></div>
+        <div class="f" style="margin-top:.55rem"><label>Local password</label><input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password"></div>
+        <div style="display:flex;gap:.5rem;margin-top:.9rem">
+          <button class="btn" data-action="auth-signin" style="flex:1">Sign in</button>
+          <button class="btn" data-action="auth-register" style="flex:1">Register</button>
+        </div>
+      </details>
+      ` : `
+      <p class="hint" style="margin-bottom:.7rem">${cloud.attempted ? 'Cloud sign-in is unavailable right now, so only device-only options work below.' : 'Connecting to cloud sign-in…'}</p>
+      <button class="btn ghost" data-action="auth-guest" style="width:100%">Continue as Guest</button>
+      <hr class="rule" style="margin:1.1rem 0">
+      <div class="f"><label>Local username</label><input type="text" id="auth-username" placeholder="KaladinBridge4" autocomplete="username"></div>
+      <div class="f" style="margin-top:.55rem"><label>Local password</label><input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password"></div>
       <div style="display:flex;gap:.5rem;margin-top:.9rem">
         <button class="btn" data-action="auth-signin" style="flex:1">Sign in</button>
         <button class="btn" data-action="auth-register" style="flex:1">Register</button>
       </div>
-      <p class="hint" style="margin-top:.6rem">Local accounts stay on this device only — not synced across devices.</p>
-      <hr class="rule" style="margin:1.1rem 0">
-      <button class="btn ghost" data-action="auth-guest" style="width:100%">Continue as Guest</button>
+      `}
     </div>
   </div>`;
 }
@@ -2706,8 +2685,8 @@ function offlineSocialHTML(){
     <h3>Campaign party</h3><hr class="rule">
     <p class="hint">This table runs on your own device. Every character saved here can be dropped into a party and tracked live during a session — health, focus, defenses, conditions, and goal progress all in one view.</p>
     <p class="hint" style="margin-top:.4rem">${cloud.on
-      ? 'Firebase is connected. Sign in below to play with friends across devices.'
-      : 'To share a party with other players on their own devices, add your Firebase keys under Settings → Cloud & Social Sync.'}</p>
+      ? 'Sign in with email below to play with friends across devices.'
+      : 'Cloud sync is unavailable right now — party sharing needs an internet connection.'}</p>
     ${cloud.on ? authFormHTML() : ''}
   </div>
 
