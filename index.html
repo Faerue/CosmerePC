@@ -4128,12 +4128,12 @@ const cloud = {
       this.watchParties();
       renderSocial();
       updateAccountChrome();
-    }));
+    }, err => toast(`Profile sync error: ${err.message}`)));
     this.unsubs.push(this.fb.onSnapshot(this.fb.collection(this.db, 'users', uidv, 'requests'), snap => {
       this.requests = snap.docs.map(d => ({id:d.id, ...d.data()}));
       renderSocial();
       updateAccountChrome();
-    }));
+    }, err => toast(`Friend request sync error: ${err.message}`)));
     this.listenCharacters();
     this.syncCharactersUp();
   },
@@ -4176,7 +4176,7 @@ const cloud = {
       }
       if (state.characters.length && !state.characters.some(c => c.id === state.activeId)) state.activeId = state.characters[0].id;
       if (changed){ persistLocal(); if (state.view === 'main') render(); }
-    }));
+    }, err => toast(`Character sync error: ${err.message}`)));
   },
 
   pushProfile(){
@@ -4236,11 +4236,24 @@ const cloud = {
         const i = this.parties.findIndex(p => p.id === snap.id);
         if (i >= 0) this.parties[i] = data; else this.parties.push(data);
         this.applyIncomingPatch(data);
+        this.ensurePartyCodeRegistered(data);
         renderSocial();
+      }, err => {
+        toast(`Campaign sync error: ${err.message}`);
       });
       this.unsubs.push(unsub);
       this.parties.push({id:pid, _watching:true, name:'…', members:{}});
     });
+  },
+
+  /* partyCodes/{code} -> partyId is a separate lookup doc added after some
+     campaigns already existed, so their code was never registered there —
+     backfill it once per session whenever the GM's own client sees the party. */
+  registeredCodes:new Set(),
+  ensurePartyCodeRegistered(party){
+    if (!party.code || party.gm !== this.user.uid || this.registeredCodes.has(party.code)) return;
+    this.registeredCodes.add(party.code);
+    this.fb.setDoc(this.doc('partyCodes', party.code), {partyId:party.id}).catch(() => {});
   },
 
   applyIncomingPatch(party){
@@ -5413,7 +5426,10 @@ async function leaveParty(pid){
       const own = state.characters.find(x => x.id === mine.charId);
       if (own && own.partyId === pid){ own.partyId = null; save(); }
     }
-    await cloud.fb.updateDoc(cloud.doc('parties', pid), {memberUids:cloud.fb.arrayRemove(cloud.user.uid)});
+    await cloud.fb.updateDoc(cloud.doc('parties', pid), {
+      memberUids:cloud.fb.arrayRemove(cloud.user.uid),
+      [`members.${cloud.user.uid}`]:cloud.fb.deleteField()
+    });
     await cloud.fb.setDoc(cloud.doc('users', cloud.user.uid), {parties:cloud.fb.arrayRemove(pid)}, {merge:true});
     cloud.parties = cloud.parties.filter(p => p.id !== pid);
     state.activePartyId = null;
