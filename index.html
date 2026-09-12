@@ -273,6 +273,10 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
   position:absolute;z-index:20;left:0;right:0;top:calc(100% + 4px);max-height:240px;overflow:auto;
   background:var(--card-solid);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:.25rem;
 }
+/* .card has backdrop-filter, which creates its own stacking context — that traps the
+   dropdown's z-index inside it, so a later sibling .card still paints on top. Lifting
+   the whole card above its siblings while a menu inside it is open fixes that. */
+.card:has(.menu:not([hidden])){ position:relative; z-index:25; }
 .combo .menu button{display:block;width:100%;text-align:left;padding:.34rem .55rem;border-radius:8px;font-size:.85rem}
 .combo .menu button:hover,.combo .menu button.hl{background:color-mix(in srgb,var(--accent) 14%,transparent)}
 .combo .menu .grp{font-size:.66rem;color:var(--ink-faint);letter-spacing:.1em;padding:.35rem .55rem .15rem}
