@@ -4801,7 +4801,8 @@ function memberCardHTML(m, uidKey, opts){
       <div class="conds" style="margin-top:.3rem">
         ${(opts.canEdit ? CONDITIONS : conds).map(n => `<button class="cond" ${opts.canEdit ? `data-action="${opts.scope}-cond" data-uid="${uidKey}" data-cond="${n}"` : ''} aria-pressed="${conds.includes(n)}">${n}</button>`).join('') || '<span class="empty">No conditions</span>'}
       </div>
-      ${goals ? `<hr class="rule" style="margin:.6rem 0 .3rem">${goals}` : ''}
+      ${goals && canSeeGoals ? `<hr class="rule" style="margin:.6rem 0 .3rem">${goals}` : ''}
+      ${goals && !canSeeGoals ? `<hr class="rule" style="margin:.6rem 0 .3rem"><p class="empty" style="margin:0">Goals hidden by the game master.</p>` : ''}
     ` : '<p class="empty">Waiting for this player to pick a character.</p>'}
   </div>`;
 }
