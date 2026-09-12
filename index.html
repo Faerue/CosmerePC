@@ -462,18 +462,57 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
 .pwtoggle:hover{color:var(--accent)}
 .pwtoggle.on{color:var(--accent)}
 
+.print-only{display:none}
+
+/* ---------- printed character sheet — matches the official Cosmere RPG sheet layout ---------- */
+#printSheet{font-family:'EB Garamond','Cormorant Garamond',serif;color:#111}
+#printSheet .sheet-page{width:100%;box-sizing:border-box}
+#printSheet .stitle{display:flex;align-items:center;gap:.5rem;border:1.5px solid #111;border-radius:6px;padding:.5rem .8rem;margin-bottom:.4rem}
+#printSheet .stitle .glyph{width:2.6rem;height:2.6rem;flex:none}
+#printSheet .stitle h1{font-size:1.5rem;letter-spacing:.06em;margin:0;line-height:1.05;text-transform:uppercase}
+#printSheet .stitle h2{font-size:.8rem;letter-spacing:.12em;margin:0;font-family:system-ui,sans-serif;color:#333}
+#printSheet .stop{display:grid;grid-template-columns:1fr 2.1fr;gap:.4rem;margin-bottom:.4rem}
+#printSheet .sidbox{display:grid;grid-template-columns:1fr 1fr}
+#printSheet .sbox{border:1.3px solid #111;border-radius:5px;padding:.3rem .55rem;position:relative;min-height:1.6rem}
+#printSheet .sbox .lbl{font-family:system-ui,sans-serif;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:#333;display:block;margin-bottom:.15rem}
+#printSheet .sbox .val{font-size:.92rem}
+#printSheet .attrrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.3rem}
+#printSheet .attrgroup{text-align:center}
+#printSheet .attrgroup > .glabel{font-family:system-ui,sans-serif;font-size:.62rem;letter-spacing:.14em;font-weight:700;text-transform:uppercase;margin-bottom:.2rem}
+#printSheet .attrgroup .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.3rem;align-items:end}
+#printSheet .attrgroup .abox{border:1.3px solid #111;border-radius:5px;padding:.3rem;text-align:center;min-height:2.6rem}
+#printSheet .attrgroup .abox .lbl{font-family:system-ui,sans-serif;font-size:.52rem;letter-spacing:.06em;text-transform:uppercase;display:block}
+#printSheet .attrgroup .abox .val{font-size:1.1rem;font-weight:600}
+#printSheet .attrgroup .pshield{border:1.3px solid #111;border-radius:0 0 50% 50%/0 0 30% 30%;padding:.3rem;text-align:center;min-height:2.6rem;background:#fff}
+#printSheet .attrgroup .pshield .lbl{font-family:system-ui,sans-serif;font-size:.52rem;letter-spacing:.06em;text-transform:uppercase;display:block}
+#printSheet .attrgroup .pshield .val{font-size:1.1rem;font-weight:600}
+#printSheet .poolrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.3rem}
+#printSheet .poolbox{border:1.3px solid #111;border-radius:5px;padding:.3rem .5rem;display:flex;justify-content:space-between;align-items:center}
+#printSheet .poolbox .lbl{font-family:system-ui,sans-serif;font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+#printSheet .poolbox .val{font-size:1rem}
+#printSheet .skillcols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.3rem}
+#printSheet .skillcol .srow{display:flex;align-items:center;gap:.35rem;font-size:.72rem;padding:.05rem 0;border-bottom:1px solid #ddd}
+#printSheet .skillcol .srow .box{width:.7rem;height:.7rem;border:1px solid #111;flex:none}
+#printSheet .skillcol .srow .nm{flex:1}
+#printSheet .skillcol .srow .pips{letter-spacing:.05em;font-size:.7rem;white-space:nowrap}
+#printSheet .rangerow{display:grid;grid-template-columns:1fr 1fr 2fr 2fr;gap:.5rem;margin-bottom:.3rem}
+#printSheet .textbox{border:1.3px solid #111;border-radius:5px;padding:.35rem .55rem;margin-bottom:.3rem}
+#printSheet .textbox .lbl{font-family:system-ui,sans-serif;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;display:block;margin-bottom:.2rem}
+#printSheet .textbox .body{font-size:.78rem;white-space:pre-wrap;line-height:1.35}
+#printSheet .twinrow{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.3rem}
+#printSheet .threecol{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem}
+#printSheet .item-line{font-size:.76rem;padding:.08rem 0;border-bottom:1px solid #eee}
+#printSheet .goal-line{font-size:.76rem;display:flex;justify-content:space-between;border-bottom:1px solid #ddd;padding:.1rem 0}
+#printSheet .page-footer{text-align:center;font-family:system-ui,sans-serif;font-size:.6rem;letter-spacing:.08em;color:#666;margin-top:.3rem;text-transform:uppercase}
+
 @media print{
+  @page{margin:.35in}
   html,body{background:#fff!important}
-  header.topbar, nav.tabs, aside.tray, .drawer, .drawer-overlay, .overlay,
-  #view-home, #view-social, #toast{display:none!important}
-  #view-front, #view-back{display:block!important}
-  main{max-width:100%!important;padding:0!important;margin:0!important}
-  .card{box-shadow:none!important;border:1px solid #ccc!important;break-inside:avoid;background:#fff!important;backdrop-filter:none!important}
-  .realms{display:block!important}
-  .realm{break-inside:avoid;margin-bottom:.5rem}
-  button{display:none!important}
-  input,select,textarea{border:1px solid #ccc!important;background:#fff!important;color:#000!important}
-  .back-grid{display:block!important}
+  body > *:not(#printSheet){display:none!important}
+  .print-only{display:block!important}
+  #printSheet .sheet-page{page-break-after:always}
+  #printSheet .sheet-page:last-child{page-break-after:auto}
+  #printSheet .sbox, #printSheet .abox, #printSheet .shield, #printSheet .poolbox, #printSheet .textbox, #printSheet .stitle{break-inside:avoid}
 }
 </style>
 </head>
@@ -570,6 +609,7 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
 <input type="file" id="filein" accept="application/json,.json" hidden>
 <input type="file" id="avatarfile" accept="image/*" hidden>
 <div class="toast" id="toast"><span id="toasttext"></span><button id="toastaction" hidden></button></div>
+<div id="printSheet" class="print-only"></div>
 <script>
 /* ============================================================
    Radiant Sheet — Cosmere RPG character & party manager
@@ -3048,8 +3088,8 @@ function handleAction(action, node, c){
     case 'long-rest': longRest(); break;
     case 'export': openExportModal(c); break;
     case 'export-json': exportCharacter(c); closeModal(); break;
-    case 'export-pdf': closeModal(); setTimeout(() => window.print(), 150); break;
-    case 'export-both': exportCharacter(c); closeModal(); setTimeout(() => window.print(), 150); break;
+    case 'export-pdf': preparePrintSheet(); closeModal(); setTimeout(() => window.print(), 150); break;
+    case 'export-both': exportCharacter(c); preparePrintSheet(); closeModal(); setTimeout(() => window.print(), 150); break;
     case 'export-all': exportAll(); break;
     case 'import': $('#filein').click(); break;
     case 'add-weapon':
@@ -3276,6 +3316,133 @@ function download(filename, data){
 }
 const slug = s => (s || 'character').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 function exportCharacter(c){ download(`${slug(c.name)}.json`, JSON.stringify({type:'radiant-sheet-character', character:c}, null, 2)); toast('Character file downloaded.'); }
+
+/* ---------- printed sheet — mirrors the official two-page Cosmere RPG character sheet ---------- */
+function pipsPlain(n, max){
+  n = Math.max(0, Math.min(max, n|0));
+  return '●'.repeat(n) + '○'.repeat(max - n);
+}
+
+function printAttrGroupHTML(c, d, realm){
+  const [a1, a2] = realm.attrs;
+  const defKey = {physical:'physicalDefense', cognitive:'cognitiveDefense', spiritual:'spiritualDefense'}[realm.key];
+  return `<div class="attrgroup">
+    <div class="glabel">${esc(realm.name)}</div>
+    <div class="three">
+      <div class="abox"><span class="lbl">${ATTRS[a1].name}</span><span class="val">${c.attributes[a1]}</span></div>
+      <div class="pshield"><span class="lbl">Defense</span><span class="val">${d[defKey]}</span></div>
+      <div class="abox"><span class="lbl">${ATTRS[a2].name}</span><span class="val">${c.attributes[a2]}</span></div>
+    </div>
+  </div>`;
+}
+
+function printSkillColHTML(c, d, realm){
+  const rows = realm.skills.map(([key, name, attr]) => `<div class="srow">
+      <span class="box"></span><span class="nm">${esc(name)} (${ATTRS[attr].short})</span><span class="pips">${pipsPlain(c.skills[key].ranks, 5)}</span>
+    </div>`).join('');
+  const customKey = 'custom_' + realm.key;
+  const custom = c.skills[customKey];
+  const customRow = `<div class="srow">
+      <span class="box"></span><span class="nm">${esc(custom.name) || '________________'} (${ATTRS[custom.attr].short})</span><span class="pips">${pipsPlain(custom.ranks, 5)}</span>
+    </div>`;
+  return `<div class="skillcol">${rows}${customRow}</div>`;
+}
+
+function printHeaderHTML(title, subtitle, c){
+  return `<div class="stop">
+    <div class="stitle">
+      <svg class="glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 1.5 15 9l7.5 3-7.5 3-3 7.5-3-7.5L1.5 12 9 9z" fill="#333"/>
+        <circle cx="12" cy="12" r="10.2" stroke="#333" stroke-opacity=".5" fill="none"/>
+      </svg>
+      <div><h1>${esc(title)}</h1><h2>${esc(subtitle)}</h2></div>
+    </div>
+    <div class="sidbox">
+      <div class="sbox"><span class="lbl">Character name</span><span class="val">${esc(c.name)}</span></div>
+      <div class="sbox"><span class="lbl">Level</span><span class="val">${c.level}</span></div>
+      <div class="sbox"><span class="lbl">Paths</span><span class="val">${esc(c.paths)}</span></div>
+      <div class="sbox"><span class="lbl">Ancestry</span><span class="val">${esc(c.ancestry)}</span></div>
+    </div>
+  </div>
+  <div class="sbox" style="margin-bottom:.4rem"><span class="lbl">Player name</span><span class="val">${esc(c.playerName)}</span></div>`;
+}
+
+function buildPrintSheetHTML(c, d){
+  const expertiseList = (c.expertises || []).map(e => `${esc(e.name)}${e.temporary ? ' (temp)' : ''}`).join(', ') || '—';
+  const conditionsOn = CONDITIONS.filter(n => c.conditions[n]).join(', ') || 'None';
+  const injuriesText = (c.injuries || []).filter(i => i.text).map(i => `${esc(i.text)} (${i.days}d)`).join('; ') || 'None';
+  const weaponsText = (c.weapons || []).map(w => {
+    const disp = weaponDisplay(c, d, w);
+    const nm = w.name || (disp.catalog ? w.catalogName : 'Weapon');
+    return `<div class="item-line"><b>${esc(nm)}</b> — Attack ${sgn(disp.attackMod)}, Damage ${esc(disp.diceExpr)} ${sgn(disp.totalDamageMod)} ${esc(disp.damageType)}</div>`;
+  }).join('') || '<div class="item-line">None</div>';
+  const talentNames = (c.talentIds || []).length ? c.talentIds.join(', ') : (c.talents || '—');
+  const gearText = (c.gear || []).map(g => `<div class="item-line">${esc(g.name)}${g.qty > 1 ? ` ×${g.qty}` : ''} — ${g.weight} lbs, ${g.price} Marks</div>`).join('') || '<div class="item-line">None</div>';
+  const fabrialText = (c.fabrials || []).map(f => `<div class="item-line">${esc(f.name)} — Charge ${f.charge}/${f.maxCharge}${f.weight ? `, ${f.weight} lbs` : ''}</div>`).join('');
+  const goalsText = (c.goals || []).filter(g => g.text).map(g => `<div class="goal-line"><span>${esc(g.text)}</span><span>${pipsPlain(g.ticks.filter(Boolean).length, 3)}</span></div>`).join('') || '<div class="goal-line"><span>None</span></div>';
+
+  const page1 = `<div class="sheet-page">
+    ${printHeaderHTML('Cosmere Roleplaying Game', '', c)}
+    <div class="attrrow">${REALMS.map(r => printAttrGroupHTML(c, d, r)).join('')}</div>
+    <div class="poolrow">
+      <div class="poolbox"><span class="lbl">Health</span><span class="val">${c.health.current} / ${d.maxHealth}</span></div>
+      <div class="poolbox"><span class="lbl">Focus</span><span class="val">${c.focus.current} / ${d.maxFocus}</span></div>
+      <div class="poolbox"><span class="lbl">Investiture</span><span class="val">${c.investiture.current} / ${d.maxInvestiture}</span></div>
+    </div>
+    <div class="poolrow"><div class="poolbox"><span class="lbl">Deflect</span><span class="val">${d.deflect}</span></div></div>
+    <div class="skillcols">${REALMS.map(r => printSkillColHTML(c, d, r)).join('')}</div>
+    <div class="rangerow">
+      <div class="sbox"><span class="lbl">Lifting capacity</span><span class="val">${d.lifting}</span></div>
+      <div class="sbox"><span class="lbl">Movement</span><span class="val">${d.movement}</span></div>
+      <div class="sbox"><span class="lbl">Recovery die</span><span class="val">${d.recovery}</span></div>
+      <div class="sbox"><span class="lbl">Senses range</span><span class="val">${d.senses}</span></div>
+    </div>
+    <div class="twinrow">
+      <div class="textbox"><span class="lbl">Conditions &amp; injuries</span><div class="body">${esc(conditionsOn)}${injuriesText !== 'None' ? '<br>' + injuriesText : ''}</div></div>
+      <div class="textbox"><span class="lbl">Expertises</span><div class="body">${expertiseList}</div></div>
+    </div>
+    <div class="twinrow">
+      <div class="textbox"><span class="lbl">Weapons</span><div class="body">${weaponsText}</div></div>
+      <div class="textbox"><span class="lbl">Talents</span><div class="body">${esc(talentNames)}</div></div>
+    </div>
+    <div class="page-footer">Cosmere RPG Character Sheet · Radiant Sheet export</div>
+  </div>`;
+
+  const page2 = `<div class="sheet-page">
+    ${printHeaderHTML(c.campaign || 'Campaign Setting', 'Campaign Setting', c)}
+    <div class="attrrow">${REALMS.map(r => printAttrGroupHTML(c, d, r)).join('')}</div>
+    <div class="threecol">
+      <div class="textbox" style="min-height:16rem"><span class="lbl">Character appearance</span><div class="body">${esc(c.appearance) || '—'}</div></div>
+      <div class="textbox" style="min-height:16rem"><span class="lbl">Armor &amp; equipment</span><div class="body">
+        <div class="item-line"><b>${esc(d.armor.name)}</b> — Deflect ${d.armor.deflect}</div>
+        ${gearText}${fabrialText}
+        ${esc(c.equipment) ? `<div class="item-line">${esc(c.equipment)}</div>` : ''}
+        <div class="item-line" style="margin-top:.3rem"><b>Spheres</b> — ${c.spheres.chips||0} chips, ${c.spheres.marks||0} marks, ${c.spheres.broams||0} broams</div>
+      </div></div>
+      <div class="textbox" style="min-height:16rem">
+        <span class="lbl">Purpose</span><div class="body" style="margin-bottom:.3rem">${esc(c.purpose) || '—'}</div>
+        <span class="lbl">Obstacle</span><div class="body" style="margin-bottom:.3rem">${esc(c.obstacle) || '—'}</div>
+        <span class="lbl">Goals</span><div class="body">${goalsText}</div>
+      </div>
+    </div>
+    <div class="threecol" style="margin-top:.3rem">
+      <div class="textbox"><span class="lbl">Talents, continued</span><div class="body">${(c.talentIds || []).length > 8 ? esc(c.talentIds.slice(8).join(', ')) : '—'}</div></div>
+      <div class="textbox"><span class="lbl">Notes</span><div class="body">${esc(c.notes) || '—'}</div></div>
+      <div class="textbox"><span class="lbl">Connections</span><div class="body">${esc(c.connections) || '—'}</div></div>
+    </div>
+    <div class="page-footer">Cosmere RPG Character Sheet · Radiant Sheet export</div>
+  </div>`;
+
+  return page1 + page2;
+}
+
+function preparePrintSheet(){
+  const c = activeChar();
+  if (!c) return;
+  const d = derive(c);
+  const el = $('#printSheet');
+  if (el) el.innerHTML = buildPrintSheetHTML(c, d);
+}
 
 function openExportModal(c){
   if (!c) return;
