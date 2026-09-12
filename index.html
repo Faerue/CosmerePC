@@ -710,7 +710,12 @@ function derive(c){
 const STORE_KEY = 'radiant-sheet-v1';
 const state = {
   characters:[], activeId:null, tab:'home', view:'auth', session:null,
-  settings:{theme:'light', scale:'m', plotDie:true, diceMode:'disabled', firebase:{apiKey:'',authDomain:'',projectId:'',databaseURL:''}},
+  settings:{theme:'light', scale:'m', plotDie:true, diceMode:'disabled', firebase:{
+    apiKey:'AIzaSyC6qq3jITUYJmZfbAOouPaTYn02hjrVZvs',
+    authDomain:'cosmere-rpg-sheet.firebaseapp.com',
+    projectId:'cosmere-rpg-sheet',
+    databaseURL:''
+  }},
   profile:{username:''},
   localParties:[],
   rolls:[]
@@ -1890,8 +1895,8 @@ function openSettings(){
     </section>
 
     <section>
-      <h4>Sync across devices</h4>
-      <p class="hint" style="margin:.1rem 0 .6rem">Sheets live in this browser until you add a Firebase project. Adding one turns on accounts, friends, and shared party dashboards.</p>
+      <h4>Cloud &amp; Social Sync</h4>
+      <p class="hint" style="margin:.1rem 0 .6rem">Firebase credentials power accounts, friends, and shared party dashboards across devices. Sheets stay in this browser until these are saved and connected.</p>
       <div class="grid2">
         <div class="f"><label>API key</label><input type="text" id="fb-apiKey" value="${esc(f.apiKey)}" placeholder="AIza…"></div>
         <div class="f"><label>Auth domain</label><input type="text" id="fb-authDomain" value="${esc(f.authDomain)}" placeholder="my-app.firebaseapp.com"></div>
@@ -1899,7 +1904,7 @@ function openSettings(){
         <div class="f"><label>Database URL</label><input type="text" id="fb-databaseURL" value="${esc(f.databaseURL)}" placeholder="https://my-app.firebaseio.com"></div>
       </div>
       <div style="display:flex;gap:.4rem;margin-top:.6rem;flex-wrap:wrap">
-        <button class="btn primary" data-action="save-firebase">Save and connect</button>
+        <button class="btn primary" data-action="save-firebase">Save Settings</button>
         ${cloud.on ? '<button class="btn danger" data-action="disconnect-firebase">Disconnect</button>' : ''}
       </div>
       <p class="hint" style="margin-top:.5rem">${cloud.on ? 'Connected as ' + esc(cloud.user && cloud.user.email || 'signed in') : 'Not connected.'}</p>
@@ -2428,7 +2433,7 @@ function offlineSocialHTML(){
     <p class="hint">This table runs on your own device. Every character saved here can be dropped into a party and tracked live during a session — health, focus, defenses, conditions, and goal progress all in one view.</p>
     <p class="hint" style="margin-top:.4rem">${cloud.on
       ? 'Firebase is connected. Sign in below to play with friends across devices.'
-      : 'To share a party with other players on their own devices, add your Firebase keys under Settings → Sync across devices.'}</p>
+      : 'To share a party with other players on their own devices, add your Firebase keys under Settings → Cloud & Social Sync.'}</p>
     ${cloud.on ? authFormHTML() : ''}
   </div>
 
