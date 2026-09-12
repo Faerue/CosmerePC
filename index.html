@@ -2739,6 +2739,7 @@ function renderBackImpl(){
 
     <div>
       ${gearHTML(c, d)}
+      ${fabrialsHTML(c, d)}
       <div class="card">
         <h3>Other gear notes</h3><hr class="rule">
         <textarea data-path="equipment" style="min-height:8rem" placeholder="Starting kit, packs, and anything else you are carrying that isn't itemized above.">${esc(c.equipment)}</textarea>
@@ -2748,7 +2749,6 @@ function renderBackImpl(){
         ${overburdenedBadgeHTML(d)}
       </div>
       ${sphereConverterHTML(c)}
-      ${fabrialsHTML(c, d)}
       <div class="card">
         <h3>Connections</h3><hr class="rule">
         <textarea data-path="connections" style="min-height:9rem" placeholder="Patrons, allies, squires, and the spren you are bonded to.">${esc(c.connections)}</textarea>
