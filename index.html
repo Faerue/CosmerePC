@@ -18,7 +18,7 @@
 :root{
   --bg:#FAF8F5;
   --bg-2:#F3EEE9;
-  --card:rgba(255,255,255,.62);
+  --card:rgba(255,255,255,.88);
   --card-solid:#FFFDFB;
   --ink:#2D2438;
   --ink-soft:#6B5F76;
@@ -37,7 +37,7 @@
 [data-theme="dark"]{
   --bg:#16151D;
   --bg-2:#1C1A25;
-  --card:rgba(34,31,45,.72);
+  --card:rgba(34,31,45,.92);
   --card-solid:#221F2D;
   --ink:#F0EDF5;
   --ink-soft:#B7AFC4;
@@ -139,12 +139,13 @@ main{padding:.9rem clamp(.6rem,2vw,1.4rem) 5rem;max-width:1500px;margin:0 auto}
 /* ---------- cards ---------- */
 .card{
   background:var(--card);
-  backdrop-filter:blur(10px);
   border:1px solid var(--border-soft);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
   padding:.9rem 1rem 1rem;
   margin-bottom:.9rem;
+  content-visibility:auto;
+  contain-intrinsic-size:auto 420px;
 }
 .card > h3{
   font-size:1.18rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;
