@@ -336,9 +336,62 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 }
 .toast.show{opacity:.95}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* radiant ideals */
+.ideal{border:1px solid var(--border-soft);border-radius:12px;background:var(--card-solid);padding:.5rem .65rem;margin-bottom:.4rem}
+.ideal input{margin-top:.35rem}
+
+/* rules lookup drawer */
+.drawer-overlay{position:fixed;inset:0;z-index:80;background:color-mix(in srgb, var(--ink) 38%, transparent);backdrop-filter:blur(2px)}
+.drawer{
+  position:fixed;top:0;right:0;bottom:0;z-index:81;width:min(400px,100vw);
+  background:var(--card-solid);border-left:1px solid var(--border);box-shadow:-18px 0 40px -20px rgba(0,0,0,.35);
+  display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s ease;
+}
+.drawer.open{transform:translateX(0)}
+.drawer header{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1rem;border-bottom:1px solid var(--border-soft)}
+.drawer header h4{font-size:1.3rem}
+.drawer > input{margin:.7rem 1rem 0;width:calc(100% - 2rem)}
+.rulesbody{flex:1;overflow:auto;padding:.6rem 1rem 1.4rem}
+.rulesbody h5{font-family:'Cormorant Garamond',serif;font-size:1.05rem;color:var(--accent);margin:1rem 0 .3rem;letter-spacing:.03em}
+.rulesbody h5:first-child{margin-top:.2rem}
+.ruleitem{padding:.4rem 0;border-bottom:1px dotted var(--border-soft)}
+.ruleitem b{font-size:.9rem}
+.ruleitem p{margin:.15rem 0 0;font-size:.8rem;color:var(--ink-soft)}
+.badgecount{
+  position:absolute;top:-4px;right:-4px;min-width:15px;height:15px;border-radius:99px;
+  background:var(--accent);color:#fff;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;
+}
+[data-theme="dark"] .badgecount{color:#1A1824}
+
+/* home dashboard */
+.vault-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.8rem}
+.vaultcard{
+  border:1px solid var(--border-soft);border-radius:14px;background:var(--card-solid);
+  padding:.85rem .95rem;text-align:left;transition:border-color .15s,transform .15s;
+}
+.vaultcard:hover{border-color:var(--accent)}
+.vaultcard h4{font-size:1.2rem;margin-bottom:.15rem}
+.vaultcard .sub{font-size:.78rem;color:var(--ink-faint)}
+.vaultcard.newcard{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3rem;
+  color:var(--ink-faint);border-style:dashed;min-height:9rem;
+}
+.vaultcard.newcard:hover{color:var(--accent);border-color:var(--accent)}
+.vaultcard.newcard .plus{font-family:'Cormorant Garamond',serif;font-size:2rem;line-height:1}
+
+/* auth screen */
+.authwrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem 1rem}
+.authcard{
+  width:min(400px,100%);background:var(--card-solid);border:1px solid var(--border);border-radius:22px;
+  box-shadow:var(--shadow);padding:1.6rem 1.5rem 1.8rem;
+}
 </style>
 </head>
 <body>
+<div id="app-auth" hidden></div>
+<div id="app-home" hidden></div>
+<div id="app-sheet" hidden>
 <header class="topbar">
   <div class="brand">
     <svg class="glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -362,6 +415,10 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
   <button class="pill" data-action="import" title="Load a character file">Import</button>
   <button class="pill" data-action="export" title="Save a character file">Export</button>
   <button class="pill" data-action="go-social" title="Parties and friends">Parties</button>
+  <button class="pill" data-action="go-home" title="Character &amp; campaign vault">Home</button>
+  <button class="pill icon" data-action="rules" aria-label="Rules lookup" title="Rules lookup">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5v-17Z"/><path d="M4 19a2.5 2.5 0 0 1 2.5-2.5H20"/></svg>
+  </button>
   <span class="pill saved" id="savepill"><span class="dot"></span><span id="savetext">Saved</span></span>
   <button class="pill icon" data-action="settings" aria-label="Settings" title="Settings">
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
@@ -402,6 +459,17 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
     <button data-action="plot-only">Plot die</button>
   </div>
   <div class="log" id="rolllog"><p class="empty">Rolls appear here. Tap any skill modifier to test it.</p></div>
+</aside>
+</div>
+
+<div class="drawer-overlay" id="draweroverlay" hidden></div>
+<aside class="drawer" id="rulesdrawer" aria-hidden="true">
+  <header>
+    <h4>Rules lookup</h4>
+    <button class="iconbtn" data-action="close-rules" aria-label="Close rules lookup">✕</button>
+  </header>
+  <input type="text" id="rulessearch" placeholder="Search skills, actions, conditions, surges…" aria-label="Search rules">
+  <div class="rulesbody" id="rulesbody"></div>
 </aside>
 
 <div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
@@ -458,6 +526,87 @@ const ARMORS = [
   {name:'Full Plate', deflect:6}, {name:'Half-Shard', deflect:7}, {name:'Shardplate', deflect:8}
 ];
 
+/* ---------- singer forms ---------- */
+const SINGER_FORMS = {
+  'None (Formless)': {bonus:{}, desc:'Between forms — no bonuses, and prone to overexertion without a rhythm to hold to.'},
+  'Dullform':        {bonus:{spd:-1, wil:-1, pre:-1}, desc:'Numbed emotion and pain; tireless at labor. Common after an Everstorm without a bond.'},
+  'Workform':        {bonus:{str:1}, desc:'A laborer’s build — sturdy, industrious, built for the mundane.'},
+  'Warform':         {bonus:{str:1, spd:1}, desc:'Carapace thickens for battle; the common soldier form.'},
+  'Nimbleform':      {bonus:{spd:1, awa:1}, desc:'Light and quick — favored by scouts, messengers, and thieves.'},
+  'Mateform':        {bonus:{pre:1}, desc:'Drawn toward bonding and courtship; emotionally resonant.'},
+  'Scholarform':     {bonus:{int:1}, desc:'Sharpens the mind for study, craft, and careful thought.'},
+  'Artform':         {bonus:{pre:1, awa:1}, desc:'Heightens creativity, expression, and performance.'},
+  'Envoyform':       {bonus:{pre:1, int:1}, desc:'A rare diplomatic form, prized for negotiation between peoples.'},
+  'Willshaperform':  {bonus:{wil:1}, desc:'Resolute and unyielding — rare, and little understood by scholars.'}
+};
+
+/* ---------- radiant orders ---------- */
+const RADIANT_ORDERS = [
+  {name:'Windrunner',    spren:'Honorspren',          surges:'Adhesion & Gravitation'},
+  {name:'Skybreaker',    spren:'Highspren',           surges:'Gravitation & Division'},
+  {name:'Dustbringer',   spren:'Ashspren',            surges:'Division & Abrasion'},
+  {name:'Edgedancer',    spren:'Cultivationspren',    surges:'Abrasion & Progression'},
+  {name:'Truthwatcher',  spren:'Mistspren',           surges:'Progression & Illumination'},
+  {name:'Lightweaver',   spren:'Cryptic',             surges:'Illumination & Transformation'},
+  {name:'Elsecaller',    spren:'Inkspren',            surges:'Transformation & Transportation'},
+  {name:'Willshaper',    spren:'Lightspren',          surges:'Transportation & Cohesion'},
+  {name:'Stoneward',     spren:'Peakspren',           surges:'Cohesion & Tension'},
+  {name:'Bondsmith',     spren:'Highspren (unique)',  surges:'Tension & Adhesion'}
+];
+const IDEAL_NAMES = ['First Ideal', 'Second Ideal', 'Third Ideal', 'Fourth Ideal'];
+
+/* ---------- spheres ---------- */
+const SPHERE_CHIPS_PER_MARK = 5, SPHERE_MARKS_PER_BROAM = 5;
+
+/* ---------- rules lookup data ---------- */
+const SKILL_BLURBS = {
+  agility:'Balance, dodging, and fine full-body control.', athletics:'Running, jumping, climbing, swimming, and raw physical feats.',
+  heavyWeapons:'Attacks with large or two-handed weapons — hammers, greatswords, poleaxes.',
+  lightWeapons:'Attacks with fast, one-handed weapons — knives, sidearms, rapiers.',
+  stealth:'Moving unseen and unheard.', thievery:'Sleight of hand, lockpicking, and pickpocketing.',
+  crafting:'Making and repairing goods, art, and equipment.', deduction:'Puzzling out clues, patterns, and hidden meaning.',
+  discipline:'Resisting mental strain, fear, and temptation.', intimidation:'Coercing others through threat or presence.',
+  lore:'Recalled knowledge — history, theology, nature, the sciences.', medicine:'Diagnosing and treating injury or illness.',
+  deception:'Lying convincingly and reading a lie.', insight:'Reading intentions, emotions, and the truth behind words.',
+  leadership:'Inspiring, organizing, and commanding others.', perception:'Noticing what is there to be noticed.',
+  persuasion:'Convincing others honestly, through logic or charm.', survival:'Tracking, foraging, and enduring the wilds.'
+};
+const COMBAT_ACTIONS = [
+  {name:'Attack', desc:'Make a weapon or unarmed attack against a target in range.'},
+  {name:'Move', desc:'Move up to your Movement rate.'},
+  {name:'Full Defense', desc:'Forgo your attack to add a bonus to your Defense until your next turn.'},
+  {name:'Aid Another', desc:'Help an ally, granting Advantage on their next relevant test.'},
+  {name:'Charge', desc:'Move and attack in the same action, often at a penalty to Defense.'},
+  {name:'Disengage', desc:'Move away from an adjacent foe without provoking a free attack.'},
+  {name:'Grapple / Shove', desc:'Contest an opponent’s Athletics to restrain or move them.'},
+  {name:'Ready an Action', desc:'Prepare to act on a trigger you define before your next turn.'},
+  {name:'Recover', desc:'Spend your turn to shake off a condition or catch your breath.'},
+  {name:'Sense Surroundings', desc:'Make a Perception or Insight test to notice details or danger.'},
+  {name:'Use an Item', desc:'Draw, drink, apply, or activate an item you are carrying.'},
+  {name:'Use a Surge', desc:'Spend Focus or Investiture to invoke a Radiant Surge.'}
+];
+const CONDITION_BLURBS = {
+  Afflicted:'Suffering an ongoing malady — poison, disease, or curse.', Determined:'A rare boon condition — advantage on Discipline tests to push through.',
+  Disoriented:'Confused and unable to act reliably; disadvantage on most tests.', Empowered:'A boon granting bonus dice or effect on a specific action.',
+  Enhanced:'A temporary boost to an attribute or skill.', Exhausted:'Worn thin; penalties to physical tests until rested.',
+  Focused:'A boon condition sharpening concentration for a task.', Immobilized:'Unable to move from your current position.',
+  Prone:'Knocked down; disadvantage on most physical actions until you stand.', Restrained:'Bound or held; movement and some actions are blocked.',
+  Slowed:'Movement rate is reduced.', Stunned:'Unable to take actions until the condition clears.',
+  Surprised:'Caught off guard at the start of a conflict; act later, react less.', Unconscious:'Insensate and helpless.'
+};
+const SURGE_BLURBS = [
+  {name:'Adhesion', desc:'Binds surfaces and objects together, or a person to a surface.'},
+  {name:'Gravitation', desc:'Alters the direction and strength of gravity for a target.'},
+  {name:'Division', desc:'Unmakes bonds at a fundamental level, corroding or dissolving matter.'},
+  {name:'Abrasion', desc:'Reduces friction, letting a target slide freely or brace absolutely.'},
+  {name:'Progression', desc:'Accelerates growth and healing in living things.'},
+  {name:'Illumination', desc:'Bends and creates light — illusions, images, and darkness.'},
+  {name:'Transformation', desc:'Changes the fundamental nature of matter, as with lifeless things given motion.'},
+  {name:'Transportation', desc:'Moves a target partially or fully to Shadesmar and back.'},
+  {name:'Cohesion', desc:'Softens or hardens matter, letting it be reshaped like clay.'},
+  {name:'Tension', desc:'Reinforces the surface of an object, letting it hold enormous stress.'}
+];
+
 const TABLES = {
   lifting:[[0,'100 lbs'],[1,'200 lbs'],[3,'500 lbs'],[5,'1,000 lbs'],[7,'5,000 lbs'],[9,'10,000 lbs']],
   movement:[[0,'20 ft'],[1,'25 ft'],[3,'30 ft'],[5,'40 ft'],[7,'60 ft'],[9,'80 ft']],
@@ -485,6 +634,7 @@ function newCharacter(name){
     id: uid(),
     name: name || 'Unnamed Radiant',
     playerName:'', level:1, paths:'', ancestry:'', campaign:'Stormlight Archive',
+    singer:false, form:'None (Formless)',
     attributes:{str:0, spd:0, int:0, wil:0, awa:0, pre:0},
     defenseBonus:{physical:0, cognitive:0, spiritual:0},
     skills: blankSkills(),
@@ -492,12 +642,14 @@ function newCharacter(name){
     focus:{current:2, bonus:0},
     investiture:{current:0, bonus:0},
     radiant:false,
+    spren:{name:'', order:'', ideals: IDEAL_NAMES.map(n => ({name:n, text:'', ticks:[false,false,false]}))},
     armor:'No armor', deflectBonus:0,
     expertises:[], expertiseBonus:0,
     talents:'',
     weapons:[],
     conditions:{}, injuries:[],
-    spheres:'', purpose:'', obstacle:'',
+    squires:[], fabrials:[], gearWeight:0,
+    spheres:{chips:0, marks:0, broams:0, notes:''}, purpose:'', obstacle:'',
     goals:[{text:'', ticks:[false,false,false]}],
     appearance:'', equipment:'', connections:'', notes:''
   };
@@ -506,10 +658,17 @@ function newCharacter(name){
 /* ---------- derived values ---------- */
 const tierOf = lvl => Math.max(1, Math.min(5, Math.ceil((lvl || 1) / 4)));
 
+function formBonus(c){
+  const f = c.singer && SINGER_FORMS[c.form] ? SINGER_FORMS[c.form].bonus : null;
+  return f || {};
+}
+
 function derive(c){
-  const a = c.attributes;
+  const fb = formBonus(c);
+  const a = {}; for (const k in c.attributes) a[k] = c.attributes[k] + (fb[k] | 0);
   const d = {
     tier: tierOf(c.level),
+    formBonus: fb,
     physicalDefense: 10 + a.str + a.spd + (c.defenseBonus.physical|0),
     cognitiveDefense: 10 + a.int + a.wil + (c.defenseBonus.cognitive|0),
     spiritualDefense: 10 + a.awa + a.pre + (c.defenseBonus.spiritual|0),
@@ -519,6 +678,7 @@ function derive(c){
     senses: lookup(TABLES.senses, a.awa),
     skills:{}
   };
+  d.liftingLbs = parseInt(d.lifting.replace(/[^0-9]/g, ''), 10) || 0;
   d.maxHealth = 10 + a.str + (d.tier - 1) * 10 + (c.health.bonus|0);
   d.maxFocus = 2 + a.wil + (c.focus.bonus|0);
   d.maxInvestiture = c.radiant ? 2 + Math.max(a.awa, a.pre) + (c.investiture.bonus|0) : 0;
@@ -539,12 +699,13 @@ function derive(c){
 /* ---------- app state & persistence ---------- */
 const STORE_KEY = 'radiant-sheet-v1';
 const state = {
-  characters:[], activeId:null, tab:'front',
+  characters:[], activeId:null, tab:'front', view:'auth', session:null,
   settings:{theme:'light', scale:'m', plotDie:true, firebase:{apiKey:'',authDomain:'',projectId:'',databaseURL:''}},
   profile:{username:''},
   localParties:[],
   rolls:[]
 };
+const genCode = () => String(Math.floor(100000 + Math.random() * 900000));
 
 function activeChar(){
   return state.characters.find(c => c.id === state.activeId) || state.characters[0];
@@ -565,6 +726,11 @@ function load(){
   }
   if (!state.characters.some(c => c.id === state.activeId)) state.activeId = state.characters[0].id;
   state.characters.forEach(migrate);
+  (state.localParties || []).forEach(p => {
+    if (!p.code) p.code = genCode();
+    if (p.gmName === undefined) p.gmName = state.profile.username || 'You';
+    if (p.sessionDate === undefined) p.sessionDate = '';
+  });
 }
 
 function migrate(c){
@@ -572,6 +738,13 @@ function migrate(c){
   for (const k in fresh) if (c[k] === undefined) c[k] = fresh[k];
   for (const k in fresh.skills) if (!c.skills[k]) c.skills[k] = fresh.skills[k];
   c.goals = c.goals && c.goals.length ? c.goals : [{text:'', ticks:[false,false,false]}];
+  if (typeof c.spheres === 'string') c.spheres = {chips:0, marks:0, broams:0, notes:c.spheres};
+  if (!c.spheres || typeof c.spheres !== 'object') c.spheres = fresh.spheres;
+  if (!c.spren || typeof c.spren !== 'object') c.spren = fresh.spren;
+  c.spren.ideals = (c.spren.ideals && c.spren.ideals.length === IDEAL_NAMES.length) ? c.spren.ideals : fresh.spren.ideals;
+  if (!Array.isArray(c.squires)) c.squires = [];
+  if (!Array.isArray(c.fabrials)) c.fabrials = [];
+  if (!SINGER_FORMS[c.form]) c.form = fresh.form;
 }
 
 let saveTimer = null, saveState = 'saved';
@@ -582,7 +755,8 @@ function save(){
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify({
         characters:state.characters, activeId:state.activeId, settings:state.settings,
-        profile:state.profile, localParties:state.localParties, rolls:state.rolls.slice(0,30)
+        profile:state.profile, localParties:state.localParties, rolls:state.rolls.slice(0,30),
+        session:state.session, tab:state.tab
       }));
       setSavePill('saved');
     } catch(err){
@@ -608,6 +782,7 @@ const $$ = sel => Array.from(document.querySelectorAll(sel));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const sgn = n => (n >= 0 ? '+' : '') + n;
+const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
 
 let toastTimer;
 function toast(msg){
@@ -775,6 +950,59 @@ function expertisesHTML(c, d){
   </div>`;
 }
 
+function singerFormHTML(c, d){
+  const formOpts = Object.keys(SINGER_FORMS).map(f => `<option value="${esc(f)}" ${c.form === f ? 'selected' : ''}>${esc(f)}</option>`).join('');
+  const bonusList = Object.entries(d.formBonus || {}).filter(([, v]) => v).map(([k, v]) => `${ATTRS[k].short} ${sgn(v)}`).join(', ');
+  return `<div class="card">
+    <h3>Ancestry &amp; Form <span class="hint">Forms apply temporary attribute bonuses</span></h3><hr class="rule">
+    <div class="switchrow">
+      <span>Singer ancestry<span class="hint" style="display:block">Unlocks Form selection and Form-based bonuses</span></span>
+      <button class="switch" data-toggle="singer" aria-pressed="${c.singer}" aria-label="Singer ancestry"></button>
+    </div>
+    ${c.singer ? `
+    <div class="f" style="margin-top:.6rem"><label>Current form</label>
+      <select data-path="form">${formOpts}</select></div>
+    <p class="hint" style="margin-top:.4rem">${esc((SINGER_FORMS[c.form] || {}).desc || '')}${bonusList ? ` — <b style="color:var(--accent)">${bonusList}</b>` : ''}</p>
+    ` : ''}
+  </div>`;
+}
+
+function radiantIdealsHTML(c){
+  const order = RADIANT_ORDERS.find(o => o.name === c.spren.order);
+  const orderOpts = RADIANT_ORDERS.map(o => `<option value="${o.name}" ${c.spren.order === o.name ? 'selected' : ''}>${o.name}</option>`).join('');
+  const ideals = c.spren.ideals.map((ideal, i) => `<div class="ideal" data-iidx="${i}">
+      <div class="row" style="grid-template-columns:1fr auto;align-items:center">
+        <b>${esc(ideal.name)}</b>
+        <span class="ticks" data-idealticks="${i}">${[0, 1, 2].map(t => `<i class="${ideal.ticks[t] ? 'on' : ''}" data-t="${t}" role="button" tabindex="0" aria-label="Milestone ${t + 1}"></i>`).join('')}</span>
+      </div>
+      <input type="text" value="${esc(ideal.text)}" data-path="spren.ideals.${i}.text" placeholder="The words of this Ideal, once spoken">
+    </div>`).join('');
+  return `<div class="card">
+    <h3>Radiant Ideals &amp; Spren Bond</h3><hr class="rule">
+    <div class="grid2">
+      <div class="f"><label>Spren name</label><input type="text" value="${esc(c.spren.name)}" data-path="spren.name" placeholder="Syl, Pattern, Wyndle…"></div>
+      <div class="f"><label>Order</label><select data-path="spren.order"><option value="">— Unbonded —</option>${orderOpts}</select></div>
+    </div>
+    ${order ? `<p class="hint" style="margin-top:.4rem">Surges: ${esc(order.surges)} · typically bonded to a ${esc(order.spren)}</p>` : ''}
+    <div class="rows" style="margin-top:.6rem">${ideals}</div>
+  </div>`;
+}
+
+function squiresHTML(c){
+  const rows = c.squires.map((s, i) => `<div class="row" style="grid-template-columns:1fr 1fr 2fr auto" data-sqidx="${i}">
+      <input type="text" value="${esc(s.name)}" data-path="squires.${i}.name" placeholder="Name">
+      <input type="text" value="${esc(s.type)}" data-path="squires.${i}.type" placeholder="Squire / Companion">
+      <input type="text" value="${esc(s.notes)}" data-path="squires.${i}.notes" placeholder="Health, key attributes, notes">
+      <button class="iconbtn" data-action="del-squire" data-i="${i}" aria-label="Remove">✕</button>
+    </div>`).join('');
+  return `<div class="card">
+    <h3>Squires &amp; Companions</h3><hr class="rule">
+    <div class="row thead" style="grid-template-columns:1fr 1fr 2fr auto"><span>Name</span><span>Type</span><span>Stat block / notes</span><span></span></div>
+    <div class="rows">${rows || '<p class="empty">No squires or companions yet.</p>'}</div>
+    <button class="btn addbtn" data-action="add-squire">Add squire or companion</button>
+  </div>`;
+}
+
 function conditionsHTML(c){
   const conds = CONDITIONS.map(n =>
     `<button class="cond" data-cond="${n}" aria-pressed="${!!c.conditions[n]}">${n}</button>`).join('');
@@ -836,8 +1064,11 @@ function renderFront(){
     <textarea data-path="talents" placeholder="Path talents, ancestry talents, and anything you have taken from a talent tree." style="min-height:9rem">${esc(c.talents)}</textarea>
   </div>
 
+  ${singerFormHTML(c, d)}
+  ${radiantIdealsHTML(c)}
   ${weaponsHTML(c, d)}
   ${conditionsHTML(c)}
+  ${squiresHTML(c)}
   `;
   bindCombo();
   updatePointsSpent();
@@ -858,6 +1089,48 @@ function updatePointsSpent(){
 /* ============================================================
    BACK PAGE
    ============================================================ */
+function sphereTotalText(c){
+  const s = c.spheres;
+  const totalChips = (s.chips | 0) + (s.marks | 0) * SPHERE_CHIPS_PER_MARK + (s.broams | 0) * SPHERE_CHIPS_PER_MARK * SPHERE_MARKS_PER_BROAM;
+  return `Total value: ${totalChips} chips (≈ ${(totalChips / SPHERE_CHIPS_PER_MARK).toFixed(2)} marks, ≈ ${(totalChips / (SPHERE_CHIPS_PER_MARK * SPHERE_MARKS_PER_BROAM)).toFixed(2)} broams)`;
+}
+
+function sphereConverterHTML(c){
+  const s = c.spheres;
+  return `<div class="card">
+    <h3>Spheres <span class="hint">1 mark = ${SPHERE_CHIPS_PER_MARK} chips · 1 broam = ${SPHERE_MARKS_PER_BROAM} marks</span></h3><hr class="rule">
+    <div class="row" style="grid-template-columns:repeat(3,1fr)">
+      <div class="f"><label>Chips</label><input type="number" min="0" value="${s.chips}" data-path="spheres.chips"></div>
+      <div class="f"><label>Marks</label><input type="number" min="0" value="${s.marks}" data-path="spheres.marks"></div>
+      <div class="f"><label>Broams</label><input type="number" min="0" value="${s.broams}" data-path="spheres.broams"></div>
+    </div>
+    <p class="hint" id="sphereTotal" style="margin-top:.5rem">${sphereTotalText(c)}</p>
+    <div class="f" style="margin-top:.4rem"><label>Notes</label><input type="text" value="${esc(s.notes)}" data-path="spheres.notes" placeholder="Sphere pouch, infused state, spheres held in trust…"></div>
+  </div>`;
+}
+
+function weightLineText(c, d){
+  const w = c.gearWeight | 0;
+  const over = w > d.liftingLbs;
+  return `Lifting capacity: ${d.lifting}${over ? ' — overloaded! Movement and Physical tests take Disadvantage.' : '.'}`;
+}
+
+function fabrialsHTML(c){
+  const rows = c.fabrials.map((f, i) => `<div class="row" style="grid-template-columns:1.4fr 1fr auto auto auto" data-fidx="${i}">
+      <input type="text" value="${esc(f.name)}" data-path="fabrials.${i}.name" placeholder="Fabrial name">
+      <input type="text" value="${esc(f.type)}" data-path="fabrials.${i}.type" placeholder="Type — e.g. Stormlight lamp">
+      <input type="number" value="${f.charge}" min="0" data-path="fabrials.${i}.charge" title="Current charge" aria-label="Current charge">
+      <input type="number" value="${f.maxCharge}" min="0" data-path="fabrials.${i}.maxCharge" title="Max charge" aria-label="Max charge">
+      <button class="iconbtn" data-action="del-fabrial" data-i="${i}" aria-label="Remove">✕</button>
+    </div>`).join('');
+  return `<div class="card">
+    <h3>Fabrials <span class="hint">Charge / max charge</span></h3><hr class="rule">
+    <div class="row thead" style="grid-template-columns:1.4fr 1fr auto auto auto"><span>Name</span><span>Type</span><span>Charge</span><span>Max</span><span></span></div>
+    <div class="rows">${rows || '<p class="empty">No fabrials carried.</p>'}</div>
+    <button class="btn addbtn" data-action="add-fabrial">Add fabrial</button>
+  </div>`;
+}
+
 function renderBack(){
   const c = activeChar(), d = derive(c);
   const goals = c.goals.map((g, i) => `<div class="goal" data-gidx="${i}">
@@ -901,10 +1174,13 @@ function renderBack(){
     <div>
       <div class="card">
         <h3>Armor &amp; equipment</h3><hr class="rule">
-        <textarea data-path="equipment" style="min-height:16rem" placeholder="Starting kit, weapons, packs, fabrials, and anything you are carrying.">${esc(c.equipment)}</textarea>
-        <div class="f" style="margin-top:.6rem"><label>Spheres — diamond marks</label>
-          <input type="text" value="${esc(c.spheres)}" data-path="spheres" placeholder="e.g. 4 diamond marks, 2 clearchips"></div>
+        <textarea data-path="equipment" style="min-height:12rem" placeholder="Starting kit, weapons, packs, and anything you are carrying.">${esc(c.equipment)}</textarea>
+        <div class="f" style="margin-top:.6rem"><label>Carried weight (lbs)</label>
+          <input type="number" min="0" value="${c.gearWeight || 0}" data-path="gearWeight"></div>
+        <p class="hint" id="weightline" style="margin-top:.3rem${(c.gearWeight | 0) > d.liftingLbs ? ';color:var(--warn)' : ''}">${weightLineText(c, d)}</p>
       </div>
+      ${sphereConverterHTML(c)}
+      ${fabrialsHTML(c)}
       <div class="card">
         <h3>Connections</h3><hr class="rule">
         <textarea data-path="connections" style="min-height:9rem" placeholder="Patrons, allies, squires, and the spren you are bonded to.">${esc(c.connections)}</textarea>
@@ -1175,6 +1451,18 @@ document.addEventListener('input', e => {
     if (fixed !== value){ setPath(c, path, fixed); t.value = fixed; }
   }
   if (t.dataset.renames) renderCharPicker();
+  if (path.startsWith('spheres.') && path !== 'spheres.notes'){
+    const el = $('#sphereTotal');
+    if (el) el.textContent = sphereTotalText(c);
+  }
+  if (path === 'gearWeight'){
+    const d = derive(c);
+    const line = $('#weightline');
+    if (line){
+      line.textContent = weightLineText(c, d);
+      line.style.color = (c.gearWeight | 0) > d.liftingLbs ? 'var(--warn)' : '';
+    }
+  }
   syncDerived();
   save();
 });
@@ -1201,6 +1489,17 @@ document.addEventListener('click', e => {
     const ti = parseInt(tick.dataset.t, 10);
     c.goals[gi].ticks[ti] = !c.goals[gi].ticks[ti];
     tick.classList.toggle('on', c.goals[gi].ticks[ti]);
+    save();
+    return;
+  }
+
+  const idealTick = e.target.closest('[data-idealticks] i');
+  if (idealTick){
+    const ii = parseInt(idealTick.parentElement.dataset.idealticks, 10);
+    const ti = parseInt(idealTick.dataset.t, 10);
+    const ideal = c.spren.ideals[ii];
+    ideal.ticks[ti] = !ideal.ticks[ti];
+    idealTick.classList.toggle('on', ideal.ticks[ti]);
     save();
     return;
   }
@@ -1283,11 +1582,12 @@ document.addEventListener('click', e => {
 });
 
 document.addEventListener('keydown', e => {
-  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-pips] i, [data-ticks] i, [data-test]')){
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-pips] i, [data-ticks] i, [data-idealticks] i, [data-test]')){
     e.preventDefault();
     e.target.click();
   }
   if (e.key === 'Escape' && $('#overlay').classList.contains('open')) closeModal();
+  if (e.key === 'Escape' && $('#rulesdrawer').classList.contains('open')) closeRules();
 });
 
 function handleAction(action, node, c){
@@ -1301,7 +1601,30 @@ function handleAction(action, node, c){
       break;
     }
     case 'settings': openSettings(); break;
-    case 'go-social': switchTab('social'); break;
+    case 'go-social': if (state.view !== 'sheet') switchView('sheet'); switchTab('social'); break;
+    case 'go-home': switchView('home'); break;
+    case 'rules': openRules(); break;
+    case 'close-rules': closeRules(); break;
+    case 'auth-signin': localSignIn(val('auth-username'), val('auth-password')); break;
+    case 'auth-register': localRegister(val('auth-username'), val('auth-password')); break;
+    case 'auth-guest': continueAsGuest(); break;
+    case 'sign-out-session': signOutSession(); break;
+    case 'open-char': state.activeId = node.dataset.cid; switchView('sheet'); switchTab('front'); break;
+    case 'new-char-home': {
+      const nc = newCharacter('New character');
+      state.characters.push(nc);
+      state.activeId = nc.id;
+      switchView('sheet'); switchTab('front');
+      break;
+    }
+    case 'delete-char-home': deleteCharacterById(node.dataset.cid); break;
+    case 'open-campaign': {
+      state.activePartyId = node.dataset.pid;
+      switchView('sheet'); switchTab('social');
+      break;
+    }
+    case 'create-campaign-home': createCampaignHome(val('homecampaignname')); break;
+    case 'join-campaign-home': joinCampaignHome(val('joincode')); break;
     case 'short-rest': shortRest(); break;
     case 'long-rest': longRest(); break;
     case 'export': exportCharacter(c); break;
@@ -1316,6 +1639,10 @@ function handleAction(action, node, c){
     case 'roll-weapon': rollWeapon(parseInt(node.dataset.i, 10)); break;
     case 'add-injury': c.injuries.push({text:'', days:1}); renderFront(); save(); break;
     case 'del-injury': c.injuries.splice(parseInt(node.dataset.i, 10), 1); renderFront(); save(); break;
+    case 'add-squire': c.squires.push({name:'', type:'Squire', notes:''}); renderFront(); save(); break;
+    case 'del-squire': c.squires.splice(parseInt(node.dataset.i, 10), 1); renderFront(); save(); break;
+    case 'add-fabrial': c.fabrials.push({name:'', type:'', maxCharge:10, charge:10, notes:''}); renderBack(); save(); break;
+    case 'del-fabrial': c.fabrials.splice(parseInt(node.dataset.i, 10), 1); renderBack(); save(); break;
     case 'del-expertise': c.expertises.splice(parseInt(node.dataset.i, 10), 1); renderFront(); syncDerived(); save(); break;
     case 'add-goal': c.goals.push({text:'', ticks:[false,false,false]}); renderBack(); save(); break;
     case 'del-goal': c.goals.splice(parseInt(node.dataset.i, 10), 1); renderBack(); save(); break;
@@ -1411,6 +1738,45 @@ $('#filein').addEventListener('change', async e => {
   }
   e.target.value = '';
 });
+
+/* ============================================================
+   RULES LOOKUP DRAWER
+   ============================================================ */
+function ruleSection(title, items){
+  return `<h5>${esc(title)}</h5>` + items.map(it =>
+    `<div class="ruleitem"><b>${esc(it.name)}</b>${it.sub ? ` <span class="hint">(${esc(it.sub)})</span>` : ''}<p>${esc(it.desc || '')}</p></div>`).join('');
+}
+function renderRulesDrawer(q){
+  q = (q || '').trim().toLowerCase();
+  const body = $('#rulesbody');
+  if (!body) return;
+  const match = x => !q || x.name.toLowerCase().includes(q) || (x.desc || '').toLowerCase().includes(q);
+  const sections = [];
+  const skillItems = ALL_SKILLS.map(s => ({name:s.name, sub:ATTRS[s.attr].short, desc:SKILL_BLURBS[s.key] || ''})).filter(match);
+  if (skillItems.length) sections.push(ruleSection('Skills', skillItems));
+  const actionItems = COMBAT_ACTIONS.filter(match);
+  if (actionItems.length) sections.push(ruleSection('Combat actions', actionItems));
+  const condItems = CONDITIONS.map(n => ({name:n, desc:CONDITION_BLURBS[n] || ''})).filter(match);
+  if (condItems.length) sections.push(ruleSection('Conditions', condItems));
+  const surgeItems = SURGE_BLURBS.filter(match);
+  if (surgeItems.length) sections.push(ruleSection('Surges', surgeItems));
+  body.innerHTML = sections.join('') || '<p class="empty">No matches for that search.</p>';
+}
+function openRules(){
+  $('#rulesdrawer').classList.add('open');
+  $('#rulesdrawer').setAttribute('aria-hidden', 'false');
+  $('#draweroverlay').hidden = false;
+  $('#rulessearch').value = '';
+  renderRulesDrawer('');
+  $('#rulessearch').focus();
+}
+function closeRules(){
+  $('#rulesdrawer').classList.remove('open');
+  $('#rulesdrawer').setAttribute('aria-hidden', 'true');
+  $('#draweroverlay').hidden = true;
+}
+$('#draweroverlay').addEventListener('click', closeRules);
+$('#rulessearch').addEventListener('input', e => renderRulesDrawer(e.target.value));
 
 /* ============================================================
    SETTINGS MODAL
@@ -1666,7 +2032,8 @@ const cloud = {
       deflect:d.deflect, movement:d.movement,
       conditions:c.conditions || {},
       surges:(c.skills.custom_physical.name || '') + (c.skills.custom_spiritual.name ? ', ' + c.skills.custom_spiritual.name : ''),
-      goals:(c.goals || []).map(g => ({text:g.text, ticks:g.ticks}))
+      goals:(c.goals || []).map(g => ({text:g.text, ticks:g.ticks})),
+      spren:(c.spren && c.spren.order) ? {name:c.spren.name, order:c.spren.order} : null
     };
   },
 
@@ -1692,10 +2059,252 @@ const cloud = {
 };
 
 /* ============================================================
+   VIEW ROUTING — auth / home / sheet
+   ============================================================ */
+function switchView(view){
+  state.view = view;
+  $('#app-auth').hidden = view !== 'auth';
+  $('#app-home').hidden = view !== 'home';
+  $('#app-sheet').hidden = view !== 'sheet';
+  if (view === 'auth') renderAuth();
+  else if (view === 'home') renderHome();
+  else render();
+  save();
+}
+
+/* ---------- local (offline) accounts ---------- */
+const ACCOUNTS_KEY = 'radiant-sheet-accounts-v1';
+function loadAccounts(){ try { return JSON.parse(localStorage.getItem(ACCOUNTS_KEY)) || {}; } catch(e){ return {}; } }
+function saveAccounts(a){ localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(a)); }
+
+function localRegister(username, password){
+  username = (username || '').replace(/^@/, '').trim();
+  if (!/^[A-Za-z0-9_]{3,20}$/.test(username)) return toast('Use 3–20 letters, numbers, or underscores for a username.');
+  if (!password || password.length < 4) return toast('Use a password with at least 4 characters.');
+  const accounts = loadAccounts();
+  if (accounts[username.toLowerCase()]) return toast('That handle is already registered on this device.');
+  accounts[username.toLowerCase()] = {username, password};
+  saveAccounts(accounts);
+  state.session = {mode:'local', username};
+  state.profile.username = username;
+  switchView('home');
+  toast(`Welcome, @${username}.`);
+}
+function localSignIn(username, password){
+  username = (username || '').replace(/^@/, '').trim();
+  const accounts = loadAccounts();
+  const acc = accounts[username.toLowerCase()];
+  if (!acc || acc.password !== password) return toast('Username or password did not match on this device.');
+  state.session = {mode:'local', username:acc.username};
+  state.profile.username = acc.username;
+  switchView('home');
+  toast(`Welcome back, @${acc.username}.`);
+}
+function continueAsGuest(){
+  state.session = {mode:'guest'};
+  switchView('home');
+}
+function signOutSession(){
+  if (cloud.on && cloud.user) cloud.signOut();
+  state.session = null;
+  switchView('auth');
+}
+
+function renderAuth(){
+  const el = $('#app-auth');
+  if (!el) return;
+  el.innerHTML = `
+  <div class="authwrap">
+    <div class="authcard">
+      <div class="brand" style="justify-content:center;margin-bottom:.4rem">
+        <svg class="glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 1.5 15 9l7.5 3-7.5 3-3 7.5-3-7.5L1.5 12 9 9z" fill="url(#ga)"/>
+          <circle cx="12" cy="12" r="10.2" stroke="currentColor" stroke-opacity=".35"/>
+          <defs><linearGradient id="ga" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#C88A8A"/><stop offset="1" stop-color="#D4A373"/></linearGradient></defs>
+        </svg>
+        <b style="font-size:1.6rem">Radiant Sheet</b>
+      </div>
+      <p class="hint" style="text-align:center;margin-bottom:1.1rem">Character sheets and campaign tables for the Cosmere Roleplaying Game.</p>
+      <div class="f"><label>@Username</label><input type="text" id="auth-username" placeholder="KaladinBridge4" autocomplete="username"></div>
+      <div class="f" style="margin-top:.55rem"><label>Password</label><input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password"></div>
+      <div style="display:flex;gap:.5rem;margin-top:.9rem">
+        <button class="btn primary" data-action="auth-signin" style="flex:1">Sign in</button>
+        <button class="btn" data-action="auth-register" style="flex:1">Register</button>
+      </div>
+      <p class="hint" style="margin-top:.6rem">Accounts made here live on this device only. Add Firebase keys in Settings to sync across devices with real accounts.</p>
+      <hr class="rule" style="margin:1.1rem 0">
+      <button class="btn ghost" data-action="auth-guest" style="width:100%">Continue as Guest</button>
+    </div>
+  </div>`;
+}
+
+/* ============================================================
+   HOME DASHBOARD — vault & campaign hub
+   ============================================================ */
+function deleteCharacterById(id){
+  if (state.characters.length === 1){ toast('Keep at least one character.'); return; }
+  const c = state.characters.find(x => x.id === id);
+  if (!c || !confirm(`Delete ${c.name}?`)) return;
+  state.characters = state.characters.filter(x => x.id !== id);
+  if (state.activeId === id) state.activeId = state.characters[0].id;
+  renderHome(); save();
+}
+
+function createCampaignHome(name){
+  if (!name) return toast('Give the campaign a name.');
+  if (cloud.on && cloud.user) return createParty(name);
+  const p = {id:uid(), name, code:genCode(), gmName:state.profile.username || 'You', sessionDate:'', charIds:[]};
+  state.localParties.push(p);
+  state.activePartyId = p.id;
+  renderHome(); save();
+  toast(`Campaign created. Join code: ${p.code}`);
+}
+
+async function joinCampaignHome(code){
+  code = (code || '').trim();
+  if (!/^\d{6}$/.test(code)) return toast('Enter the 6-digit join code.');
+  if (cloud.on && cloud.user){
+    try {
+      const q = cloud.fb.query(cloud.fb.collection(cloud.db, 'parties'), cloud.fb.where('code', '==', code));
+      const snap = await cloud.fb.getDocs(q);
+      if (snap.empty) return toast('No campaign uses that code.');
+      const partyDoc = snap.docs[0];
+      await cloud.fb.updateDoc(partyDoc.ref, {
+        memberUids:cloud.fb.arrayUnion(cloud.user.uid),
+        [`members.${cloud.user.uid}`]:{username:cloud.me.username, role:'Player', charId:'', char:null, updatedAt:Date.now()}
+      });
+      await cloud.fb.setDoc(cloud.doc('users', cloud.user.uid), {parties:cloud.fb.arrayUnion(partyDoc.id)}, {merge:true});
+      state.activePartyId = partyDoc.id;
+      toast('Joined the campaign.');
+      renderHome();
+    } catch(err){ toast('Could not join: ' + err.message); }
+    return;
+  }
+  const p = state.localParties.find(x => x.code === code);
+  if (!p) return toast('No campaign with that code exists on this device.');
+  state.activePartyId = p.id;
+  renderHome();
+  toast(`Joined ${p.name}.`);
+}
+
+function renderHome(){
+  const el = $('#app-home');
+  if (!el) return;
+  const cloudOn = cloud.on && cloud.user;
+  const handle = cloudOn ? (cloud.me.username ? '@' + cloud.me.username : 'Signed in')
+    : state.session && state.session.mode === 'local' ? '@' + state.session.username
+    : 'Guest';
+  const inviteCount = cloudOn ? (cloud.requests || []).length : 0;
+
+  const charCards = state.characters.map(c => {
+    const d = derive(c);
+    return `<div class="vaultcard">
+      <h4>${esc(c.name || 'Unnamed')}</h4>
+      <div class="sub">${esc(c.ancestry || 'Ancestry —')} · ${esc(c.paths || 'Path —')}</div>
+      <div class="sub">Level ${c.level} · Tier ${d.tier}</div>
+      <div class="sub">${esc(c.campaign || 'No campaign set')}</div>
+      <div style="display:flex;gap:.4rem;margin-top:.6rem">
+        <button class="btn primary" data-action="open-char" data-cid="${c.id}" style="flex:1">Open</button>
+        <button class="iconbtn" data-action="delete-char-home" data-cid="${c.id}" aria-label="Delete ${esc(c.name)}">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  const parties = cloudOn ? cloud.parties.filter(p => p.members) : state.localParties;
+  const campaignCards = parties.map(p => {
+    const size = cloudOn ? Object.keys(p.members || {}).length : p.charIds.length;
+    const gmName = cloudOn ? ((Object.values(p.members || {}).find(m => m.role === 'GM') || {}).username || '—') : (p.gmName || 'You');
+    return `<div class="vaultcard">
+      <h4>${esc(p.name)}</h4>
+      <div class="sub">GM: ${esc(gmName)}</div>
+      <div class="sub">${size} at the table</div>
+      <div class="sub">Next session: ${esc(p.sessionDate || 'Not scheduled')}</div>
+      <div class="sub">Join code: <b>${esc(p.code || '——————')}</b></div>
+      <button class="btn primary" style="margin-top:.6rem;width:100%" data-action="open-campaign" data-pid="${p.id}">Open</button>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+  <header class="topbar">
+    <div class="brand">
+      <svg class="glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 1.5 15 9l7.5 3-7.5 3-3 7.5-3-7.5L1.5 12 9 9z" fill="url(#gh)"/>
+        <circle cx="12" cy="12" r="10.2" stroke="currentColor" stroke-opacity=".35"/>
+        <defs><linearGradient id="gh" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#C88A8A"/><stop offset="1" stop-color="#D4A373"/></linearGradient></defs>
+      </svg>
+      <b>Radiant Sheet</b>
+    </div>
+    <span class="spacer"></span>
+    <span class="pill">${esc(handle)}</span>
+    <button class="pill icon" data-action="go-social" title="Notifications &amp; invites" style="position:relative">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      ${inviteCount ? `<span class="badgecount">${inviteCount}</span>` : ''}
+    </button>
+    <button class="pill icon" data-action="rules" aria-label="Rules lookup" title="Rules lookup">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5v-17Z"/><path d="M4 19a2.5 2.5 0 0 1 2.5-2.5H20"/></svg>
+    </button>
+    <button class="pill icon" data-action="settings" aria-label="Settings" title="Settings">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.9 19.3a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.7 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.7 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.7a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.7a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.3 9v.09A1.7 1.7 0 0 0 20.91 10H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15z"/></svg>
+    </button>
+    <button class="pill" data-action="sign-out-session">Sign out</button>
+  </header>
+  <main>
+    <div class="card">
+      <h3>My Characters <span class="hint">Your vault</span></h3><hr class="rule">
+      <div class="vault-grid">
+        ${charCards}
+        <button class="vaultcard newcard" data-action="new-char-home"><span class="plus">＋</span><span>Create new character</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>My Campaigns</h3><hr class="rule">
+      <div class="vault-grid">${campaignCards || '<p class="empty">No campaigns yet — create one below.</p>'}</div>
+      <div class="twocol" style="margin-top:.9rem">
+        <div class="row" style="grid-template-columns:1fr auto">
+          <input type="text" id="homecampaignname" placeholder="Shattered Plains campaign">
+          <button class="btn primary" data-action="create-campaign-home">Create campaign</button>
+        </div>
+        <div class="row" style="grid-template-columns:1fr auto">
+          <input type="text" id="joincode" placeholder="Enter 6-digit join code" maxlength="6">
+          <button class="btn" data-action="join-campaign-home">Join via code</button>
+        </div>
+      </div>
+    </div>
+  </main>`;
+}
+
+/* ============================================================
    CAMPAIGN PARTY VIEW
    ============================================================ */
+function gmVisibilityMatrixHTML(party){
+  const rows = Object.entries(party.members || {}).map(([mUid, m]) => `<div class="row" style="grid-template-columns:1fr auto auto;align-items:center" data-uid="${mUid}">
+      <span>${esc(m.username || mUid)}${m.role === 'GM' ? ' <span class="hint">(GM)</span>' : ''}</span>
+      <label style="display:flex;gap:.35rem;align-items:center;font-size:.78rem"><input type="checkbox" data-visctl="hidden" data-uid="${mUid}" data-pid="${party.id}" ${m.hidden ? 'checked' : ''}> Hide card</label>
+      <label style="display:flex;gap:.35rem;align-items:center;font-size:.78rem"><input type="checkbox" data-visctl="hideSecrets" data-uid="${mUid}" data-pid="${party.id}" ${m.hideSecrets ? 'checked' : ''}> Hide secrets</label>
+    </div>`).join('');
+  return `<div class="card" style="margin-top:.7rem;background:var(--card-solid)">
+    <h3 style="font-size:1rem">GM visibility matrix</h3><hr class="rule">
+    <div class="switchrow">
+      <span>Players can view the whole party's sheets<span class="hint" style="display:block">Off — each player sees only their own character</span></span>
+      <button class="switch" data-visglobal="${party.id}" aria-pressed="${party.visibility === 'all'}"></button>
+    </div>
+    <p class="hint" style="margin:.5rem 0 .3rem">Per-character overrides — hide a card entirely, or just its secret Radiant order and spren bond.</p>
+    <div class="rows">${rows || '<p class="empty">No members yet.</p>'}</div>
+  </div>`;
+}
+
 function memberCardHTML(m, uidKey, opts){
+  opts = opts || {};
   const ch = m.char || {};
+  const isGM = !!opts.isGM, isSelf = uidKey === opts.viewerUid;
+  if (!isGM && !isSelf && opts.party && opts.party.visibility !== 'all'){
+    return `<div class="member"><h4>${esc(m.username || 'Player')}</h4><p class="empty">This player's sheet is set to private.</p></div>`;
+  }
+  if (!isGM && !isSelf && m.hidden){
+    return `<div class="member"><h4>${esc(m.username || 'Player')}</h4><p class="empty">Hidden by the game master.</p></div>`;
+  }
+  const canSeeSecrets = isGM || isSelf || !m.hideSecrets;
   const conds = Object.keys(ch.conditions || {}).filter(k => ch.conditions[k]);
   const bar = (cur, max) => `<div class="bar"><i style="width:${max ? clamp(cur / max * 100, 0, 100) : 0}%"></i></div>`;
   const line = (label, kind, cur, max) => `<div class="track" style="margin-top:.35rem">
@@ -1726,6 +2335,9 @@ function memberCardHTML(m, uidKey, opts){
         <div><div class="v">${ch.deflect}</div><div class="l">Deflect</div></div>
       </div>
       ${ch.surges && ch.surges.trim() ? `<div class="sub">Surges: ${esc(ch.surges)}</div>` : ''}
+      ${ch.spren ? (canSeeSecrets
+        ? `<div class="sub">${esc(ch.spren.order)}${ch.spren.name ? ' · bonded to ' + esc(ch.spren.name) : ''}</div>`
+        : `<div class="sub">Radiant order — <i>kept secret</i></div>`) : ''}
       <div class="conds" style="margin-top:.3rem">
         ${(opts.canEdit ? CONDITIONS : conds).map(n => `<button class="cond" ${opts.canEdit ? `data-action="${opts.scope}-cond" data-uid="${uidKey}" data-cond="${n}"` : ''} aria-pressed="${conds.includes(n)}">${n}</button>`).join('') || '<span class="empty">No conditions</span>'}
       </div>
@@ -1790,7 +2402,9 @@ function offlineSocialHTML(){
   </div>
 
   ${party ? `<div class="card">
-    <h3>${esc(party.name)} <span class="hint">Live table view</span></h3><hr class="rule">
+    <h3>${esc(party.name)} <span class="hint">Live table view · Join code ${esc(party.code || '')}</span></h3><hr class="rule">
+    <div class="f" style="max-width:16rem;margin-bottom:.7rem"><label>Next session</label>
+      <input type="text" id="localsessiondate" data-pid="${party.id}" value="${esc(party.sessionDate || '')}" placeholder="e.g. Sept 20, 7pm"></div>
     <div class="party-grid">${cards || '<p class="empty">No characters at this table yet.</p>'}</div>
   </div>` : ''}`;
 }
@@ -1871,7 +2485,7 @@ function onlineSocialHTML(){
   </div>
 
   ${party ? `<div class="card">
-    <h3>${esc(party.name)} ${isGM ? '<span class="badge">Game master</span>' : ''}</h3><hr class="rule">
+    <h3>${esc(party.name)} ${isGM ? '<span class="badge">Game master</span>' : ''} <span class="hint">Join code ${esc(party.code || '')}</span></h3><hr class="rule">
     <div class="twocol">
       <div class="f"><label>Your character in this party</label>
         <select data-change="assign-char" data-pid="${party.id}">${myCharOpts}</select></div>
@@ -1879,11 +2493,14 @@ function onlineSocialHTML(){
         <div class="row" style="grid-template-columns:1fr auto">
           <input type="text" id="partyadd" placeholder="@username">
           <button class="btn" data-action="party-add" data-pid="${party.id}">Add</button>
-        </div></div>` : ''}
+        </div></div>` : `<div class="f"><label>Next session</label><p class="hint" style="margin-top:.3rem">${esc(party.sessionDate || 'Not scheduled')}</p></div>`}
     </div>
+    ${isGM ? `<div class="f" style="max-width:16rem;margin-top:.6rem"><label>Next session</label>
+      <input type="text" id="partysessiondate" data-pid="${party.id}" value="${esc(party.sessionDate || '')}" placeholder="e.g. Sept 20, 7pm"></div>
+      ${gmVisibilityMatrixHTML(party)}` : ''}
     <div class="party-grid" style="margin-top:.9rem">
       ${Object.entries(party.members || {}).map(([mUid, m]) =>
-        memberCardHTML(m, mUid, {canEdit:isGM || mUid === cloud.user.uid, scope:'party'})).join('')}
+        memberCardHTML(m, mUid, {canEdit:isGM || mUid === cloud.user.uid, scope:'party', isGM, viewerUid:cloud.user.uid, party})).join('')}
     </div>
     <button class="btn danger" style="margin-top:.8rem" data-action="leave-party" data-pid="${party.id}">Leave party</button>
   </div>` : ''}`;
@@ -1899,10 +2516,11 @@ function handleSocialAction(action, node, c){
     case 'create-local-party': {
       const name = val('localpartyname');
       if (!name) return toast('Give the party a name.');
-      const p = {id:uid(), name, charIds:[]};
+      const p = {id:uid(), name, code:genCode(), gmName:state.profile.username || (state.session && state.session.username) || 'You', sessionDate:'', charIds:[]};
       state.localParties.push(p);
       state.activePartyId = p.id;
       renderSocial(); save();
+      toast(`Campaign created. Join code: ${p.code}`);
       break;
     }
     case 'select-local-party': state.activePartyId = pid; renderSocial(); break;
@@ -1977,7 +2595,41 @@ function handleSocialAction(action, node, c){
 
 document.addEventListener('change', e => {
   const sel = e.target.closest('[data-change="assign-char"]');
-  if (sel) assignCharacter(sel.dataset.pid, sel.value);
+  if (sel){ assignCharacter(sel.dataset.pid, sel.value); return; }
+
+  const localDate = e.target.closest('#localsessiondate');
+  if (localDate){
+    const p = state.localParties.find(x => x.id === localDate.dataset.pid);
+    if (p){ p.sessionDate = localDate.value; save(); renderHome(); }
+    return;
+  }
+  const cloudDate = e.target.closest('#partysessiondate');
+  if (cloudDate){
+    const party = cloud.parties.find(x => x.id === cloudDate.dataset.pid);
+    if (party) party.sessionDate = cloudDate.value;
+    cloud.fb.updateDoc(cloud.doc('parties', cloudDate.dataset.pid), {sessionDate:cloudDate.value}).catch(() => {});
+    return;
+  }
+  const visctl = e.target.closest('[data-visctl]');
+  if (visctl){
+    const field = visctl.dataset.visctl, mUid = visctl.dataset.uid, pid = visctl.dataset.pid;
+    const party = cloud.parties.find(p => p.id === pid);
+    if (party && party.members[mUid]) party.members[mUid][field] = visctl.checked;
+    cloud.fb.updateDoc(cloud.doc('parties', pid), {[`members.${mUid}.${field}`]:visctl.checked}).catch(() => {});
+    return;
+  }
+});
+
+document.addEventListener('click', e => {
+  const visg = e.target.closest('[data-visglobal]');
+  if (!visg) return;
+  const pid = visg.dataset.visglobal;
+  const party = cloud.parties.find(p => p.id === pid);
+  if (!party) return;
+  const next = party.visibility === 'all' ? 'own' : 'all';
+  party.visibility = next;
+  visg.setAttribute('aria-pressed', String(next === 'all'));
+  cloud.fb.updateDoc(cloud.doc('parties', pid), {visibility:next}).catch(() => {});
 });
 
 /* ---------- firestore operations ---------- */
@@ -2031,12 +2683,13 @@ async function createParty(name){
   try {
     const c = activeChar();
     const ref = await cloud.fb.addDoc(cloud.fb.collection(cloud.db, 'parties'), {
-      name, gm:cloud.user.uid, memberUids:[cloud.user.uid],
+      name, gm:cloud.user.uid, code:genCode(), sessionDate:'', visibility:'own', memberUids:[cloud.user.uid],
       members:{[cloud.user.uid]:{username:cloud.me.username, role:'GM', charId:c.id, char:cloud.snapshot(c), updatedAt:Date.now()}}
     });
     await cloud.fb.setDoc(cloud.doc('users', cloud.user.uid), {parties:cloud.fb.arrayUnion(ref.id)}, {merge:true});
     state.activePartyId = ref.id;
-    toast('Party created. You are the game master.');
+    renderHome(); renderSocial();
+    toast('Campaign created. You are the game master.');
   } catch(err){ toast('Could not create the party: ' + err.message); }
 }
 
@@ -2109,7 +2762,8 @@ async function partyPatch(node, mutate){
    ============================================================ */
 load();
 applySettings();
-switchTab('front');
+switchTab(state.tab || 'front');
+switchView(state.session ? (state.view === 'sheet' ? 'sheet' : 'home') : 'auth');
 if (state.settings.firebase.apiKey && state.settings.firebase.projectId) cloud.connect();
 setSavePill('saved');
 </script>
