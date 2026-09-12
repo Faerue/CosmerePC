@@ -2735,6 +2735,7 @@ function renderBackImpl(){
         <textarea data-path="appearance" style="min-height:13rem" placeholder="Build, features, bearing, the marks a life on Roshar leaves.">${esc(c.appearance)}</textarea>
       </div>
       ${notebookHTML(c)}
+      ${sphereConverterHTML(c)}
     </div>
 
     <div>
@@ -2748,7 +2749,6 @@ function renderBackImpl(){
         <p class="hint" id="weightline" style="margin-top:.3rem${d.totalCarriedWeight > d.liftingLbs ? ';color:var(--warn)' : ''}">${weightLineText(c, d)}</p>
         ${overburdenedBadgeHTML(d)}
       </div>
-      ${sphereConverterHTML(c)}
       <div class="card">
         <h3>Connections</h3><hr class="rule">
         <textarea data-path="connections" style="min-height:9rem" placeholder="Patrons, allies, squires, and the spren you are bonded to.">${esc(c.connections)}</textarea>
