@@ -168,6 +168,13 @@ main{padding:.9rem clamp(.6rem,2vw,1.4rem) 5rem;max-width:1500px;margin:0 auto}
 .turnspeed-fast polygon{fill:#fff}
 .turnspeed-slow{background:linear-gradient(135deg,#5B84B1,#9CC2E8);border-color:transparent}
 .turnspeed-slow polygon{fill:#fff}
+.turnspeed-badge{display:inline-flex;align-items:center;gap:.25rem;padding:.05rem .45rem;border-radius:999px;border:1px solid var(--border);background:var(--field);font-size:.68rem;vertical-align:middle}
+.turnspeed-badge svg{width:10px;height:auto;display:block}
+.turnspeed-badge polygon{fill:var(--ink-soft)}
+.turnspeed-badge.turnspeed-fast{background:linear-gradient(135deg,#D9A867,#F2D9AE);border-color:transparent;color:#5a4419}
+.turnspeed-badge.turnspeed-fast polygon{fill:#5a4419}
+.turnspeed-badge.turnspeed-slow{background:linear-gradient(135deg,#5B84B1,#9CC2E8);border-color:transparent;color:#1c3a56}
+.turnspeed-badge.turnspeed-slow polygon{fill:#1c3a56}
 .f{display:flex;flex-direction:column;gap:.25rem}
 .f > label{font-size:.72rem;color:var(--ink-faint);letter-spacing:.06em}
 input[type=text],input[type=number],input[type=password],input[type=email],textarea,select{
@@ -4241,6 +4248,7 @@ const cloud = {
     const d = derive(c);
     return {
       id:c.id, name:c.name, level:c.level, tier:d.tier, paths:c.paths, ancestry:c.ancestry,
+      turnSpeed:c.turnSpeed || 'passive',
       health:{current:c.health.current, max:d.maxHealth},
       focus:{current:c.focus.current, max:d.maxFocus},
       investiture:{current:c.investiture.current, max:d.maxInvestiture, radiant:c.radiant},
@@ -4776,7 +4784,8 @@ function memberCardHTML(m, uidKey, opts){
   return `<div class="member">
     <h4>${esc(ch.name || 'No character assigned')}${reorder}</h4>
     <div class="sub">${esc(m.username || '')}${m.role ? ` · <span class="badge">${esc(m.role)}</span>` : ''}
-      ${ch.level ? ` · Level ${ch.level} ${esc(ch.paths || '')}` : ''}</div>
+      ${ch.level ? ` · Level ${ch.level} ${esc(ch.paths || '')}` : ''}
+      ${ch.name ? ` · <span class="turnspeed-badge turnspeed-${ch.turnSpeed || 'passive'}" title="${TURN_SPEED_LABEL[ch.turnSpeed || 'passive']}">${turnSpeedIconHTML(ch.turnSpeed || 'passive')} ${TURN_SPEED_LABEL[ch.turnSpeed || 'passive']}</span>` : ''}</div>
     ${ch.name ? `
       ${line('Health', 'health', ch.health.current, ch.health.max)}
       ${line('Focus', 'focus', ch.focus.current, ch.focus.max)}
