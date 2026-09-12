@@ -78,6 +78,8 @@ button{cursor:pointer;background:none;border:none}
   border-bottom:1px solid var(--border-soft);
 }
 .brand{display:flex;align-items:baseline;gap:.5rem;margin-right:.2rem}
+button.brand{cursor:pointer}
+button.brand:hover b{color:var(--accent)}
 .brand .glyph{width:22px;height:22px;flex:0 0 auto;align-self:center}
 .brand b{font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:600;letter-spacing:.02em}
 .brand span{font-size:.68rem;color:var(--ink-faint);letter-spacing:.14em;text-transform:uppercase}
@@ -371,9 +373,11 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
 .vault-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.8rem}
 .vaultcard{
   border:1px solid var(--border-soft);border-radius:14px;background:var(--card-solid);
-  padding:.85rem .95rem;text-align:left;transition:border-color .15s,transform .15s;
+  padding:.85rem .95rem;text-align:left;transition:border-color .15s,transform .15s;cursor:pointer;
 }
 .vaultcard:hover{border-color:var(--accent)}
+.vaultcard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.vaultcard button{cursor:pointer}
 .vaultcard h4{font-size:1.2rem;margin-bottom:.15rem}
 .vaultcard .sub{font-size:.78rem;color:var(--ink-faint)}
 .vaultcard.newcard{
@@ -393,10 +397,9 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
 </head>
 <body>
 <div id="app-auth" hidden></div>
-<div id="app-home" hidden></div>
-<div id="app-sheet" hidden>
+<div id="app-main" hidden>
 <header class="topbar">
-  <div class="brand">
+  <button class="brand" data-action="go-home" title="Home" aria-label="Home">
     <svg class="glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M12 1.5 15 9l7.5 3-7.5 3-3 7.5-3-7.5L1.5 12 9 9z" fill="url(#g)"/>
       <circle cx="12" cy="12" r="10.2" stroke="currentColor" stroke-opacity=".35"/>
@@ -405,7 +408,7 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
       </linearGradient></defs>
     </svg>
     <b>Radiant Sheet</b>
-  </div>
+  </button>
 
   <select class="charpick" id="charpick" aria-label="Active character"></select>
   <button class="pill icon" data-action="new-char" title="New character">＋</button>
@@ -417,8 +420,10 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
   <button class="pill" data-action="long-rest">Long rest</button>
   <button class="pill" data-action="import" title="Load a character file">Import</button>
   <button class="pill" data-action="export" title="Save a character file">Export</button>
-  <button class="pill" data-action="go-social" title="Parties and friends">Parties</button>
-  <button class="pill" data-action="go-home" title="Character &amp; campaign vault">Home</button>
+  <span class="pill" id="handlepill">Guest</span>
+  <button class="pill icon" data-action="go-social" aria-label="Notifications and invites" title="Notifications and invites" style="position:relative" id="notifbell">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+  </button>
   <button class="pill icon" data-action="rules" aria-label="Rules lookup" title="Rules lookup">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5v-17Z"/><path d="M4 19a2.5 2.5 0 0 1 2.5-2.5H20"/></svg>
   </button>
@@ -432,13 +437,15 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
 </header>
 
 <nav class="tabs" role="tablist">
-  <button class="tab" role="tab" data-tab="front" aria-selected="true">Combat &amp; stats</button>
+  <button class="tab" role="tab" data-tab="home" aria-selected="true">Home</button>
+  <button class="tab" role="tab" data-tab="front" aria-selected="false">Combat &amp; stats</button>
   <button class="tab" role="tab" data-tab="back" aria-selected="false">Narrative &amp; gear</button>
   <button class="tab" role="tab" data-tab="social" aria-selected="false">Campaign party</button>
 </nav>
 
 <main>
-  <section id="view-front"></section>
+  <section id="view-home"></section>
+  <section id="view-front" hidden></section>
   <section id="view-back" hidden></section>
   <section id="view-social" hidden></section>
 </main>
@@ -702,7 +709,7 @@ function derive(c){
 /* ---------- app state & persistence ---------- */
 const STORE_KEY = 'radiant-sheet-v1';
 const state = {
-  characters:[], activeId:null, tab:'front', view:'auth', session:null,
+  characters:[], activeId:null, tab:'home', view:'auth', session:null,
   settings:{theme:'light', scale:'m', plotDie:true, diceMode:'disabled', firebase:{apiKey:'',authDomain:'',projectId:'',databaseURL:''}},
   profile:{username:''},
   localParties:[],
@@ -1240,7 +1247,9 @@ function renderCharPicker(){
 
 function render(){
   renderCharPicker();
-  if (state.tab === 'front') renderFront();
+  updateAccountChrome();
+  if (state.tab === 'home') renderHomeTab();
+  else if (state.tab === 'front') renderFront();
   else if (state.tab === 'back') renderBack();
   else renderSocial();
   syncDerived();
@@ -1250,8 +1259,9 @@ function render(){
 function switchTab(tab){
   state.tab = tab;
   $$('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === tab)));
-  ['front','back','social'].forEach(t => $('#view-' + t).hidden = (t !== tab));
+  ['home','front','back','social'].forEach(t => $('#view-' + t).hidden = (t !== tab));
   render();
+  save();
 }
 
 /* ============================================================
@@ -1611,7 +1621,7 @@ document.addEventListener('click', e => {
 });
 
 document.addEventListener('keydown', e => {
-  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-pips] i, [data-ticks] i, [data-idealticks] i, [data-test]')){
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-pips] i, [data-ticks] i, [data-idealticks] i, [data-test], .vaultcard[role="button"]')){
     e.preventDefault();
     e.target.click();
   }
@@ -1630,26 +1640,26 @@ function handleAction(action, node, c){
       break;
     }
     case 'settings': openSettings(); break;
-    case 'go-social': if (state.view !== 'sheet') switchView('sheet'); switchTab('social'); break;
-    case 'go-home': switchView('home'); break;
+    case 'go-social': switchTab('social'); break;
+    case 'go-home': switchTab('home'); break;
     case 'rules': openRules(); break;
     case 'close-rules': closeRules(); break;
     case 'auth-signin': localSignIn(val('auth-username'), val('auth-password')); break;
     case 'auth-register': localRegister(val('auth-username'), val('auth-password')); break;
     case 'auth-guest': continueAsGuest(); break;
     case 'sign-out-session': signOutSession(); break;
-    case 'open-char': state.activeId = node.dataset.cid; switchView('sheet'); switchTab('front'); break;
+    case 'open-char': state.activeId = node.dataset.cid; switchTab('front'); break;
     case 'new-char-home': {
       const nc = newCharacter('New character');
       state.characters.push(nc);
       state.activeId = nc.id;
-      switchView('sheet'); switchTab('front');
+      switchTab('front');
       break;
     }
     case 'delete-char-home': deleteCharacterById(node.dataset.cid); break;
     case 'open-campaign': {
       state.activePartyId = node.dataset.pid;
-      switchView('sheet'); switchTab('social');
+      switchTab('social');
       break;
     }
     case 'create-campaign-home': createCampaignHome(val('homecampaignname')); break;
@@ -1825,6 +1835,12 @@ function openSettings(){
     <h2>Settings</h2><hr class="rule">
 
     <section>
+      <div class="switchrow"><span>Account<span class="hint" style="display:block">Signed in as ${esc(accountHandle())}</span></span>
+        <button class="btn danger" data-action="sign-out-session">Sign out</button>
+      </div>
+    </section>
+
+    <section>
       <div class="switchrow"><span>Theme</span>
         <span class="seg">
           <button data-set="theme" data-val="light" aria-pressed="${s.theme === 'light'}">Light</button>
@@ -1915,7 +1931,7 @@ function applySettings(){
   document.documentElement.dataset.dice = state.settings.diceMode;
   const tray = $('#tray');
   if (tray) tray.hidden = state.settings.diceMode === 'disabled';
-  if (state.view === 'sheet') render();
+  if (state.view === 'main') render();
 }
 
 function saveFirebaseConfig(){
@@ -1956,6 +1972,7 @@ const cloud = {
         this.user = user;
         if (user) this.listen(); else this.stopListening();
         renderSocial();
+        updateAccountChrome();
         setSavePill('saved');
       });
       return true;
@@ -2010,10 +2027,12 @@ const cloud = {
       this.loadFriendProfiles();
       this.watchParties();
       renderSocial();
+      updateAccountChrome();
     }));
     this.unsubs.push(this.fb.onSnapshot(this.fb.collection(this.db, 'users', uidv, 'requests'), snap => {
       this.requests = snap.docs.map(d => ({id:d.id, ...d.data()}));
       renderSocial();
+      updateAccountChrome();
     }));
   },
 
@@ -2106,12 +2125,34 @@ const cloud = {
 function switchView(view){
   state.view = view;
   $('#app-auth').hidden = view !== 'auth';
-  $('#app-home').hidden = view !== 'home';
-  $('#app-sheet').hidden = view !== 'sheet';
+  $('#app-main').hidden = view !== 'main';
   if (view === 'auth') renderAuth();
-  else if (view === 'home') renderHome();
-  else render();
+  else switchTab(state.tab && state.tab !== 'auth' ? state.tab : 'home');
   save();
+}
+
+function accountHandle(){
+  const cloudOn = cloud.on && cloud.user;
+  if (cloudOn) return cloud.me.username ? '@' + cloud.me.username : 'Signed in';
+  if (state.session && state.session.mode === 'local') return '@' + state.session.username;
+  return 'Guest';
+}
+
+function updateAccountChrome(){
+  const pill = $('#handlepill');
+  if (pill) pill.textContent = accountHandle();
+  const bell = $('#notifbell');
+  if (bell){
+    const inviteCount = (cloud.on && cloud.user) ? (cloud.requests || []).length : 0;
+    const existing = bell.querySelector('.badgecount');
+    if (existing) existing.remove();
+    if (inviteCount){
+      const b = document.createElement('span');
+      b.className = 'badgecount';
+      b.textContent = String(inviteCount);
+      bell.appendChild(b);
+    }
+  }
 }
 
 /* ---------- local (offline) accounts ---------- */
@@ -2129,7 +2170,8 @@ function localRegister(username, password){
   saveAccounts(accounts);
   state.session = {mode:'local', username};
   state.profile.username = username;
-  switchView('home');
+  state.tab = 'home';
+  switchView('main');
   toast(`Welcome, @${username}.`);
 }
 function localSignIn(username, password){
@@ -2139,16 +2181,19 @@ function localSignIn(username, password){
   if (!acc || acc.password !== password) return toast('Username or password did not match on this device.');
   state.session = {mode:'local', username:acc.username};
   state.profile.username = acc.username;
-  switchView('home');
+  state.tab = 'home';
+  switchView('main');
   toast(`Welcome back, @${acc.username}.`);
 }
 function continueAsGuest(){
   state.session = {mode:'guest'};
-  switchView('home');
+  state.tab = 'home';
+  switchView('main');
 }
 function signOutSession(){
   if (cloud.on && cloud.user) cloud.signOut();
   state.session = null;
+  closeModal();
   switchView('auth');
 }
 
@@ -2189,7 +2234,7 @@ function deleteCharacterById(id){
   if (!c || !confirm(`Delete ${c.name}?`)) return;
   state.characters = state.characters.filter(x => x.id !== id);
   if (state.activeId === id) state.activeId = state.characters[0].id;
-  renderHome(); save();
+  renderHomeTab(); save();
 }
 
 function createCampaignHome(name){
@@ -2198,7 +2243,7 @@ function createCampaignHome(name){
   const p = {id:uid(), name, code:genCode(), gmName:state.profile.username || 'You', sessionDate:'', charIds:[]};
   state.localParties.push(p);
   state.activePartyId = p.id;
-  renderHome(); save();
+  renderHomeTab(); save();
   toast(`Campaign created. Join code: ${p.code}`);
 }
 
@@ -2218,29 +2263,25 @@ async function joinCampaignHome(code){
       await cloud.fb.setDoc(cloud.doc('users', cloud.user.uid), {parties:cloud.fb.arrayUnion(partyDoc.id)}, {merge:true});
       state.activePartyId = partyDoc.id;
       toast('Joined the campaign.');
-      renderHome();
+      renderHomeTab();
     } catch(err){ toast('Could not join: ' + err.message); }
     return;
   }
   const p = state.localParties.find(x => x.code === code);
   if (!p) return toast('No campaign with that code exists on this device.');
   state.activePartyId = p.id;
-  renderHome();
+  renderHomeTab();
   toast(`Joined ${p.name}.`);
 }
 
-function renderHome(){
-  const el = $('#app-home');
+function renderHomeTab(){
+  const el = $('#view-home');
   if (!el) return;
   const cloudOn = cloud.on && cloud.user;
-  const handle = cloudOn ? (cloud.me.username ? '@' + cloud.me.username : 'Signed in')
-    : state.session && state.session.mode === 'local' ? '@' + state.session.username
-    : 'Guest';
-  const inviteCount = cloudOn ? (cloud.requests || []).length : 0;
 
   const charCards = state.characters.map(c => {
     const d = derive(c);
-    return `<div class="vaultcard">
+    return `<div class="vaultcard" data-action="open-char" data-cid="${c.id}" role="button" tabindex="0" aria-label="Open ${esc(c.name || 'Unnamed')}">
       <h4>${esc(c.name || 'Unnamed')}</h4>
       <div class="sub">${esc(c.ancestry || 'Ancestry —')} · ${esc(c.paths || 'Path —')}</div>
       <div class="sub">Level ${c.level} · Tier ${d.tier}</div>
@@ -2256,7 +2297,7 @@ function renderHome(){
   const campaignCards = parties.map(p => {
     const size = cloudOn ? Object.keys(p.members || {}).length : p.charIds.length;
     const gmName = cloudOn ? ((Object.values(p.members || {}).find(m => m.role === 'GM') || {}).username || '—') : (p.gmName || 'You');
-    return `<div class="vaultcard">
+    return `<div class="vaultcard" data-action="open-campaign" data-pid="${p.id}" role="button" tabindex="0" aria-label="Open ${esc(p.name)}">
       <h4>${esc(p.name)}</h4>
       <div class="sub">GM: ${esc(gmName)}</div>
       <div class="sub">${size} at the table</div>
@@ -2267,30 +2308,6 @@ function renderHome(){
   }).join('');
 
   el.innerHTML = `
-  <header class="topbar">
-    <div class="brand">
-      <svg class="glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M12 1.5 15 9l7.5 3-7.5 3-3 7.5-3-7.5L1.5 12 9 9z" fill="url(#gh)"/>
-        <circle cx="12" cy="12" r="10.2" stroke="currentColor" stroke-opacity=".35"/>
-        <defs><linearGradient id="gh" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#C88A8A"/><stop offset="1" stop-color="#D4A373"/></linearGradient></defs>
-      </svg>
-      <b>Radiant Sheet</b>
-    </div>
-    <span class="spacer"></span>
-    <span class="pill">${esc(handle)}</span>
-    <button class="pill icon" data-action="go-social" title="Notifications &amp; invites" style="position:relative">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-      ${inviteCount ? `<span class="badgecount">${inviteCount}</span>` : ''}
-    </button>
-    <button class="pill icon" data-action="rules" aria-label="Rules lookup" title="Rules lookup">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5v-17Z"/><path d="M4 19a2.5 2.5 0 0 1 2.5-2.5H20"/></svg>
-    </button>
-    <button class="pill icon" data-action="settings" aria-label="Settings" title="Settings">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.9 19.3a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.7 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.7 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.7a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.7a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.3 9v.09A1.7 1.7 0 0 0 20.91 10H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15z"/></svg>
-    </button>
-    <button class="pill" data-action="sign-out-session">Sign out</button>
-  </header>
-  <main>
     <div class="card">
       <h3>My Characters <span class="hint">Your vault</span></h3><hr class="rule">
       <div class="vault-grid">
@@ -2312,8 +2329,7 @@ function renderHome(){
           <button class="btn" data-action="join-campaign-home">Join via code</button>
         </div>
       </div>
-    </div>
-  </main>`;
+    </div>`;
 }
 
 /* ============================================================
@@ -2642,7 +2658,7 @@ document.addEventListener('change', e => {
   const localDate = e.target.closest('#localsessiondate');
   if (localDate){
     const p = state.localParties.find(x => x.id === localDate.dataset.pid);
-    if (p){ p.sessionDate = localDate.value; save(); renderHome(); }
+    if (p){ p.sessionDate = localDate.value; save(); renderHomeTab(); }
     return;
   }
   const cloudDate = e.target.closest('#partysessiondate');
@@ -2730,7 +2746,7 @@ async function createParty(name){
     });
     await cloud.fb.setDoc(cloud.doc('users', cloud.user.uid), {parties:cloud.fb.arrayUnion(ref.id)}, {merge:true});
     state.activePartyId = ref.id;
-    renderHome(); renderSocial();
+    renderHomeTab(); renderSocial();
     toast('Campaign created. You are the game master.');
   } catch(err){ toast('Could not create the party: ' + err.message); }
 }
@@ -2804,8 +2820,7 @@ async function partyPatch(node, mutate){
    ============================================================ */
 load();
 applySettings();
-switchTab(state.tab || 'front');
-switchView(state.session ? (state.view === 'sheet' ? 'sheet' : 'home') : 'auth');
+switchView(state.session ? 'main' : 'auth');
 if (state.settings.firebase.apiKey && state.settings.firebase.projectId) cloud.connect();
 setSavePill('saved');
 </script>
