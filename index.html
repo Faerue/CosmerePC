@@ -4037,7 +4037,7 @@ function applySettings(){
    ============================================================ */
 const cloud = {
   on:false, ready:false, app:null, auth:null, db:null, user:null,
-  me:{username:'', friends:[], parties:[]}, requests:[], friendProfiles:[], parties:[],
+  me:{username:'', friends:[], parties:[]}, requests:[], invites:[], friendProfiles:[], parties:[],
   unsubs:[], lastPatchAt:0, pushTimer:null,
   lastPushedAt:{}, knownRemoteIds:new Set(), charPushTimer:null, attempted:false, pendingDeletes:new Set(),
   appliedGiftIds:new Set(), gmNoteTimers:{},
@@ -4134,6 +4134,11 @@ const cloud = {
       renderSocial();
       updateAccountChrome();
     }, err => toast(`Friend request sync error: ${err.message}`)));
+    this.unsubs.push(this.fb.onSnapshot(this.fb.collection(this.db, 'users', uidv, 'partyInvites'), snap => {
+      this.invites = snap.docs.map(d => ({id:d.id, ...d.data()}));
+      renderSocial();
+      updateAccountChrome();
+    }, err => toast(`Campaign invite sync error: ${err.message}`)));
     this.listenCharacters();
     this.syncCharactersUp();
   },
@@ -4381,7 +4386,7 @@ function updateAccountChrome(){
   if (btn) btn.title = accountHandle();
   const bell = $('#notifbell');
   if (bell){
-    const inviteCount = (cloud.on && cloud.user) ? (cloud.requests || []).length : 0;
+    const inviteCount = (cloud.on && cloud.user) ? (cloud.requests || []).length + (cloud.invites || []).length : 0;
     const existing = bell.querySelector('.badgecount');
     if (existing) existing.remove();
     if (inviteCount){
@@ -5026,6 +5031,12 @@ function onlineSocialHTML(){
 
     <div class="card">
       <h3>Parties</h3><hr class="rule">
+      ${cloud.invites.length ? `<div class="rows" style="margin-bottom:.7rem">${cloud.invites.map(i => `<div class="listitem">
+          <span>${esc(i.partyName || 'A campaign')} <span class="hint">from @${esc(i.invitedByName || '?')}</span></span>
+          <span style="display:flex;gap:.3rem">
+            <button class="iconbtn" data-action="accept-party-invite" data-pid="${i.id}">Accept</button>
+            <button class="iconbtn" data-action="decline-party-invite" data-pid="${i.id}">Decline</button>
+          </span></div>`).join('')}</div>` : ''}
       <div class="rows">
         ${parties.map(p => `<div class="listitem">
           <button class="btn ghost" data-action="select-party" data-pid="${p.id}" style="${p.id === pid ? 'border-color:var(--accent);color:var(--accent)' : ''}">${esc(p.name)}</button>
@@ -5162,6 +5173,10 @@ function handleSocialAction(action, node, c){
     case 'send-request': sendFriendRequest(val('friendinput')); break;
     case 'accept-request': acceptRequest(node.dataset.uid); break;
     case 'decline-request': declineRequest(node.dataset.uid); break;
+
+    /* campaign invites */
+    case 'accept-party-invite': acceptPartyInvite(pid); break;
+    case 'decline-party-invite': declinePartyInvite(pid); break;
 
     /* parties */
     case 'create-party': createParty(val('partyname')); break;
@@ -5361,13 +5376,35 @@ async function partyAdd(pid, handle){
   try {
     const target = await lookupUser(handle);
     if (!target) return toast('No one is using that handle.');
-    await cloud.fb.updateDoc(cloud.doc('parties', pid), {
-      memberUids:cloud.fb.arrayUnion(target.uid),
-      [`members.${target.uid}`]:{username:target.username, role:'Player', charId:'', char:null, updatedAt:Date.now()}
+    const party = cloud.parties.find(p => p.id === pid);
+    if (party && party.members && party.members[target.uid]) return toast(`@${target.username} is already in this party.`);
+    /* A GM can't write into another player's users/{uid} doc (owner-only,
+       same as everything else there), so this can't add them to the party
+       directly — the invited player's own client has to be the one that
+       joins. Drop a notice they'll see next time they open the app. */
+    await cloud.fb.setDoc(cloud.doc('users', target.uid, 'partyInvites', pid), {
+      partyName:party ? party.name : '', invitedBy:cloud.user.uid, invitedByName:cloud.me.username, createdAt:Date.now()
     });
-    await cloud.fb.setDoc(cloud.doc('users', target.uid), {parties:cloud.fb.arrayUnion(pid)}, {merge:true});
-    toast(`@${target.username} added.`);
-  } catch(err){ toast('Could not add them: ' + err.message); }
+    toast(`Invite sent to @${target.username}.`);
+  } catch(err){ toast('Could not invite them: ' + err.message); }
+}
+
+async function acceptPartyInvite(pid){
+  try {
+    await cloud.fb.updateDoc(cloud.doc('parties', pid), {
+      memberUids:cloud.fb.arrayUnion(cloud.user.uid),
+      [`members.${cloud.user.uid}`]:{username:cloud.me.username, role:'Player', charId:'', char:null, updatedAt:Date.now()}
+    });
+    await cloud.fb.setDoc(cloud.doc('users', cloud.user.uid), {parties:cloud.fb.arrayUnion(pid)}, {merge:true});
+    await cloud.fb.deleteDoc(cloud.doc('users', cloud.user.uid, 'partyInvites', pid));
+    state.activePartyId = pid;
+    toast('Joined the campaign.');
+  } catch(err){ toast('Could not join: ' + err.message); }
+}
+
+async function declinePartyInvite(pid){
+  try { await cloud.fb.deleteDoc(cloud.doc('users', cloud.user.uid, 'partyInvites', pid)); }
+  catch(err){ toast('Could not decline: ' + err.message); }
 }
 
 async function assignCharacter(pid, charId){
