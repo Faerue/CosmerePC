@@ -7,6 +7,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%20%22Radiant%20Sheet%22%2C%20%22short_name%22%3A%20%22Radiant%20Sheet%22%2C%20%22description%22%3A%20%22Character%20sheets%20and%20campaign%20tables%20for%20the%20Cosmere%20Roleplaying%20Game.%22%2C%20%22start_url%22%3A%20%22.%22%2C%20%22display%22%3A%20%22standalone%22%2C%20%22background_color%22%3A%20%22%23FAF8F5%22%2C%20%22theme_color%22%3A%20%22%23C88A8A%22%2C%20%22icons%22%3A%20%5B%7B%22src%22%3A%20%22data%3Aimage/svg%2Bxml%2C%253Csvg%2520xmlns%253D%2522http%253A//www.w3.org/2000/svg%2522%2520viewBox%253D%25220%25200%2520100%2520100%2522%253E%253Crect%2520width%253D%2522100%2522%2520height%253D%2522100%2522%2520rx%253D%252220%2522%2520fill%253D%2522%2523FAF8F5%2522/%253E%253Cpath%2520d%253D%2522M50%252015%252058%252038%252081%252046%252058%252054%252050%252077%252042%252054%252019%252046%252042%252038Z%2522%2520fill%253D%2522url%2528%2523g%2529%2522/%253E%253Cdefs%253E%253ClinearGradient%2520id%253D%2522g%2522%2520x1%253D%25220%2522%2520y1%253D%25220%2522%2520x2%253D%2522100%2522%2520y2%253D%2522100%2522%253E%253Cstop%2520stop-color%253D%2522%2523C88A8A%2522/%253E%253Cstop%2520offset%253D%25221%2522%2520stop-color%253D%2522%2523D4A373%2522/%253E%253C/linearGradient%253E%253C/defs%253E%253C/svg%253E%22%2C%20%22sizes%22%3A%20%22any%22%2C%20%22type%22%3A%20%22image/svg%2Bxml%22%2C%20%22purpose%22%3A%20%22any%22%7D%5D%7D">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20rx%3D%2220%22%20fill%3D%22%23FAF8F5%22/%3E%3Cpath%20d%3D%22M50%2015%2058%2038%2081%2046%2058%2054%2050%2077%2042%2054%2019%2046%2042%2038Z%22%20fill%3D%22url%28%23g%29%22/%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%22100%22%20y2%3D%22100%22%3E%3Cstop%20stop-color%3D%22%23C88A8A%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23D4A373%22/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20rx%3D%2220%22%20fill%3D%22%23FAF8F5%22/%3E%3Cpath%20d%3D%22M50%2015%2058%2038%2081%2046%2058%2054%2050%2077%2042%2054%2019%2046%2042%2038Z%22%20fill%3D%22url%28%23g%29%22/%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%22100%22%20y2%3D%22100%22%3E%3Cstop%20stop-color%3D%22%23C88A8A%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23D4A373%22/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E">
+<meta name="theme-color" content="#C88A8A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Radiant Sheet">
 <style>
 :root{
   --bg:#FAF8F5;
@@ -356,8 +363,14 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
   position:fixed;left:50%;transform:translateX(-50%);bottom:1.2rem;z-index:70;
   background:var(--ink);color:var(--bg);padding:.5rem 1rem;border-radius:999px;font-size:.85rem;
   opacity:0;pointer-events:none;transition:opacity .25s;
+  display:flex;align-items:center;gap:.7rem;max-width:min(90vw,26rem);
 }
-.toast.show{opacity:.95}
+.toast.show{opacity:.95;pointer-events:auto}
+#toastaction{
+  color:var(--accent-2);font-weight:700;font-size:.8rem;letter-spacing:.03em;text-transform:uppercase;
+  flex:0 0 auto;
+}
+#toastaction:hover{text-decoration:underline}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
 /* radiant ideals */
@@ -390,11 +403,19 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
 /* home dashboard */
 .vault-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.8rem}
 .vaultcard{
-  border:1px solid var(--border-soft);border-radius:14px;background:var(--card-solid);
+  position:relative;border:1px solid var(--border-soft);border-radius:14px;background:var(--card-solid);
   padding:.85rem .95rem;text-align:left;transition:border-color .15s,transform .15s;cursor:pointer;
 }
 .vaultcard:hover{border-color:var(--accent)}
 .vaultcard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pinbtn{
+  position:absolute;top:.6rem;right:.6rem;font-size:1rem;line-height:1;color:var(--border);
+  padding:.15rem;z-index:1;
+}
+.pinbtn:hover{color:var(--accent-2)}
+.pinbtn.on{color:var(--accent-2)}
+.joincode{cursor:pointer;border-bottom:1px dashed var(--ink-faint)}
+.joincode:hover{color:var(--accent);border-color:var(--accent)}
 .vaultcard button{cursor:pointer}
 .vaultcard h4{font-size:1.2rem;margin-bottom:.15rem}
 .vaultcard .sub{font-size:.78rem;color:var(--ink-faint)}
@@ -418,6 +439,25 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
 .authcard details summary::-webkit-details-marker{display:none}
 .authcard details summary:hover{text-decoration:underline}
 .authcard details[open] summary{margin-bottom:.2rem}
+.pwwrap{position:relative}
+.pwwrap input{padding-right:2.5rem}
+.pwtoggle{position:absolute;right:.3rem;top:50%;transform:translateY(-50%);color:var(--ink-faint);padding:.4rem;border-radius:8px}
+.pwtoggle:hover{color:var(--accent)}
+.pwtoggle.on{color:var(--accent)}
+
+@media print{
+  html,body{background:#fff!important}
+  header.topbar, nav.tabs, aside.tray, .drawer, .drawer-overlay, .overlay,
+  #view-home, #view-social, #toast{display:none!important}
+  #view-front, #view-back{display:block!important}
+  main{max-width:100%!important;padding:0!important;margin:0!important}
+  .card{box-shadow:none!important;border:1px solid #ccc!important;break-inside:avoid;background:#fff!important;backdrop-filter:none!important}
+  .realms{display:block!important}
+  .realm{break-inside:avoid;margin-bottom:.5rem}
+  button{display:none!important}
+  input,select,textarea{border:1px solid #ccc!important;background:#fff!important;color:#000!important}
+  .back-grid{display:block!important}
+}
 </style>
 </head>
 <body>
@@ -451,7 +491,7 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
   <button class="pill icon" data-action="rules" aria-label="Rules lookup" title="Rules lookup">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5v-17Z"/><path d="M4 19a2.5 2.5 0 0 1 2.5-2.5H20"/></svg>
   </button>
-  <span class="pill saved" id="savepill"><span class="dot"></span><span id="savetext">Saved</span></span>
+  <span class="pill saved" id="savepill" title="Save status"><span class="dot"></span><span id="savetext">Saved</span><span id="synctime" class="hint" style="margin-left:.15rem"></span></span>
   <button class="pill icon" data-action="settings" aria-label="Settings" title="Settings">
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
       <circle cx="12" cy="12" r="3.2"/>
@@ -512,7 +552,7 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
 <div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
 <input type="file" id="filein" accept="application/json,.json" hidden>
 <input type="file" id="avatarfile" accept="image/*" hidden>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast"><span id="toasttext"></span><button id="toastaction" hidden></button></div>
 <script>
 /* ============================================================
    Radiant Sheet — Cosmere RPG character & party manager
@@ -690,6 +730,7 @@ function newCharacter(name){
     spheres:{chips:0, marks:0, broams:0, notes:''}, purpose:'', obstacle:'',
     goals:[{text:'', ticks:[false,false,false]}],
     appearance:'', equipment:'', connections:'', notes:'',
+    pinned:false,
     updatedAt: Date.now()
   };
 }
@@ -758,7 +799,7 @@ const state = {
 const genCode = () => String(Math.floor(100000 + Math.random() * 900000));
 
 function activeChar(){
-  return state.characters.find(c => c.id === state.activeId) || state.characters[0];
+  return state.characters.find(c => c.id === state.activeId) || state.characters[0] || null;
 }
 
 function load(){
@@ -769,12 +810,8 @@ function load(){
       Object.assign(state, parsed, {settings:{...state.settings, ...(parsed.settings||{})}, rolls: parsed.rolls || []});
     }
   } catch(err){ console.warn('Could not read saved data', err); }
-  if (!state.characters.length){
-    const c = newCharacter('Unnamed Radiant');
-    state.characters = [c];
-    state.activeId = c.id;
-  }
-  if (!state.characters.some(c => c.id === state.activeId)) state.activeId = state.characters[0].id;
+  if (state.characters.length && !state.characters.some(c => c.id === state.activeId)) state.activeId = state.characters[0].id;
+  if (!state.characters.length) state.activeId = null;
   state.characters.forEach(migrate);
   (state.localParties || []).forEach(p => {
     if (!p.code) p.code = genCode();
@@ -820,7 +857,7 @@ function save(){
     persistLocal();
     cloud.pushCharacter();
     cloud.syncCharactersUp();
-  }, 420);
+  }, 250);
 }
 function setSavePill(mode){
   saveState = mode;
@@ -829,8 +866,22 @@ function setSavePill(mode){
   if (!pill) return;
   pill.classList.toggle('saved', mode === 'saved');
   pill.querySelector('.dot').classList.toggle('pending', mode !== 'saved');
-  text.textContent = mode === 'saved' ? (cloud.on ? 'Synced' : 'Saved') : mode === 'saving' ? 'Saving' : 'Not saved';
+  const cloudReady = cloud.on && cloud.user;
+  text.textContent = mode === 'saved' ? (cloudReady ? 'Synced' : (cloud.on ? 'Saved' : 'Saved offline')) : mode === 'saving' ? 'Saving' : 'Not saved';
+  if (mode === 'saved' && cloudReady) markSynced();
+  updateSyncIndicator();
 }
+
+let lastSyncAt = null;
+function markSynced(){ lastSyncAt = Date.now(); }
+function updateSyncIndicator(){
+  const el = document.getElementById('synctime');
+  if (!el) return;
+  if (!(cloud.on && cloud.user) || !lastSyncAt || saveState !== 'saved'){ el.textContent = ''; return; }
+  const secs = Math.round((Date.now() - lastSyncAt) / 1000);
+  el.textContent = '· ' + (secs < 3 ? 'just now' : secs < 60 ? `${secs}s ago` : `${Math.round(secs / 60)}m ago`);
+}
+setInterval(updateSyncIndicator, 5000);
 
 /* ---------- tiny helpers ---------- */
 const $ = sel => document.querySelector(sel);
@@ -841,12 +892,25 @@ const sgn = n => (n >= 0 ? '+' : '') + n;
 const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
 
 let toastTimer;
-function toast(msg){
+function toast(msg, duration){
   const t = $('#toast');
-  t.textContent = msg;
+  $('#toasttext').textContent = msg;
+  $('#toastaction').hidden = true;
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+  toastTimer = setTimeout(() => t.classList.remove('show'), duration || 2600);
+}
+
+function showUndoToast(msg, onUndo, duration){
+  const t = $('#toast');
+  const btn = $('#toastaction');
+  $('#toasttext').textContent = msg;
+  btn.textContent = 'Undo';
+  btn.hidden = false;
+  btn.onclick = () => { t.classList.remove('show'); clearTimeout(toastTimer); onUndo(); };
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.classList.remove('show'); btn.hidden = true; }, duration || 6000);
 }
 
 function getPath(obj, path){
@@ -1078,7 +1142,9 @@ function conditionsHTML(c){
 }
 
 function renderFront(){
-  const c = activeChar(), d = derive(c);
+  const c = activeChar();
+  if (!c){ $('#view-front').innerHTML = `<div class="card"><p class="empty">No character selected. <button class="btn" data-action="go-home">Go to your vault</button></p></div>`; return; }
+  const d = derive(c);
   const armorOpts = ARMORS.map(a => `<option value="${a.name}" ${c.armor === a.name ? 'selected' : ''}>${a.name} (deflect ${a.deflect})</option>`).join('');
 
   $('#view-front').innerHTML = `
@@ -1188,7 +1254,9 @@ function fabrialsHTML(c){
 }
 
 function renderBack(){
-  const c = activeChar(), d = derive(c);
+  const c = activeChar();
+  if (!c){ $('#view-back').innerHTML = `<div class="card"><p class="empty">No character selected. <button class="btn" data-action="go-home">Go to your vault</button></p></div>`; return; }
+  const d = derive(c);
   const goals = c.goals.map((g, i) => `<div class="goal" data-gidx="${i}">
       <input type="text" value="${esc(g.text)}" data-path="goals.${i}.text" placeholder="A goal your character is working toward">
       <span style="display:flex;align-items:center;gap:.4rem">
@@ -1265,7 +1333,10 @@ function renderBack(){
    LIVE VALUE SYNC — updates computed nodes without rebuilding
    ============================================================ */
 function syncDerived(){
-  const c = activeChar(), d = derive(c);
+  const c = activeChar();
+  const badge = $('#tierbadge');
+  if (!c){ if (badge) badge.textContent = 'No character'; return; }
+  const d = derive(c);
   const set = (key, val) => $$(`[data-derived="${key}"]`).forEach(n => { if (n.textContent !== String(val)) n.textContent = val; });
 
   ['physicalDefense','cognitiveDefense','spiritualDefense','lifting','movement','recovery','senses','deflect'].forEach(k => set(k, d[k]));
@@ -1279,7 +1350,6 @@ function syncDerived(){
     if (bar) bar.style.width = (max > 0 ? clamp(c[k].current / max * 100, 0, 100) : 0) + '%';
   });
 
-  const badge = $('#tierbadge');
   if (badge) badge.textContent = `Level ${c.level} · Tier ${d.tier}`;
   const slots = $('[data-derived="expSlots"]');
   if (slots && slots.parentElement) slots.parentElement.style.color = c.expertises.length > d.expertiseSlots ? 'var(--warn)' : '';
@@ -1287,6 +1357,10 @@ function syncDerived(){
 
 function renderCharPicker(){
   const sel = $('#charpick');
+  if (!state.characters.length){
+    sel.innerHTML = `<option value="">No characters yet</option>`;
+    return;
+  }
   sel.innerHTML = state.characters.map(c =>
     `<option value="${c.id}" ${c.id === state.activeId ? 'selected' : ''}>${esc(c.name || 'Unnamed')}</option>`).join('');
 }
@@ -1294,6 +1368,7 @@ function renderCharPicker(){
 function render(){
   renderCharPicker();
   updateAccountChrome();
+  updateTabTitle();
   if (state.tab === 'home') renderHomeTab();
   else if (state.tab === 'front') renderFront();
   else if (state.tab === 'back') renderBack();
@@ -1302,7 +1377,18 @@ function render(){
   renderRolls();
 }
 
+function updateTabTitle(){
+  const c = activeChar();
+  document.title = (state.tab === 'front' || state.tab === 'back') && c
+    ? `${c.name || 'Unnamed'} — Radiant Sheet`
+    : 'Radiant Sheet';
+}
+
 function switchTab(tab){
+  if ((tab === 'front' || tab === 'back') && !state.characters.length){
+    toast('Create a character first.');
+    tab = 'home';
+  }
   state.tab = tab;
   $$('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === tab)));
   ['home','front','back','social'].forEach(t => $('#view-' + t).hidden = (t !== tab));
@@ -1418,7 +1504,9 @@ function rollWeapon(i){
 
 /* ---------- rests ---------- */
 function shortRest(){
-  const c = activeChar(), d = derive(c);
+  const c = activeChar();
+  if (!c){ toast('Create a character first.'); return; }
+  const d = derive(c);
   const die = parseInt(d.recovery.slice(1), 10);
   const roll = rollDie(die) + c.attributes.wil;
   c.health.current = clamp(c.health.current + roll, 0, d.maxHealth);
@@ -1431,7 +1519,9 @@ function shortRest(){
 }
 
 function longRest(){
-  const c = activeChar(), d = derive(c);
+  const c = activeChar();
+  if (!c){ toast('Create a character first.'); return; }
+  const d = derive(c);
   c.health.current = d.maxHealth;
   c.focus.current = d.maxFocus;
   if (c.radiant) c.investiture.current = d.maxInvestiture;
@@ -1529,7 +1619,7 @@ document.addEventListener('input', e => {
     const fixed = clamp(value, 0, max);
     if (fixed !== value){ setPath(c, path, fixed); t.value = fixed; }
   }
-  if (t.dataset.renames) renderCharPicker();
+  if (t.dataset.renames){ renderCharPicker(); updateTabTitle(); }
   if (path.startsWith('spheres.') && path !== 'spheres.notes'){
     const el = $('#sphereTotal');
     if (el) el.textContent = sphereTotalText(c);
@@ -1666,6 +1756,11 @@ document.addEventListener('click', e => {
   if (act) handleAction(act.dataset.action, act, c);
 });
 
+document.addEventListener('submit', e => {
+  const f = e.target.closest('form[data-submit-action]');
+  if (f){ e.preventDefault(); handleAction(f.dataset.submitAction, f, activeChar()); }
+});
+
 document.addEventListener('keydown', e => {
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-pips] i, [data-ticks] i, [data-idealticks] i, [data-test], .vaultcard[role="button"]')){
     e.preventDefault();
@@ -1688,7 +1783,7 @@ function handleAction(action, node, c){
     case 'settings': openSettings(); break;
     case 'open-profile': openProfile(); break;
     case 'pick-avatar': $('#avatarfile').click(); break;
-    case 'remove-avatar': state.profile.avatar = ''; save(); updateAccountChrome(); openProfile(); break;
+    case 'remove-avatar': state.profile.avatar = ''; save(); cloud.pushProfile(); updateAccountChrome(); openProfile(); break;
     case 'save-username-guest': if (localRegister(val('profile-username'), val('profile-password'))) closeModal(); break;
     case 'save-username-local': renameLocalUsername(val('profile-username')); break;
     case 'save-username-cloud': renameCloudUsername(val('profile-username')); break;
@@ -1701,6 +1796,16 @@ function handleAction(action, node, c){
     case 'auth-guest': continueAsGuest(); break;
     case 'cloud-signin': cloud.signIn(val('cloud-email'), val('cloud-password')); break;
     case 'cloud-signup': cloud.signUp(val('cloud-email'), val('cloud-password')); break;
+    case 'toggle-password': {
+      const input = document.getElementById(node.dataset.target);
+      if (input){
+        const showing = input.type === 'text';
+        input.type = showing ? 'password' : 'text';
+        node.classList.toggle('on', !showing);
+        node.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+      }
+      break;
+    }
     case 'sign-out-session': signOutSession(); break;
     case 'open-char': state.activeId = node.dataset.cid; switchTab('front'); break;
     case 'new-char-home': {
@@ -1711,6 +1816,30 @@ function handleAction(action, node, c){
       break;
     }
     case 'delete-char-home': deleteCharacterById(node.dataset.cid); break;
+    case 'duplicate-char-home': {
+      const src = state.characters.find(x => x.id === node.dataset.cid);
+      if (src){
+        const copy = JSON.parse(JSON.stringify(src));
+        copy.id = uid(); copy.name = src.name + ' (copy)'; copy.updatedAt = Date.now(); copy.pinned = false;
+        state.characters.push(copy);
+        renderHomeTab(); save();
+        toast(`Duplicated ${src.name}.`);
+      }
+      break;
+    }
+    case 'toggle-pin': {
+      const target = state.characters.find(x => x.id === node.dataset.cid);
+      if (target){ target.pinned = !target.pinned; target.updatedAt = Date.now(); renderHomeTab(); save(); }
+      break;
+    }
+    case 'copy-code': {
+      const code = node.dataset.code;
+      if (!code) break;
+      const done = () => toast('Join code copied.');
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done).catch(() => toast(code));
+      else toast(code);
+      break;
+    }
     case 'open-campaign': {
       state.activePartyId = node.dataset.pid;
       switchTab('social');
@@ -1720,7 +1849,10 @@ function handleAction(action, node, c){
     case 'join-campaign-home': joinCampaignHome(val('joincode')); break;
     case 'short-rest': shortRest(); break;
     case 'long-rest': longRest(); break;
-    case 'export': exportCharacter(c); break;
+    case 'export': openExportModal(c); break;
+    case 'export-json': exportCharacter(c); closeModal(); break;
+    case 'export-pdf': closeModal(); setTimeout(() => window.print(), 150); break;
+    case 'export-both': exportCharacter(c); closeModal(); setTimeout(() => window.print(), 150); break;
     case 'export-all': exportAll(); break;
     case 'import': $('#filein').click(); break;
     case 'add-weapon':
@@ -1748,14 +1880,14 @@ function handleAction(action, node, c){
     case 'clear-log': state.rolls = []; renderRolls(); save(); break;
     case 'plot-only': { if (state.settings.diceMode !== 'enabled') break; const p = plotDie(); logRoll({what:'Plot die', total:String(p.value), detail:p.label, plot:p}); break; }
     case 'clear-sheet': {
-      if (confirm('Clear every field on this character? This cannot be undone.')){
+      confirmDialog('Clear every field on this character? This cannot be undone.', () => {
         const keep = c.id;
         const fresh = newCharacter('Unnamed Radiant');
         fresh.id = keep;
         state.characters = state.characters.map(x => x.id === keep ? fresh : x);
-        closeModal(); render(); save();
+        render(); save();
         toast('Sheet cleared.');
-      }
+      }, {okLabel:'Clear sheet'});
       break;
     }
     case 'reset-level': {
@@ -1767,12 +1899,11 @@ function handleAction(action, node, c){
       break;
     }
     case 'delete-char': {
-      if (state.characters.length === 1){ toast('Keep at least one character.'); break; }
-      if (confirm(`Delete ${c.name}?`)){
-        state.characters = state.characters.filter(x => x.id !== c.id);
-        state.activeId = state.characters[0].id;
-        closeModal(); render(); save();
-      }
+      confirmDialog(`Delete ${esc(c.name)}?`, () => {
+        removeCharacter(c.id);
+        if (state.characters.length) render(); else switchTab('home');
+        save();
+      });
       break;
     }
     case 'duplicate-char': {
@@ -1783,6 +1914,8 @@ function handleAction(action, node, c){
       break;
     }
     case 'close-modal': closeModal(); break;
+    case 'confirm-ok': { const fn = pendingConfirm; pendingConfirm = null; closeModal(); if (fn) fn(); break; }
+    case 'confirm-cancel': pendingConfirm = null; closeModal(); break;
     default: handleSocialAction(action, node, c);
   }
 }
@@ -1803,6 +1936,26 @@ function download(filename, data){
 }
 const slug = s => (s || 'character').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 function exportCharacter(c){ download(`${slug(c.name)}.json`, JSON.stringify({type:'radiant-sheet-character', character:c}, null, 2)); toast('Character file downloaded.'); }
+
+function openExportModal(c){
+  if (!c) return;
+  openModal(`
+    <h2>Export ${esc(c.name || 'character')}</h2><hr class="rule">
+    <p class="hint" style="margin-bottom:1rem">Choose how to save this character sheet.</p>
+    <div style="display:flex;flex-direction:column;gap:.9rem">
+      <div>
+        <button class="btn" style="width:100%" data-action="export-json">Download JSON</button>
+        <p class="hint" style="margin-top:.3rem">For backing up or re-importing into Radiant Sheet later.</p>
+      </div>
+      <div>
+        <button class="btn" style="width:100%" data-action="export-pdf">Print / Save as PDF</button>
+        <p class="hint" style="margin-top:.3rem">Opens your browser's print dialog for a clean printable sheet.</p>
+      </div>
+      <button class="btn primary" style="width:100%" data-action="export-both">Both</button>
+    </div>
+    <div style="text-align:right;margin-top:1.2rem"><button class="btn ghost" data-action="close-modal">Cancel</button></div>
+  `);
+}
 function exportAll(){ download('radiant-sheet-all.json', JSON.stringify({type:'radiant-sheet-collection', characters:state.characters, profile:state.profile, localParties:state.localParties}, null, 2)); toast('All characters downloaded.'); }
 
 $('#filein').addEventListener('change', async e => {
@@ -1881,6 +2034,40 @@ function openModal(html){
 function closeModal(){ $('#overlay').classList.remove('open'); }
 $('#overlay').addEventListener('mousedown', e => { if (e.target.id === 'overlay') closeModal(); });
 
+/* ---------- styled confirm dialog (replaces native confirm()) ---------- */
+let pendingConfirm = null;
+function confirmDialog(message, onConfirm, opts){
+  opts = opts || {};
+  pendingConfirm = onConfirm;
+  openModal(`
+    <h2>${esc(opts.title || 'Are you sure?')}</h2><hr class="rule">
+    <p style="margin:.5rem 0 1.3rem">${message}</p>
+    <div style="display:flex;justify-content:flex-end;gap:.5rem">
+      <button class="btn" data-action="confirm-cancel">Cancel</button>
+      <button class="btn danger" data-action="confirm-ok">${esc(opts.okLabel || 'Delete')}</button>
+    </div>
+  `);
+}
+
+/* ---------- character removal with undo ---------- */
+let lastDeletedChar = null;
+function removeCharacter(id){
+  const idx = state.characters.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  const [removed] = state.characters.splice(idx, 1);
+  if (state.activeId === id) state.activeId = state.characters[0] ? state.characters[0].id : null;
+  lastDeletedChar = removed;
+  const label = removed.name || 'Character';
+  showUndoToast(`${label} deleted.`, () => {
+    if (lastDeletedChar !== removed) return;
+    state.characters.push(removed);
+    if (!state.activeId) state.activeId = removed.id;
+    lastDeletedChar = null;
+    render(); save();
+    toast('Restored.');
+  });
+}
+
 function openSettings(){
   const s = state.settings;
   openModal(`
@@ -1922,7 +2109,7 @@ function openSettings(){
       </div>` : ''}
     </section>
 
-    <section>
+    ${activeChar() ? `<section>
       <h4>This character</h4>
       <div style="display:flex;flex-wrap:wrap;gap:.4rem">
         <button class="btn" data-action="duplicate-char">Duplicate</button>
@@ -1930,12 +2117,12 @@ function openSettings(){
         <button class="btn danger" data-action="clear-sheet">Clear sheet</button>
         <button class="btn danger" data-action="delete-char">Delete character</button>
       </div>
-    </section>
+    </section>` : ''}
 
     <section>
       <h4>Backups</h4>
       <div style="display:flex;flex-wrap:wrap;gap:.4rem">
-        <button class="btn" data-action="export">Export this character</button>
+        ${activeChar() ? '<button class="btn" data-action="export">Export this character</button>' : ''}
         <button class="btn" data-action="export-all">Export all characters</button>
         <button class="btn" data-action="import">Import from file</button>
       </div>
@@ -2056,6 +2243,11 @@ const cloud = {
     const uidv = this.user.uid;
     this.unsubs.push(this.fb.onSnapshot(this.doc('users', uidv), snap => {
       this.me = Object.assign({username:'', friends:[], parties:[]}, snap.data() || {});
+      if (this.me.avatar !== undefined && this.me.avatar !== state.profile.avatar){
+        state.profile.avatar = this.me.avatar;
+        this.lastPushedAvatar = this.me.avatar;
+        persistLocal();
+      }
       this.loadFriendProfiles();
       this.watchParties();
       renderSocial();
@@ -2073,7 +2265,7 @@ const cloud = {
   stopListening(){
     this.unsubs.forEach(u => { try{ u(); }catch(e){} });
     this.unsubs = []; this.partyUnsubs = [];
-    this.lastPushedAt = {}; this.knownRemoteIds = new Set();
+    this.lastPushedAt = {}; this.knownRemoteIds = new Set(); this.lastPushedAvatar = undefined;
   },
 
   listenCharacters(){
@@ -2110,11 +2302,22 @@ const cloud = {
     }));
   },
 
+  pushProfile(){
+    if (!this.on || !this.user) return;
+    if (this.lastPushedAvatar === state.profile.avatar) return;
+    const uidv = this.user.uid;
+    const avatar = state.profile.avatar;
+    this.fb.setDoc(this.doc('users', uidv), {avatar}, {merge:true})
+      .then(() => { this.lastPushedAvatar = avatar; })
+      .catch(() => {});
+  },
+
   syncCharactersUp(){
     if (!this.on || !this.user) return;
     clearTimeout(this.charPushTimer);
     this.charPushTimer = setTimeout(async () => {
       const uidv = this.user.uid;
+      if (!uidv) return;
       for (const c of state.characters){
         const stamp = c.updatedAt || 0;
         if (this.lastPushedAt[c.id] === stamp) continue;
@@ -2131,7 +2334,7 @@ const cloud = {
           delete this.lastPushedAt[id];
         }
       }
-    }, 700);
+    }, 150);
   },
 
   async loadFriendProfiles(){
@@ -2200,6 +2403,7 @@ const cloud = {
     clearTimeout(this.pushTimer);
     this.pushTimer = setTimeout(async () => {
       const c = activeChar();
+      if (!c) return;
       for (const p of this.parties){
         const mine = p.members && p.members[this.user.uid];
         if (!mine || mine.charId !== c.id) continue;
@@ -2212,7 +2416,7 @@ const cloud = {
           });
         } catch(e){ /* offline is fine — local copy still holds */ }
       }
-    }, 900);
+    }, 250);
   }
 };
 
@@ -2351,6 +2555,7 @@ $('#avatarfile').addEventListener('change', async e => {
   try {
     state.profile.avatar = await readAvatarFile(file);
     save();
+    cloud.pushProfile();
     updateAccountChrome();
     openProfile();
     toast('Photo updated.');
@@ -2431,6 +2636,17 @@ function signOutSession(){
   switchView('auth');
 }
 
+function pwFieldHTML(id, label){
+  return `<div class="f"><label>${esc(label)}</label>
+    <div class="pwwrap">
+      <input type="password" id="${id}" placeholder="••••••••" autocomplete="current-password">
+      <button type="button" class="pwtoggle" data-action="toggle-password" data-target="${id}" aria-label="Show password" tabindex="-1">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+  </div>`;
+}
+
 function renderAuth(){
   const el = $('#app-auth');
   if (!el) return;
@@ -2448,12 +2664,14 @@ function renderAuth(){
       <p class="hint" style="text-align:center;margin-bottom:1.1rem">Character sheets and campaign tables for the Cosmere Roleplaying Game.</p>
 
       ${cloud.on ? `
-      <div class="f"><label>Email</label><input type="email" id="cloud-email" placeholder="you@example.com" autocomplete="username"></div>
-      <div class="f" style="margin-top:.55rem"><label>Password</label><input type="password" id="cloud-password" placeholder="••••••••" autocomplete="current-password"></div>
-      <div style="display:flex;gap:.5rem;margin-top:.9rem">
-        <button class="btn primary" data-action="cloud-signin" style="flex:1">Sign in</button>
-        <button class="btn primary" data-action="cloud-signup" style="flex:1">Create account</button>
-      </div>
+      <form data-submit-action="cloud-signin">
+        <div class="f"><label>Email</label><input type="email" id="cloud-email" placeholder="you@example.com" autocomplete="username"></div>
+        <div style="margin-top:.55rem">${pwFieldHTML('cloud-password', 'Password')}</div>
+        <div style="display:flex;gap:.5rem;margin-top:.9rem">
+          <button type="submit" class="btn primary" style="flex:1">Sign in</button>
+          <button type="button" class="btn primary" data-action="cloud-signup" style="flex:1">Create account</button>
+        </div>
+      </form>
       <p class="hint" style="text-align:center;margin-top:.6rem">Your characters and campaigns sync automatically across every device.</p>
 
       <details style="margin-top:1.2rem">
@@ -2461,23 +2679,27 @@ function renderAuth(){
         <p class="hint" style="margin:.6rem 0">Guest and local profiles stay on this device only and never sync anywhere — handy for a quick look, or for keeping a sheet fully offline.</p>
         <button class="btn ghost" data-action="auth-guest" style="width:100%">Continue as Guest</button>
         <hr class="rule" style="margin:1rem 0">
-        <div class="f"><label>Local username</label><input type="text" id="auth-username" placeholder="KaladinBridge4" autocomplete="username"></div>
-        <div class="f" style="margin-top:.55rem"><label>Local password</label><input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password"></div>
-        <div style="display:flex;gap:.5rem;margin-top:.9rem">
-          <button class="btn" data-action="auth-signin" style="flex:1">Sign in</button>
-          <button class="btn" data-action="auth-register" style="flex:1">Register</button>
-        </div>
+        <form data-submit-action="auth-signin">
+          <div class="f"><label>Local username</label><input type="text" id="auth-username" placeholder="KaladinBridge4" autocomplete="username"></div>
+          <div style="margin-top:.55rem">${pwFieldHTML('auth-password', 'Local password')}</div>
+          <div style="display:flex;gap:.5rem;margin-top:.9rem">
+            <button type="submit" class="btn" style="flex:1">Sign in</button>
+            <button type="button" class="btn" data-action="auth-register" style="flex:1">Register</button>
+          </div>
+        </form>
       </details>
       ` : `
       <p class="hint" style="margin-bottom:.7rem">${cloud.attempted ? 'Cloud sign-in is unavailable right now, so only device-only options work below.' : 'Connecting to cloud sign-in…'}</p>
       <button class="btn ghost" data-action="auth-guest" style="width:100%">Continue as Guest</button>
       <hr class="rule" style="margin:1.1rem 0">
-      <div class="f"><label>Local username</label><input type="text" id="auth-username" placeholder="KaladinBridge4" autocomplete="username"></div>
-      <div class="f" style="margin-top:.55rem"><label>Local password</label><input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password"></div>
-      <div style="display:flex;gap:.5rem;margin-top:.9rem">
-        <button class="btn" data-action="auth-signin" style="flex:1">Sign in</button>
-        <button class="btn" data-action="auth-register" style="flex:1">Register</button>
-      </div>
+      <form data-submit-action="auth-signin">
+        <div class="f"><label>Local username</label><input type="text" id="auth-username" placeholder="KaladinBridge4" autocomplete="username"></div>
+        <div style="margin-top:.55rem">${pwFieldHTML('auth-password', 'Local password')}</div>
+        <div style="display:flex;gap:.5rem;margin-top:.9rem">
+          <button type="submit" class="btn" style="flex:1">Sign in</button>
+          <button type="button" class="btn" data-action="auth-register" style="flex:1">Register</button>
+        </div>
+      </form>
       `}
     </div>
   </div>`;
@@ -2487,12 +2709,12 @@ function renderAuth(){
    HOME DASHBOARD — vault & campaign hub
    ============================================================ */
 function deleteCharacterById(id){
-  if (state.characters.length === 1){ toast('Keep at least one character.'); return; }
   const c = state.characters.find(x => x.id === id);
-  if (!c || !confirm(`Delete ${c.name}?`)) return;
-  state.characters = state.characters.filter(x => x.id !== id);
-  if (state.activeId === id) state.activeId = state.characters[0].id;
-  renderHomeTab(); save();
+  if (!c) return;
+  confirmDialog(`Delete ${esc(c.name)}?`, () => {
+    removeCharacter(id);
+    renderHomeTab(); save();
+  });
 }
 
 function createCampaignHome(name){
@@ -2532,20 +2754,48 @@ async function joinCampaignHome(code){
   toast(`Joined ${p.name}.`);
 }
 
+let vaultFilter = '', vaultSort = 'recent';
+
+function captureFocus(id){
+  const el = document.activeElement;
+  if (el && el.id === id) return {id, start:el.selectionStart, end:el.selectionEnd};
+  return null;
+}
+function restoreFocus(info){
+  if (!info) return;
+  const el = document.getElementById(info.id);
+  if (el){ el.focus(); if (typeof info.start === 'number') try { el.setSelectionRange(info.start, info.end); } catch(e){} }
+}
+
 function renderHomeTab(){
   const el = $('#view-home');
   if (!el) return;
+  const focusInfo = captureFocus('vaultsearch');
   const cloudOn = cloud.on && cloud.user;
 
-  const charCards = state.characters.map(c => {
+  const q = vaultFilter.trim().toLowerCase();
+  const chars = state.characters.filter(c => !q
+    || (c.name || '').toLowerCase().includes(q) || (c.ancestry || '').toLowerCase().includes(q)
+    || (c.paths || '').toLowerCase().includes(q) || (c.campaign || '').toLowerCase().includes(q));
+  const sorters = {
+    name: (a, b) => (a.name || '').localeCompare(b.name || ''),
+    level: (a, b) => (b.level || 0) - (a.level || 0),
+    recent: (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)
+  };
+  chars.sort(sorters[vaultSort] || sorters.recent);
+  chars.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+
+  const charCards = chars.map(c => {
     const d = derive(c);
     return `<div class="vaultcard" data-action="open-char" data-cid="${c.id}" role="button" tabindex="0" aria-label="Open ${esc(c.name || 'Unnamed')}">
-      <h4>${esc(c.name || 'Unnamed')}</h4>
+      <button class="pinbtn ${c.pinned ? 'on' : ''}" data-action="toggle-pin" data-cid="${c.id}" aria-label="${c.pinned ? 'Unpin' : 'Pin to top'}" title="${c.pinned ? 'Unpin' : 'Pin to top'}">★</button>
+      <h4 style="padding-right:1.3rem">${esc(c.name || 'Unnamed')}</h4>
       <div class="sub">${esc(c.ancestry || 'Ancestry —')} · ${esc(c.paths || 'Path —')}</div>
       <div class="sub">Level ${c.level} · Tier ${d.tier}</div>
       <div class="sub">${esc(c.campaign || 'No campaign set')}</div>
       <div style="display:flex;gap:.4rem;margin-top:.6rem">
         <button class="btn primary" data-action="open-char" data-cid="${c.id}" style="flex:1">Open</button>
+        <button class="iconbtn" data-action="duplicate-char-home" data-cid="${c.id}" aria-label="Duplicate ${esc(c.name)}" title="Duplicate">⧉</button>
         <button class="iconbtn" data-action="delete-char-home" data-cid="${c.id}" aria-label="Delete ${esc(c.name)}">✕</button>
       </div>
     </div>`;
@@ -2560,7 +2810,7 @@ function renderHomeTab(){
       <div class="sub">GM: ${esc(gmName)}</div>
       <div class="sub">${size} at the table</div>
       <div class="sub">Next session: ${esc(p.sessionDate || 'Not scheduled')}</div>
-      <div class="sub">Join code: <b>${esc(p.code || '——————')}</b></div>
+      <div class="sub">Join code: <span class="joincode" data-action="copy-code" data-code="${esc(p.code || '')}" title="Click to copy"><b>${esc(p.code || '——————')}</b></span></div>
       <button class="btn primary" style="margin-top:.6rem;width:100%" data-action="open-campaign" data-pid="${p.id}">Open</button>
     </div>`;
   }).join('');
@@ -2568,10 +2818,19 @@ function renderHomeTab(){
   el.innerHTML = `
     <div class="card">
       <h3>My Characters <span class="hint">Your vault</span></h3><hr class="rule">
+      ${state.characters.length > 3 ? `<div class="row" style="grid-template-columns:1fr auto;margin-bottom:.7rem">
+        <input type="text" id="vaultsearch" placeholder="Search your characters…" value="${esc(vaultFilter)}">
+        <select id="vaultsortsel">
+          <option value="recent" ${vaultSort === 'recent' ? 'selected' : ''}>Recently edited</option>
+          <option value="name" ${vaultSort === 'name' ? 'selected' : ''}>Name</option>
+          <option value="level" ${vaultSort === 'level' ? 'selected' : ''}>Level</option>
+        </select>
+      </div>` : ''}
       <div class="vault-grid">
-        ${charCards}
+        ${charCards || (q ? '<p class="empty">No characters match your search.</p>' : '')}
         <button class="vaultcard newcard" data-action="new-char-home"><span class="plus">＋</span><span>Create new character</span></button>
       </div>
+      ${!state.characters.length ? '<p class="hint" style="margin-top:.7rem">Your vault is empty — create your first character to get started.</p>' : ''}
     </div>
 
     <div class="card">
@@ -2588,6 +2847,7 @@ function renderHomeTab(){
         </div>
       </div>
     </div>`;
+  restoreFocus(focusInfo);
 }
 
 /* ============================================================
@@ -2912,9 +3172,14 @@ function handleSocialAction(action, node, c){
   }
 }
 
+document.addEventListener('input', e => {
+  if (e.target.id === 'vaultsearch'){ vaultFilter = e.target.value; renderHomeTab(); }
+});
 document.addEventListener('change', e => {
   const sel = e.target.closest('[data-change="assign-char"]');
   if (sel){ assignCharacter(sel.dataset.pid, sel.value); return; }
+
+  if (e.target.id === 'vaultsortsel'){ vaultSort = e.target.value; renderHomeTab(); return; }
 
   const localDate = e.target.closest('#localsessiondate');
   if (localDate){
