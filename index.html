@@ -1352,7 +1352,22 @@ function derive(c){
 
 /* Cross-references a weapon against known expertises to compute its effective
    (expert-trait-augmented) traits, unless the row was hand-keyed by the player. */
-function weaponDisplay(c, w){
+/* Unarmed Attack's base damage die scales with Strength score directly (not skill ranks). */
+function unarmedDamageDie(str){
+  if (str <= 2) return '1';
+  if (str <= 4) return '1d4';
+  if (str <= 6) return '1d8';
+  if (str <= 8) return '2d6';
+  return '2d10';
+}
+
+/* Splits a catalog/hand-keyed damage string like "1d4 keen" into {dice:"1d4", type:"keen"}. */
+function splitDamageString(raw){
+  const m = String(raw || '').trim().match(/^(.*?)\s+(\w+)$/);
+  return m ? {dice:m[1], type:m[2]} : {dice:raw || '', type:''};
+}
+
+function weaponDisplay(c, d, w){
   const catalog = !w.handKey && w.catalogName ? GAME_DATABASE.weapons[w.catalogName] : null;
   const expertiseName = catalog ? WEAPON_EXPERTISE_NAME[w.catalogName] : null;
   const hasExpertise = expertiseName && hasExpertiseNamed(c, expertiseName);
@@ -1362,8 +1377,44 @@ function weaponDisplay(c, w){
   }
   const isOffhand = /\boffhand\b/i.test(traits);
   const signatureBonus = hasTalent(c, 'Signature Weapon') ? (hasExpertise ? 2 : 1) : 0;
+
+  const effStr = c.attributes.str + (d.formBonus.str || 0);
+  let diceExpr, damageType;
+  if (w.catalogName === 'Unarmed Attack' && !w.handKey){
+    diceExpr = unarmedDamageDie(effStr);
+    damageType = 'impact';
+  } else {
+    const split = splitDamageString(catalog ? catalog.damage : w.damage);
+    diceExpr = split.dice;
+    damageType = split.type;
+  }
+
+  const skillMod = (d.skills[w.skill] || 0) + (w.bonus | 0);
+  const exhaustedPenalty = c.conditions.Exhausted ? 1 : 0;
+  const attackMod = skillMod - exhaustedPenalty;
+
+  const isRanged = !!(catalog && /ranged/i.test(catalog.range || ''));
+  let talentDamageBonus = 0;
+  const talentNotes = [];
+  if (hasTalent(c, 'Mighty')){
+    const bonus = 1 + d.tier; // assumes a single standard Strike action (1 action point spent)
+    talentDamageBonus += bonus;
+    talentNotes.push(`Mighty +${bonus}`);
+  }
+  if (isRanged && hasTalent(c, 'Steady Aim')){
+    const bonus = c.skills.perception.ranks || 0;
+    if (bonus){ talentDamageBonus += bonus; talentNotes.push(`Steady Aim +${bonus}`); }
+  }
+  const totalDamageMod = skillMod + talentDamageBonus;
+
+  const cumbersomeMatch = traits.match(/Cumbersome\s*\[(\d+)\]/i);
+  const weaponCumbersome = !!(cumbersomeMatch && effStr < parseInt(cumbersomeMatch[1], 10));
+  const disadvantage = weaponCumbersome || !!d.cumbersomeWarning || !!c.conditions.Disoriented;
+
   return {catalog, expertiseName, hasExpertise, traits, isOffhand,
-          offhandFocusCost: isOffhand ? 1 : 2, signatureBonus};
+          offhandFocusCost: isOffhand ? 1 : 2, signatureBonus,
+          diceExpr, damageType, skillMod, exhaustedPenalty, attackMod,
+          talentDamageBonus, talentNotes, totalDamageMod, disadvantage};
 }
 
 /* ---------- app state & persistence ---------- */
@@ -1626,11 +1677,13 @@ function weaponsHTML(c, d){
     .map(k => `<option value="${k}" ${w.defense === k ? 'selected' : ''}>vs ${k[0].toUpperCase() + k.slice(1)}</option>`).join('');
 
   const rows = c.weapons.map((w, i) => {
-    const disp = weaponDisplay(c, w);
+    const disp = weaponDisplay(c, d, w);
     const isCatalog = !!disp.catalog;
+    const defenseLabel = w.defense.charAt(0).toUpperCase() + w.defense.slice(1);
     const notes = [];
     if (disp.hasExpertise) notes.push(`Expertise match: <b>${esc(disp.expertiseName)}</b> — expert traits applied`);
     if (disp.signatureBonus) notes.push(`Signature Weapon: Opportunity range +${disp.signatureBonus}`);
+    if (disp.talentNotes.length) notes.push(esc(disp.talentNotes.join(', ')));
     notes.push(`Offhand Strike: ${disp.offhandFocusCost} Focus${disp.isOffhand ? ' (has Offhand trait)' : ''}`);
     return `<div class="row wrow" data-widx="${i}">
       <input type="text" value="${esc(w.name)}" data-path="weapons.${i}.name" placeholder="Weapon" aria-label="Weapon name">
@@ -1644,12 +1697,13 @@ function weaponsHTML(c, d){
         : `<input type="text" value="${esc(w.traits)}" data-path="weapons.${i}.traits" placeholder="Traits" aria-label="Traits">`}
       <select data-path="weapons.${i}.defense" aria-label="Target defense">${defOpts(w)}</select>
       <span style="display:flex;gap:.25rem">
-        <button class="iconbtn" data-action="show-weapon-info" data-i="${i}" aria-label="Weapon details" title="View traits and rules">ⓘ</button>
-        ${state.settings.diceMode !== 'disabled' ? `<button class="iconbtn" data-action="roll-weapon" data-i="${i}" title="${state.settings.diceMode === 'info' ? 'Show what to roll' : 'Roll attack and damage'}">${state.settings.diceMode === 'info' ? 'Show roll' : 'Roll'}</button>` : ''}
+        <button class="iconbtn" data-action="show-weapon-info" data-i="${i}" aria-label="Weapon details" title="View traits, rules, and roll actions">ⓘ</button>
+        ${state.settings.diceMode !== 'disabled' ? `<button class="iconbtn" data-action="roll-weapon-hit" data-i="${i}" title="${state.settings.diceMode === 'info' ? 'Show what to roll' : 'Roll a Hit: attack + damage'}">${state.settings.diceMode === 'info' ? 'Show roll' : 'Hit'}</button>` : ''}
         <button class="iconbtn" data-action="del-weapon" data-i="${i}" aria-label="Remove weapon">✕</button>
       </span>
     </div>
-    <p class="hint" style="margin:.1rem 0 .5rem">${notes.join(' · ')}</p>`;
+    <p class="hint" style="margin:.1rem 0 0"><b>Attack ${sgn(disp.attackMod)} vs ${defenseLabel}${disp.disadvantage ? ' <span style="color:var(--warn)">⚠ Disadvantage</span>' : ''}</b> · <b>Damage ${esc(disp.diceExpr)} ${sgn(disp.totalDamageMod)} ${esc(disp.damageType)}</b></p>
+    <p class="hint" style="margin:.05rem 0 .5rem">${notes.join(' · ')}</p>`;
   }).join('');
 
   const catNames = ['Light', 'Heavy', 'Special'];
@@ -1682,9 +1736,11 @@ function bindWeaponPicker(){
 function openWeaponModal(c, i){
   const w = c.weapons[i];
   if (!w) return;
-  const disp = weaponDisplay(c, w);
+  const d = derive(c);
+  const disp = weaponDisplay(c, d, w);
   const cat = disp.catalog;
   const title = w.catalogName || w.name || 'Weapon';
+  const defenseLabel = w.defense.charAt(0).toUpperCase() + w.defense.slice(1);
   const special = w.catalogName === 'Shardblade'
     ? 'Summoning a Shardblade takes 10 heartbeats of concentration; dismissing it is instant. A hit deals Spiritual Injury, which recovery-die healing cannot fix.'
     : w.catalogName === 'Shardblade (Radiant)'
@@ -1696,17 +1752,26 @@ function openWeaponModal(c, i){
     <h2>${esc(title)}</h2>
     ${w.name && w.name !== title ? `<p class="hint">Sheet name: ${esc(w.name)}</p>` : ''}
     <hr class="rule">
+    <section><h4>Attack Modifier</h4><p>${sgn(disp.attackMod)} vs ${defenseLabel}${disp.disadvantage ? ' — <span style="color:var(--warn)">⚠ Disadvantage</span>' : ''}${disp.exhaustedPenalty ? ` (includes −${disp.exhaustedPenalty} Exhausted)` : ''}</p></section>
+    <section><h4>Damage Formula</h4><p>${esc(disp.diceExpr)} ${sgn(disp.totalDamageMod)} ${esc(disp.damageType)} damage${disp.talentNotes.length ? ` (includes ${esc(disp.talentNotes.join(', '))})` : ''}</p></section>
     ${cat ? `
-    <section><h4>Range &amp; Damage</h4><p>${esc(cat.range)} · ${esc(cat.damage)}</p></section>
+    <section><h4>Range &amp; Base Damage</h4><p>${esc(cat.range)} · ${esc(cat.damage)}</p></section>
     <section><h4>Base Traits</h4><p>${esc(cat.traits) || 'None'}</p></section>
     <section><h4>Expert Traits</h4><p>${esc(cat.expertTraits) || 'None'}${disp.hasExpertise ? ' — <b style="color:var(--accent)">active</b> (matching expertise known)' : cat.expertTraits ? ` — requires the ${esc(disp.expertiseName)} expertise` : ''}</p></section>
     <section><h4>Weight / Price</h4><p>${cat.weight} lbs · ${cat.price} Diamond Marks</p></section>
     ` : `
     <section><h4>Traits</h4><p>${esc(w.traits) || 'None'}</p></section>
-    <section><h4>Damage</h4><p>${esc(w.damage) || 'Not set'}</p></section>
     `}
     <section><h4>Offhand Strike</h4><p>${disp.offhandFocusCost} Focus${disp.isOffhand ? ' (this weapon has the Offhand trait)' : ''}</p></section>
     ${special ? `<section><h4>Special Rules</h4><p>${esc(special)}</p></section>` : ''}
+    ${state.settings.diceMode !== 'disabled' ? `
+    <section><h4>Roll</h4>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+        <button class="btn" data-action="roll-weapon-hit" data-i="${i}">Hit</button>
+        <button class="btn" data-action="roll-weapon-graze" data-i="${i}">Graze</button>
+        <button class="btn" data-action="roll-weapon-crit" data-i="${i}">Critical Hit</button>
+      </div>
+    </section>` : ''}
     <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">Close</button></div>
   `);
 }
@@ -2417,6 +2482,20 @@ function expandAttrs(expr, c){
   return String(expr).replace(/\b(STR|SPD|INT|WIL|AWA|PRE)\b/gi, m => String(c.attributes[m.toLowerCase()]));
 }
 
+/* Maximum possible value of a dice expression like "2d6+3" — used for Critical Hit. */
+function maxDiceValue(expr){
+  let total = 0;
+  const tokens = String(expr).replace(/\s+/g, '').match(/[+-]?[^+-]+/g) || [];
+  tokens.forEach(tok => {
+    const sign = tok.startsWith('-') ? -1 : 1;
+    const body = tok.replace(/^[+-]/, '');
+    const m = body.match(/^(\d*)d(\d+)$/i);
+    if (m) total += sign * (parseInt(m[1] || '1', 10) * parseInt(m[2], 10));
+    else if (/^\d+$/.test(body)) total += sign * parseInt(body, 10);
+  });
+  return total;
+}
+
 function plotDie(){
   const v = rollDie(6);
   return {value:v, label: v <= 2 ? 'Complication' : v <= 4 ? 'Blank' : 'Opportunity',
@@ -2466,26 +2545,48 @@ function rollTest(label, modifier){
   logRoll(entry);
 }
 
-function rollWeapon(i){
+function rollWeaponAction(i, kind){
   const mode = state.settings.diceMode;
   if (mode === 'disabled') return;
   const c = activeChar(), d = derive(c), w = c.weapons[i];
   if (!w) return;
-  const mod = (d.skills[w.skill] || 0) + (w.bonus | 0);
+  const disp = weaponDisplay(c, d, w);
+  const diceExpr = expandAttrs(disp.diceExpr || '1d6', c);
+  const weaponName = w.name || w.catalogName || 'Weapon';
+  const kindLabel = kind === 'graze' ? 'Graze' : kind === 'crit' ? 'Critical Hit' : 'Hit';
+  const what = `${weaponName} — ${kindLabel}`;
+
+  if (kind === 'graze'){
+    if (mode === 'info'){
+      logRoll({what, total:diceExpr, detail:`Roll ${diceExpr} ${disp.damageType} damage (a graze does not add the skill modifier).`});
+      return;
+    }
+    const dmg = parseDice(diceExpr);
+    logRoll({what, total:`${dmg.total} damage`, detail:`${dmg.detail} ${disp.damageType}`});
+    return;
+  }
+
+  if (kind === 'crit'){
+    const maxDmg = maxDiceValue(diceExpr) + disp.totalDamageMod;
+    logRoll({what, total:`${maxDmg} damage`, detail:`Max ${diceExpr} ${sgn(disp.totalDamageMod)} ${disp.damageType} (critical hits maximize the dice).`});
+    return;
+  }
+
+  // kind === 'hit'
   if (mode === 'info'){
     logRoll({
-      what: `${w.name || 'Weapon'} — attack vs ${w.defense} defense`,
-      total: `1d20 ${sgn(mod)}`,
-      detail: `Roll a d20 and add ${sgn(mod)} to hit. On a hit, roll damage: ${w.damage || '1d6'}.${state.settings.plotDie ? ' Also roll a d6 plot die.' : ''}`
+      what,
+      total: `1d20 ${sgn(disp.attackMod)} to hit`,
+      detail: `Roll 1d20 ${sgn(disp.attackMod)} vs ${w.defense}${disp.disadvantage ? ' with Disadvantage' : ''}. On a hit, roll ${diceExpr} ${sgn(disp.totalDamageMod)} ${disp.damageType} damage.${state.settings.plotDie ? ' Also roll a d6 plot die.' : ''}`
     });
     return;
   }
   const die = rollDie(20);
-  const dmg = parseDice(expandAttrs(w.damage || '1d6', c));
+  const dmg = parseDice(diceExpr);
   const entry = {
-    what: `${w.name || 'Weapon'} — attack vs ${w.defense} defense`,
-    total: `${die + mod} to hit · ${dmg.total} damage`,
-    detail: `d20 [${die}] ${sgn(mod)} · damage ${w.damage || '1d6'} = ${dmg.detail}`
+    what,
+    total: `${die + disp.attackMod} to hit vs ${w.defense} · ${dmg.total + disp.totalDamageMod} damage`,
+    detail: `d20 [${die}] ${sgn(disp.attackMod)}${disp.disadvantage ? ' (Disadvantage)' : ''} · damage ${dmg.detail} ${sgn(disp.totalDamageMod)} ${disp.damageType}`
   };
   if (state.settings.plotDie) entry.plot = plotDie();
   logRoll(entry);
@@ -2874,7 +2975,9 @@ function handleAction(action, node, c){
     case 'del-weapon':
       c.weapons.splice(parseInt(node.dataset.i, 10), 1);
       renderFront(); save(); break;
-    case 'roll-weapon': rollWeapon(parseInt(node.dataset.i, 10)); break;
+    case 'roll-weapon-hit': rollWeaponAction(parseInt(node.dataset.i, 10), 'hit'); break;
+    case 'roll-weapon-graze': rollWeaponAction(parseInt(node.dataset.i, 10), 'graze'); break;
+    case 'roll-weapon-crit': rollWeaponAction(parseInt(node.dataset.i, 10), 'crit'); break;
     case 'show-weapon-info': openWeaponModal(c, parseInt(node.dataset.i, 10)); break;
     case 'show-armor-info': openArmorModal(c); break;
     case 'show-cond-info': openConditionModal(node.dataset.condName); break;
