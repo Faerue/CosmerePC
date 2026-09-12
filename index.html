@@ -318,6 +318,9 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .tray header h4{font-size:1.05rem}
 .tray .log{max-height:min(38vh,300px);overflow:auto;padding:.4rem .75rem .7rem}
 .tray.collapsed .log,.tray.collapsed .quick{display:none}
+html[data-dice="info"] .quick{display:none}
+[data-test]{cursor:pointer}
+html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacity:.65}
 .quick{display:flex;gap:.3rem;flex-wrap:wrap;padding:.5rem .75rem;border-top:1px solid var(--border-soft)}
 .quick button{font-size:.74rem;border:1px solid var(--border-soft);border-radius:8px;padding:.2rem .5rem;color:var(--ink-soft)}
 .quick button:hover{border-color:var(--accent);color:var(--accent)}
@@ -700,7 +703,7 @@ function derive(c){
 const STORE_KEY = 'radiant-sheet-v1';
 const state = {
   characters:[], activeId:null, tab:'front', view:'auth', session:null,
-  settings:{theme:'light', scale:'m', plotDie:true, firebase:{apiKey:'',authDomain:'',projectId:'',databaseURL:''}},
+  settings:{theme:'light', scale:'m', plotDie:true, diceMode:'disabled', firebase:{apiKey:'',authDomain:'',projectId:'',databaseURL:''}},
   profile:{username:''},
   localParties:[],
   rolls:[]
@@ -915,7 +918,7 @@ function weaponsHTML(c, d){
       <input type="text" value="${esc(w.traits)}" data-path="weapons.${i}.traits" placeholder="Traits" aria-label="Traits">
       <select data-path="weapons.${i}.defense" aria-label="Target defense">${defOpts(w)}</select>
       <span style="display:flex;gap:.25rem">
-        <button class="iconbtn" data-action="roll-weapon" data-i="${i}" title="Roll attack and damage">Roll</button>
+        ${state.settings.diceMode !== 'disabled' ? `<button class="iconbtn" data-action="roll-weapon" data-i="${i}" title="${state.settings.diceMode === 'info' ? 'Show what to roll' : 'Roll attack and damage'}">${state.settings.diceMode === 'info' ? 'Show roll' : 'Roll'}</button>` : ''}
         <button class="iconbtn" data-action="del-weapon" data-i="${i}" aria-label="Remove weapon">✕</button>
       </span>
     </div>`).join('');
@@ -1045,7 +1048,7 @@ function renderFront(){
     <div class="lookups">
       <div class="lookup"><div class="lbl">Lifting capacity</div><div class="v" data-derived="lifting">${d.lifting}</div></div>
       <div class="lookup"><div class="lbl">Movement</div><div class="v" data-derived="movement">${d.movement}</div></div>
-      <div class="lookup"><div class="lbl">Recovery die</div><div class="v" data-derived="recovery" data-test="recovery" role="button" tabindex="0" style="cursor:pointer" title="Roll recovery">${d.recovery}</div></div>
+      <div class="lookup"><div class="lbl">Recovery die</div><div class="v" data-derived="recovery" data-test="recovery" role="button" tabindex="0" title="Roll recovery">${d.recovery}</div></div>
       <div class="lookup"><div class="lbl">Senses range</div><div class="v" data-derived="senses">${d.senses}</div></div>
     </div>
     <div class="twocol" style="margin-top:.8rem">
@@ -1312,6 +1315,16 @@ function renderRolls(){
 }
 
 function rollTest(label, modifier){
+  const mode = state.settings.diceMode;
+  if (mode === 'disabled') return;
+  if (mode === 'info'){
+    logRoll({
+      what: label,
+      total: `1d20 ${sgn(modifier)}`,
+      detail: `Roll a d20 and add ${sgn(modifier)}.${state.settings.plotDie ? ' Also roll a d6 plot die.' : ''}`
+    });
+    return;
+  }
   const die = rollDie(20);
   const entry = {
     what: label,
@@ -1323,9 +1336,19 @@ function rollTest(label, modifier){
 }
 
 function rollWeapon(i){
+  const mode = state.settings.diceMode;
+  if (mode === 'disabled') return;
   const c = activeChar(), d = derive(c), w = c.weapons[i];
   if (!w) return;
   const mod = (d.skills[w.skill] || 0) + (w.bonus | 0);
+  if (mode === 'info'){
+    logRoll({
+      what: `${w.name || 'Weapon'} — attack vs ${w.defense} defense`,
+      total: `1d20 ${sgn(mod)}`,
+      detail: `Roll a d20 and add ${sgn(mod)} to hit. On a hit, roll damage: ${w.damage || '1d6'}.${state.settings.plotDie ? ' Also roll a d6 plot die.' : ''}`
+    });
+    return;
+  }
   const die = rollDie(20);
   const dmg = parseDice(expandAttrs(w.damage || '1d6', c));
   const entry = {
@@ -1553,9 +1576,14 @@ document.addEventListener('click', e => {
 
   const test = e.target.closest('[data-test]');
   if (test){
+    if (state.settings.diceMode === 'disabled') return;
     const key = test.dataset.test;
     if (key === 'recovery'){
       const d = derive(c);
+      if (state.settings.diceMode === 'info'){
+        logRoll({what:`${c.name} — recovery die`, total:`${d.recovery} ${sgn(c.attributes.wil)}`, detail:`Roll ${d.recovery} and add WIL ${sgn(c.attributes.wil)}.`});
+        return;
+      }
       const die = parseInt(d.recovery.slice(1), 10);
       const r = rollDie(die);
       logRoll({what:`${c.name} — recovery die`, total:String(r + c.attributes.wil), detail:`${d.recovery} [${r}] + WIL ${sgn(c.attributes.wil)}`});
@@ -1570,6 +1598,7 @@ document.addEventListener('click', e => {
 
   const roll = e.target.closest('[data-roll]');
   if (roll){
+    if (state.settings.diceMode !== 'enabled') return;
     const res = parseDice(roll.dataset.roll);
     const entry = {what:`Quick roll — ${roll.dataset.roll}`, total:String(res.total), detail:res.detail};
     if (state.settings.plotDie && roll.dataset.roll === '1d20') entry.plot = plotDie();
@@ -1653,7 +1682,7 @@ function handleAction(action, node, c){
       break;
     }
     case 'clear-log': state.rolls = []; renderRolls(); save(); break;
-    case 'plot-only': { const p = plotDie(); logRoll({what:'Plot die', total:String(p.value), detail:p.label, plot:p}); break; }
+    case 'plot-only': { if (state.settings.diceMode !== 'enabled') break; const p = plotDie(); logRoll({what:'Plot die', total:String(p.value), detail:p.label, plot:p}); break; }
     case 'clear-sheet': {
       if (confirm('Clear every field on this character? This cannot be undone.')){
         const keep = c.id;
@@ -1809,11 +1838,20 @@ function openSettings(){
           <button data-set="scale" data-val="l" aria-pressed="${s.scale === 'l'}">Large</button>
         </span>
       </div>
-      <div class="switchrow">
+      <div style="padding:.35rem 0">
+        <span>Dice rolling</span>
+        <span class="hint" style="display:block;margin-bottom:.5rem">Disabled — no in-app roller · Enabled — click to roll · D-roll — shows what to roll, you roll physical dice</span>
+        <span class="seg" style="display:flex;width:100%">
+          <button style="flex:1" data-set="diceMode" data-val="disabled" aria-pressed="${s.diceMode === 'disabled'}">Disabled</button>
+          <button style="flex:1" data-set="diceMode" data-val="enabled" aria-pressed="${s.diceMode === 'enabled'}">Enabled</button>
+          <button style="flex:1" data-set="diceMode" data-val="info" aria-pressed="${s.diceMode === 'info'}">D-roll</button>
+        </span>
+      </div>
+      ${s.diceMode !== 'disabled' ? `<div class="switchrow">
         <span>Roll a plot die with every d20 test
           <span class="hint" style="display:block">1–2 complication · 3–4 blank · 5–6 opportunity</span></span>
         <button class="switch" data-setbool="plotDie" aria-pressed="${s.plotDie}" aria-label="Plot die"></button>
-      </div>
+      </div>` : ''}
     </section>
 
     <section>
@@ -1874,6 +1912,10 @@ document.addEventListener('click', e => {
 function applySettings(){
   document.documentElement.dataset.theme = state.settings.theme;
   document.documentElement.dataset.scale = state.settings.scale;
+  document.documentElement.dataset.dice = state.settings.diceMode;
+  const tray = $('#tray');
+  if (tray) tray.hidden = state.settings.diceMode === 'disabled';
+  if (state.view === 'sheet') render();
 }
 
 function saveFirebaseConfig(){
