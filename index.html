@@ -1530,6 +1530,16 @@ setInterval(updateSyncIndicator, 5000);
 /* ---------- tiny helpers ---------- */
 const $ = sel => document.querySelector(sel);
 const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+/* Rebuilding a card's innerHTML can shift the page's total scrollable height
+   (a warning line appearing/disappearing, content-visibility re-estimating
+   off-screen cards, etc.), which makes the browser clamp/jump the scroll
+   position. Re-render through here to land back where the user actually was. */
+function preserveScroll(fn){
+  const y = window.scrollY;
+  fn();
+  if (window.scrollY !== y) window.scrollTo(0, y);
+}
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const sgn = n => (n >= 0 ? '+' : '') + n;
@@ -2046,7 +2056,8 @@ function conditionsHTML(c){
   </div>`;
 }
 
-function renderFront(){
+function renderFront(){ preserveScroll(renderFrontImpl); }
+function renderFrontImpl(){
   const c = activeChar();
   if (!c){ $('#view-front').innerHTML = `<div class="card"><p class="empty">No character selected. <button class="btn" data-action="go-home">Go to your vault</button></p></div>`; return; }
   const d = derive(c);
@@ -2297,7 +2308,8 @@ function fabrialsHTML(c){
   </div>`;
 }
 
-function renderBack(){
+function renderBack(){ preserveScroll(renderBackImpl); }
+function renderBackImpl(){
   const c = activeChar();
   if (!c){ $('#view-back').innerHTML = `<div class="card"><p class="empty">No character selected. <button class="btn" data-action="go-home">Go to your vault</button></p></div>`; return; }
   const d = derive(c);
@@ -2739,11 +2751,14 @@ document.addEventListener('click', e => {
 
   const pip = e.target.closest('[data-pips] i');
   if (pip){
-    const path = pip.parentElement.dataset.pips;
+    const group = pip.parentElement;
+    const path = group.dataset.pips;
     const rank = parseInt(pip.dataset.rank, 10);
     const current = getPath(c, path);
-    setPath(c, path, current === rank ? rank - 1 : rank);
-    renderFront(); syncDerived(); save();
+    const next = current === rank ? rank - 1 : rank;
+    setPath(c, path, next);
+    Array.from(group.children).forEach(i => i.classList.toggle('on', parseInt(i.dataset.rank, 10) <= next));
+    syncDerived(); save();
     return;
   }
 
@@ -3979,7 +3994,8 @@ function restoreFocus(info){
   if (el){ el.focus(); if (typeof info.start === 'number') try { el.setSelectionRange(info.start, info.end); } catch(e){} }
 }
 
-function renderHomeTab(){
+function renderHomeTab(){ preserveScroll(renderHomeTabImpl); }
+function renderHomeTabImpl(){
   const el = $('#view-home');
   if (!el) return;
   const focusInfo = captureFocus('vaultsearch');
@@ -4134,7 +4150,8 @@ function memberCardHTML(m, uidKey, opts){
   </div>`;
 }
 
-function renderSocial(){
+function renderSocial(){ preserveScroll(renderSocialImpl); }
+function renderSocialImpl(){
   const view = $('#view-social');
   if (!view || state.tab !== 'social') return;
   view.innerHTML = cloud.on && cloud.user ? onlineSocialHTML() : offlineSocialHTML();
