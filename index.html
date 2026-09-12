@@ -2056,10 +2056,13 @@ function removeCharacter(id){
   if (idx === -1) return;
   const [removed] = state.characters.splice(idx, 1);
   if (state.activeId === id) state.activeId = state.characters[0] ? state.characters[0].id : null;
+  cloud.pendingDeletes.add(id);
   lastDeletedChar = removed;
   const label = removed.name || 'Character';
   showUndoToast(`${label} deleted.`, () => {
     if (lastDeletedChar !== removed) return;
+    cloud.pendingDeletes.delete(id);
+    removed.updatedAt = Date.now();
     state.characters.push(removed);
     if (!state.activeId) state.activeId = removed.id;
     lastDeletedChar = null;
@@ -2164,7 +2167,7 @@ const cloud = {
   on:false, ready:false, app:null, auth:null, db:null, user:null,
   me:{username:'', friends:[], parties:[]}, requests:[], friendProfiles:[], parties:[],
   unsubs:[], lastPatchAt:0, pushTimer:null,
-  lastPushedAt:{}, knownRemoteIds:new Set(), charPushTimer:null, attempted:false,
+  lastPushedAt:{}, knownRemoteIds:new Set(), charPushTimer:null, attempted:false, pendingDeletes:new Set(),
 
   async connect(){
     const cfg = state.settings.firebase;
@@ -2265,7 +2268,7 @@ const cloud = {
   stopListening(){
     this.unsubs.forEach(u => { try{ u(); }catch(e){} });
     this.unsubs = []; this.partyUnsubs = [];
-    this.lastPushedAt = {}; this.knownRemoteIds = new Set(); this.lastPushedAvatar = undefined;
+    this.lastPushedAt = {}; this.knownRemoteIds = new Set(); this.lastPushedAvatar = undefined; this.pendingDeletes = new Set();
   },
 
   listenCharacters(){
@@ -2274,9 +2277,10 @@ const cloud = {
       let changed = false;
       const remoteIds = new Set();
       snap.forEach(docSnap => {
-        const remote = docSnap.data();
         remoteIds.add(docSnap.id);
         this.knownRemoteIds.add(docSnap.id);
+        if (this.pendingDeletes.has(docSnap.id)) return; // we're deleting this locally — don't resurrect it
+        const remote = docSnap.data();
         const local = state.characters.find(c => c.id === docSnap.id);
         if (!local){
           migrate(remote);
@@ -2297,7 +2301,7 @@ const cloud = {
           changed = true;
         }
       }
-      if (!state.characters.some(c => c.id === state.activeId)) state.activeId = state.characters[0].id;
+      if (state.characters.length && !state.characters.some(c => c.id === state.activeId)) state.activeId = state.characters[0].id;
       if (changed){ persistLocal(); if (state.view === 'main') render(); }
     }));
   },
@@ -2332,6 +2336,7 @@ const cloud = {
           try { await this.fb.deleteDoc(this.doc('users', uidv, 'characters', id)); } catch(e){}
           this.knownRemoteIds.delete(id);
           delete this.lastPushedAt[id];
+          this.pendingDeletes.delete(id);
         }
       }
     }, 150);
