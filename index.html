@@ -744,6 +744,18 @@ function isBlankDefaultChar(c){
 /* ---------- derived values ---------- */
 const tierOf = lvl => Math.max(1, Math.min(5, Math.ceil((lvl || 1) / 4)));
 
+function attrBudgetForLevel(level){
+  const lvl = level || 1;
+  if (lvl <= 2) return 12;
+  if (lvl <= 5) return 13;
+  if (lvl <= 8) return 14;
+  if (lvl <= 11) return 15;
+  if (lvl <= 14) return 16;
+  if (lvl <= 17) return 17;
+  return 18;
+}
+const attrCapForLevel = level => (level || 1) <= 2 ? 3 : 5;
+
 function formBonus(c){
   const f = c.singer && SINGER_FORMS[c.form] ? SINGER_FORMS[c.form].bonus : null;
   return f || {};
@@ -1200,12 +1212,17 @@ function updatePointsSpent(){
   const line = $('#pointsline');
   if (!line) return;
   const c = activeChar();
+  const budget = attrBudgetForLevel(c.level);
+  const baseCap = attrCapForLevel(c.level);
+  const fb = formBonus(c);
   const spent = Object.values(c.attributes).reduce((a, b) => a + b, 0);
-  const over = Object.entries(c.attributes).filter(([, v]) => v > 3).map(([k]) => ATTRS[k].short);
-  line.textContent = `${spent} of 12 attribute points spent`
-    + (spent > 12 ? ' — over the level 1 budget' : '')
-    + (over.length ? `. Creation caps each attribute at 3: ${over.join(', ')} ${over.length > 1 ? 'are' : 'is'} above it.` : '.');
-  line.style.color = (spent > 12 || over.length) ? 'var(--warn)' : '';
+  const over = Object.entries(c.attributes)
+    .filter(([k, v]) => v > baseCap + Math.max(0, fb[k] || 0))
+    .map(([k]) => ATTRS[k].short);
+  line.textContent = `${spent} of ${budget} attribute points spent`
+    + (spent > budget ? ` — over the level ${c.level} budget` : '')
+    + (over.length ? `. Attribute cap at this level is ${baseCap}${Object.keys(fb).length ? ' (higher where a Singer Form bonus applies)' : ''}: ${over.join(', ')} ${over.length > 1 ? 'are' : 'is'} above it.` : '.');
+  line.style.color = (spent > budget || over.length) ? 'var(--warn)' : '';
 }
 
 /* ============================================================
@@ -1619,6 +1636,7 @@ document.addEventListener('input', e => {
     const fixed = clamp(value, 0, max);
     if (fixed !== value){ setPath(c, path, fixed); t.value = fixed; }
   }
+  if (path === 'level') updatePointsSpent();
   if (t.dataset.renames){ renderCharPicker(); updateTabTitle(); }
   if (path.startsWith('spheres.') && path !== 'spheres.notes'){
     const el = $('#sphereTotal');
