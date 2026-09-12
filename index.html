@@ -4114,9 +4114,22 @@ const cloud = {
 
   doc(...p){ return this.fb.doc(this.db, ...p); },
 
+  loadKnownRemoteIds(uidv){
+    try { return new Set(JSON.parse(localStorage.getItem('radiant-known-remote-' + uidv)) || []); }
+    catch(e){ return new Set(); }
+  },
+  saveKnownRemoteIds(uidv){
+    try { localStorage.setItem('radiant-known-remote-' + uidv, JSON.stringify(Array.from(this.knownRemoteIds))); }
+    catch(e){}
+  },
+
   listen(){
     this.stopListening();
     const uidv = this.user.uid;
+    /* Which character ids this device has previously confirmed exist in the
+       cloud, kept in localStorage (unlike this.knownRemoteIds, which resets
+       every session) — see listenCharacters() for why this matters. */
+    this.knownRemoteIds = this.loadKnownRemoteIds(uidv);
     this.unsubs.push(this.fb.onSnapshot(this.doc('users', uidv), snap => {
       this.me = Object.assign({username:'', friends:[], parties:[]}, snap.data() || {});
       if (this.me.avatar !== undefined && this.me.avatar !== state.profile.avatar){
@@ -4140,7 +4153,6 @@ const cloud = {
       updateAccountChrome();
     }, err => toast(`Campaign invite sync error: ${err.message}`)));
     this.listenCharacters();
-    this.syncCharactersUp();
   },
 
   stopListening(){
@@ -4152,6 +4164,11 @@ const cloud = {
   listenCharacters(){
     const uidv = this.user.uid;
     this.unsubs.push(this.fb.onSnapshot(this.fb.collection(this.db, 'users', uidv, 'characters'), snap => {
+      /* Snapshot this BEFORE the loop below adds this snapshot's own ids to
+         it — it's what this device confirmed existed in the cloud as of the
+         END of its last sync (loaded from localStorage in listen(), so it
+         survives a full app close/reopen, unlike a plain in-memory Set). */
+      const previouslyKnownRemoteIds = new Set(this.knownRemoteIds);
       let changed = false;
       const remoteIds = new Set();
       snap.forEach(docSnap => {
@@ -4172,15 +4189,32 @@ const cloud = {
         }
       });
       if (remoteIds.size){
-        const blanks = state.characters.filter(c =>
-          !remoteIds.has(c.id) && this.lastPushedAt[c.id] === undefined && isBlankDefaultChar(c));
-        if (blanks.length && state.characters.length - blanks.length > 0){
-          state.characters = state.characters.filter(c => !blanks.includes(c));
+        /* A local character missing from this snapshot is either (a) blank
+           and never touched — the old "forced default character" leftover —
+           or (b) one this device previously confirmed was in the cloud, now
+           gone from it: deleted on another device while this one was closed.
+           Either way, remove it locally instead of treating it as a new,
+           unsynced character and pushing it straight back up — that's what
+           was resurrecting deletes made from another device. Anything else
+           (never confirmed remote, not blank) is a genuinely new local
+           character and is left alone to sync up normally. */
+        const toRemove = state.characters.filter(c =>
+          !remoteIds.has(c.id) && this.lastPushedAt[c.id] === undefined &&
+          (isBlankDefaultChar(c) || previouslyKnownRemoteIds.has(c.id)));
+        if (toRemove.length && state.characters.length - toRemove.length > 0){
+          state.characters = state.characters.filter(c => !toRemove.includes(c));
+          toRemove.forEach(c => this.knownRemoteIds.delete(c.id));
           changed = true;
         }
       }
       if (state.characters.length && !state.characters.some(c => c.id === state.activeId)) state.activeId = state.characters[0].id;
       if (changed){ persistLocal(); if (state.view === 'main') render(); }
+      this.saveKnownRemoteIds(uidv);
+      /* Only push local-only changes up once this snapshot has been
+         reconciled against the real remote state — pushing on a blind timer
+         right after listen() raced this and could re-upload characters this
+         very snapshot was about to tell us were deleted elsewhere. */
+      this.syncCharactersUp();
     }, err => toast(`Character sync error: ${err.message}`)));
   },
 
