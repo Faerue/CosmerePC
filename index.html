@@ -4642,16 +4642,15 @@ async function joinCampaignHome(code){
   if (!/^\d{6}$/.test(code)) return toast('Enter the 6-digit join code.');
   if (cloud.on && cloud.user){
     try {
-      const q = cloud.fb.query(cloud.fb.collection(cloud.db, 'parties'), cloud.fb.where('code', '==', code));
-      const snap = await cloud.fb.getDocs(q);
-      if (snap.empty) return toast('No campaign uses that code.');
-      const partyDoc = snap.docs[0];
-      await cloud.fb.updateDoc(partyDoc.ref, {
+      const codeSnap = await cloud.fb.getDoc(cloud.doc('partyCodes', code));
+      if (!codeSnap.exists()) return toast('No campaign uses that code.');
+      const pid = codeSnap.data().partyId;
+      await cloud.fb.updateDoc(cloud.doc('parties', pid), {
         memberUids:cloud.fb.arrayUnion(cloud.user.uid),
         [`members.${cloud.user.uid}`]:{username:cloud.me.username, role:'Player', charId:'', char:null, updatedAt:Date.now()}
       });
-      await cloud.fb.setDoc(cloud.doc('users', cloud.user.uid), {parties:cloud.fb.arrayUnion(partyDoc.id)}, {merge:true});
-      state.activePartyId = partyDoc.id;
+      await cloud.fb.setDoc(cloud.doc('users', cloud.user.uid), {parties:cloud.fb.arrayUnion(pid)}, {merge:true});
+      state.activePartyId = pid;
       toast('Joined the campaign.');
       renderHomeTab();
     } catch(err){ toast('Could not join: ' + err.message); }
@@ -5327,10 +5326,16 @@ async function createParty(name){
   try {
     const c = activeChar();
     const useChar = c && !c.partyId;
+    const code = genCode();
     const ref = await cloud.fb.addDoc(cloud.fb.collection(cloud.db, 'parties'), {
-      name, gm:cloud.user.uid, ownerUid:cloud.user.uid, code:genCode(), sessionDate:'', visibility:'own', memberUids:[cloud.user.uid],
+      name, gm:cloud.user.uid, ownerUid:cloud.user.uid, code, sessionDate:'', visibility:'own', memberUids:[cloud.user.uid],
       members:{[cloud.user.uid]:{username:cloud.me.username, role:'GM', charId: useChar ? c.id : '', char: useChar ? cloud.snapshot(c) : null, updatedAt:Date.now()}}
     });
+    /* Party docs are only readable by members, so joining-by-code can't query
+       the `parties` collection directly (a query obeys the same read rule as
+       a get, and a not-yet-member can't pass it). This small public lookup
+       doc — code -> partyId only, nothing sensitive — is what join reads instead. */
+    await cloud.fb.setDoc(cloud.doc('partyCodes', code), {partyId:ref.id});
     await cloud.fb.setDoc(cloud.doc('users', cloud.user.uid), {parties:cloud.fb.arrayUnion(ref.id)}, {merge:true});
     if (useChar){ c.partyId = ref.id; save(); }
     state.activePartyId = ref.id;
