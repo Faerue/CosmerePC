@@ -1,0 +1,2117 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Radiant Sheet — Cosmere RPG Character Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF8F5;
+  --bg-2:#F3EEE9;
+  --card:rgba(255,255,255,.62);
+  --card-solid:#FFFDFB;
+  --ink:#2D2438;
+  --ink-soft:#6B5F76;
+  --ink-faint:#9A8FA3;
+  --accent:#C88A8A;
+  --accent-2:#D4A373;
+  --border:#E8C5C8;
+  --border-soft:#EFE2E0;
+  --field:#FFFFFF;
+  --shadow:0 1px 2px rgba(45,36,56,.04), 0 12px 28px -18px rgba(45,36,56,.28);
+  --ok:#7C9A80;
+  --warn:#C77B5A;
+  --radius:16px;
+  --fs:1rem;
+}
+[data-theme="dark"]{
+  --bg:#16151D;
+  --bg-2:#1C1A25;
+  --card:rgba(34,31,45,.72);
+  --card-solid:#221F2D;
+  --ink:#F0EDF5;
+  --ink-soft:#B7AFC4;
+  --ink-faint:#7E7590;
+  --accent:#E0A9A9;
+  --accent-2:#E3BC8E;
+  --border:#3A3348;
+  --border-soft:#2C2739;
+  --field:#1A1824;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 18px 34px -22px rgba(0,0,0,.9);
+  --ok:#8FB894;
+  --warn:#E09A76;
+}
+html[data-scale="s"]{--fs:.9rem}
+html[data-scale="m"]{--fs:1rem}
+html[data-scale="l"]{--fs:1.12rem}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+  font-size:var(--fs);
+  color:var(--ink);
+  background:
+    radial-gradient(1100px 620px at 82% -12%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
+    radial-gradient(900px 500px at 8% 4%, color-mix(in srgb, var(--accent-2) 12%, transparent), transparent 65%),
+    var(--bg);
+  background-attachment:fixed;
+  line-height:1.5;
+  -webkit-text-size-adjust:100%;
+}
+h1,h2,h3,h4{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;margin:0;letter-spacing:.01em}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- top bar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
+  padding:.55rem clamp(.6rem,2vw,1.4rem);
+  background:color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter:blur(14px) saturate(1.2);
+  border-bottom:1px solid var(--border-soft);
+}
+.brand{display:flex;align-items:baseline;gap:.5rem;margin-right:.2rem}
+.brand .glyph{width:22px;height:22px;flex:0 0 auto;align-self:center}
+.brand b{font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:600;letter-spacing:.02em}
+.brand span{font-size:.68rem;color:var(--ink-faint);letter-spacing:.14em;text-transform:uppercase}
+.spacer{flex:1 1 auto}
+select.charpick{
+  background:var(--field);border:1px solid var(--border);border-radius:999px;
+  padding:.4rem .9rem;max-width:44vw;
+}
+.pill{
+  display:inline-flex;align-items:center;gap:.4rem;
+  border:1px solid var(--border);border-radius:999px;padding:.36rem .8rem;
+  background:var(--card);font-size:.86rem;transition:border-color .15s,background .15s;
+}
+.pill:hover{border-color:var(--accent)}
+.pill.tier{border-style:dashed;color:var(--ink-soft)}
+.pill.saved{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,transparent)}
+.pill.icon{padding:.36rem .5rem}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block}
+.dot.pending{background:var(--accent-2)}
+
+/* ---------- tabs ---------- */
+.tabs{display:flex;gap:.2rem;padding:.5rem clamp(.6rem,2vw,1.4rem) 0;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  white-space:nowrap;padding:.5rem .9rem;border-radius:10px 10px 0 0;
+  color:var(--ink-soft);font-size:.92rem;font-weight:500;border-bottom:2px solid transparent;
+}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);background:var(--card)}
+
+main{padding:.9rem clamp(.6rem,2vw,1.4rem) 5rem;max-width:1500px;margin:0 auto}
+
+/* ---------- cards ---------- */
+.card{
+  background:var(--card);
+  backdrop-filter:blur(10px);
+  border:1px solid var(--border-soft);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:.9rem 1rem 1rem;
+  margin-bottom:.9rem;
+}
+.card > h3{
+  font-size:1.18rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;
+  margin-bottom:.15rem;
+}
+.card > h3 + .rule{margin-bottom:.7rem}
+.rule{height:1px;background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent-2) 70%,transparent) 38%,transparent 92%);border:0;margin:.2rem 0 .6rem}
+.hint{font-size:.76rem;color:var(--ink-faint);font-weight:400}
+
+/* identity header */
+.identity{display:grid;grid-template-columns:2fr 1.4fr 1fr .7fr;gap:.7rem}
+.identity .f:nth-child(1){grid-column:span 2}
+@media(max-width:820px){.identity{grid-template-columns:1fr 1fr}.identity .f:nth-child(1){grid-column:span 2}}
+.f{display:flex;flex-direction:column;gap:.25rem}
+.f > label{font-size:.72rem;color:var(--ink-faint);letter-spacing:.06em}
+input[type=text],input[type=number],input[type=password],input[type=email],textarea,select{
+  background:var(--field);border:1px solid var(--border-soft);border-radius:10px;
+  padding:.45rem .6rem;width:100%;transition:border-color .15s, box-shadow .15s;
+}
+input:hover,textarea:hover,select:hover{border-color:var(--border)}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+textarea{resize:vertical;min-height:5.5rem;line-height:1.55}
+input[type=number]{-moz-appearance:textfield}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+/* ---------- realms ---------- */
+.realms{display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem;align-items:start}
+@media(max-width:1000px){.realms{grid-template-columns:1fr}}
+.realm{padding-top:.8rem}
+.realm-head{text-align:center;margin-bottom:.5rem}
+.realm-head h2{font-size:1.5rem;font-variant:small-caps;letter-spacing:.06em}
+.realm-head p{margin:.05rem 0 0;font-size:.73rem;color:var(--ink-faint)}
+.trio{display:grid;grid-template-columns:1fr auto 1fr;gap:.5rem;align-items:center}
+.attr{
+  text-align:center;border:1px solid var(--border);border-radius:12px;background:var(--card-solid);
+  padding:.4rem .3rem .5rem;
+}
+.attr .nm{font-size:.7rem;color:var(--ink-soft);letter-spacing:.08em}
+.attr .stepper{display:flex;align-items:center;justify-content:center;gap:.35rem;margin-top:.1rem}
+.attr .stepper button{width:1.5rem;height:1.5rem;border-radius:50%;border:1px solid var(--border-soft);color:var(--ink-soft);line-height:1}
+.attr .stepper button:hover{border-color:var(--accent);color:var(--accent)}
+.attr .val{font-family:'Cormorant Garamond',serif;font-size:1.85rem;font-weight:600;min-width:1.4rem}
+.shield{
+  width:78px;height:86px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 22%,transparent),color-mix(in srgb,var(--accent-2) 16%,transparent));
+  border:1px solid var(--border);
+  clip-path:polygon(0 0,100% 0,100% 62%,50% 100%,0 62%);
+  padding-bottom:.9rem;
+}
+.shield .lbl{font-size:.6rem;letter-spacing:.1em;color:var(--ink-soft)}
+.shield .num{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:600;line-height:1}
+.defbonus{width:64px;margin:.15rem auto 0}
+.defbonus input{text-align:center;padding:.15rem;font-size:.74rem}
+
+/* pools */
+.pool{border:1px solid var(--border-soft);border-radius:12px;background:var(--card-solid);padding:.5rem .6rem;margin-top:.6rem}
+.pool .top{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem}
+.pool .top b{font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-weight:600}
+.pool .top small{color:var(--ink-faint);font-size:.72rem}
+.track{display:flex;align-items:center;gap:.4rem;margin-top:.35rem}
+.track button{width:1.9rem;height:1.9rem;border-radius:9px;border:1px solid var(--border);color:var(--ink-soft)}
+.track button:hover{border-color:var(--accent);color:var(--accent)}
+.track input{text-align:center;font-size:1.1rem;font-weight:600;padding:.25rem}
+.track .of{color:var(--ink-faint);font-size:.9rem}
+.track .max{font-family:'Cormorant Garamond',serif;font-size:1.35rem;min-width:1.6rem;text-align:center}
+.bar{height:5px;border-radius:99px;background:var(--border-soft);margin-top:.4rem;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+
+/* skills */
+.skill{display:grid;grid-template-columns:2.6rem 1fr auto;gap:.5rem;align-items:center;padding:.22rem 0;border-bottom:1px dotted var(--border-soft)}
+.skill:last-child{border-bottom:0}
+.skill .mod{
+  text-align:center;font-family:'Cormorant Garamond',serif;font-size:1.25rem;font-weight:600;
+  border:1px solid var(--border);border-radius:9px;background:var(--card-solid);padding:.1rem 0;cursor:pointer;
+}
+.skill .mod:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--card-solid))}
+.skill .nm{font-size:.88rem}
+.skill .nm .at{color:var(--ink-faint);font-size:.74rem}
+.skill .nm input{padding:.2rem .4rem;font-size:.84rem}
+.pips{display:flex;gap:.22rem}
+.pips i{
+  width:.82rem;height:.82rem;border-radius:50%;border:1.5px solid var(--border);cursor:pointer;display:block;
+  transition:background .12s,border-color .12s;
+}
+.pips i.on{background:linear-gradient(150deg,var(--accent),var(--accent-2));border-color:transparent}
+.customline{display:grid;grid-template-columns:1fr 4.2rem;gap:.3rem}
+
+/* lookups */
+.lookups{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;text-align:center}
+@media(max-width:700px){.lookups{grid-template-columns:repeat(2,1fr)}}
+.lookup{border:1px solid var(--border-soft);border-radius:12px;padding:.5rem;background:var(--card-solid)}
+.lookup .lbl{font-size:.68rem;color:var(--ink-faint);letter-spacing:.07em}
+.lookup .v{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:600}
+
+/* generic rows/tables */
+.rows{display:flex;flex-direction:column;gap:.4rem}
+.row{display:grid;gap:.35rem;align-items:center}
+.wrow{grid-template-columns:1.4fr 1fr .8fr 1.1fr 1fr auto auto}
+@media(max-width:900px){.wrow{grid-template-columns:1fr 1fr}}
+.thead{font-size:.7rem;color:var(--ink-faint);letter-spacing:.05em;padding-left:.2rem}
+@media(max-width:900px){.thead{display:none}}
+.iconbtn{border:1px solid var(--border-soft);border-radius:9px;padding:.35rem .55rem;color:var(--ink-soft);font-size:.85rem}
+.iconbtn:hover{border-color:var(--accent);color:var(--accent)}
+.btn{border:1px solid var(--border);border-radius:999px;padding:.42rem .95rem;background:var(--card-solid);font-size:.87rem;font-weight:500}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));border-color:transparent;color:#fff}
+[data-theme="dark"] .btn.primary{color:#1A1824}
+.btn.primary:hover{filter:brightness(1.05);color:#fff}
+[data-theme="dark"] .btn.primary:hover{color:#1A1824}
+.btn.ghost{background:none}
+.btn.danger{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
+.addbtn{margin-top:.5rem}
+
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.5rem;min-height:1.9rem}
+.chip{
+  display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;
+  border:1px solid var(--border);border-radius:999px;padding:.22rem .4rem .22rem .7rem;
+  background:color-mix(in srgb,var(--accent) 9%,var(--card-solid));
+}
+.chip button{color:var(--ink-faint);font-size:.95rem;line-height:1;padding:0 .15rem}
+.chip button:hover{color:var(--warn)}
+.chip .kind{font-size:.62rem;color:var(--ink-faint);letter-spacing:.06em}
+.combo{position:relative}
+.combo .menu{
+  position:absolute;z-index:20;left:0;right:0;top:calc(100% + 4px);max-height:240px;overflow:auto;
+  background:var(--card-solid);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:.25rem;
+}
+.combo .menu button{display:block;width:100%;text-align:left;padding:.34rem .55rem;border-radius:8px;font-size:.85rem}
+.combo .menu button:hover,.combo .menu button.hl{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.combo .menu .grp{font-size:.66rem;color:var(--ink-faint);letter-spacing:.1em;padding:.35rem .55rem .15rem}
+.slots{font-size:.76rem;color:var(--ink-faint)}
+.slots b{color:var(--accent)}
+
+/* conditions */
+.conds{display:flex;flex-wrap:wrap;gap:.3rem}
+.cond{border:1px solid var(--border-soft);border-radius:999px;padding:.22rem .65rem;font-size:.78rem;color:var(--ink-soft)}
+.cond[aria-pressed="true"]{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-color:transparent}
+[data-theme="dark"] .cond[aria-pressed="true"]{color:#1A1824}
+
+/* goals */
+.goal{display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:center}
+.ticks{display:flex;gap:.3rem}
+.ticks i{width:1rem;height:1rem;border-radius:50%;border:1.5px solid var(--border);cursor:pointer;display:block}
+.ticks i.on{background:linear-gradient(150deg,var(--accent),var(--accent-2));border-color:transparent}
+
+/* back page */
+.back-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.9rem;align-items:start}
+@media(max-width:1000px){.back-grid{grid-template-columns:1fr}}
+
+/* party */
+.party-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:.9rem}
+.member{border:1px solid var(--border-soft);border-radius:14px;background:var(--card-solid);padding:.75rem .85rem}
+.member h4{font-size:1.15rem}
+.member .sub{font-size:.74rem;color:var(--ink-faint);margin-bottom:.4rem}
+.member .defs{display:flex;gap:.4rem;margin:.5rem 0}
+.member .defs div{flex:1;text-align:center;border:1px solid var(--border-soft);border-radius:9px;padding:.2rem}
+.member .defs .v{font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:600}
+.member .defs .l{font-size:.6rem;color:var(--ink-faint)}
+.badge{display:inline-block;font-size:.64rem;letter-spacing:.08em;border:1px solid var(--border);border-radius:999px;padding:.05rem .5rem;color:var(--accent)}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;align-items:start}
+@media(max-width:860px){.twocol{grid-template-columns:1fr}}
+.listitem{display:flex;align-items:center;justify-content:space-between;gap:.5rem;border-bottom:1px solid var(--border-soft);padding:.42rem 0}
+.listitem:last-child{border-bottom:0}
+.empty{color:var(--ink-faint);font-size:.85rem;padding:.5rem 0}
+
+/* modal */
+.overlay{
+  position:fixed;inset:0;z-index:60;display:none;align-items:flex-start;justify-content:center;
+  background:color-mix(in srgb,var(--ink) 42%,transparent);backdrop-filter:blur(3px);padding:1rem;overflow:auto;
+}
+.overlay.open{display:flex}
+.modal{
+  background:var(--card-solid);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);
+  width:min(620px,100%);margin:min(6vh,4rem) 0 3rem;padding:1.1rem 1.2rem 1.3rem;
+}
+.modal h2{font-size:1.6rem}
+.modal section{margin-top:1rem}
+.modal section > h4{font-size:1.05rem;font-family:'Cormorant Garamond',serif;margin-bottom:.35rem}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden}
+.seg button{padding:.35rem .9rem;font-size:.85rem;color:var(--ink-soft)}
+.seg button[aria-pressed="true"]{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff}
+[data-theme="dark"] .seg button[aria-pressed="true"]{color:#1A1824}
+.switchrow{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.35rem 0}
+.switch{width:44px;height:25px;border-radius:99px;border:1px solid var(--border);background:var(--field);position:relative;flex:0 0 auto}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:var(--ink-faint);transition:transform .18s,background .18s}
+.switch[aria-pressed="true"]{border-color:transparent;background:linear-gradient(135deg,var(--accent),var(--accent-2))}
+.switch[aria-pressed="true"]::after{transform:translateX(19px);background:#fff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+@media(max-width:560px){.grid2{grid-template-columns:1fr}}
+
+/* dice tray */
+.tray{
+  position:fixed;right:clamp(.6rem,2vw,1.4rem);bottom:1rem;z-index:50;width:min(310px,calc(100vw - 1.6rem));
+  background:var(--card-solid);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;
+}
+.tray header{display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;border-bottom:1px solid var(--border-soft)}
+.tray header h4{font-size:1.05rem}
+.tray .log{max-height:min(38vh,300px);overflow:auto;padding:.4rem .75rem .7rem}
+.tray.collapsed .log,.tray.collapsed .quick{display:none}
+.quick{display:flex;gap:.3rem;flex-wrap:wrap;padding:.5rem .75rem;border-top:1px solid var(--border-soft)}
+.quick button{font-size:.74rem;border:1px solid var(--border-soft);border-radius:8px;padding:.2rem .5rem;color:var(--ink-soft)}
+.quick button:hover{border-color:var(--accent);color:var(--accent)}
+.roll{border-bottom:1px dotted var(--border-soft);padding:.4rem 0;font-size:.84rem}
+.roll:last-child{border-bottom:0}
+.roll .what{color:var(--ink-soft);font-size:.76rem;display:flex;justify-content:space-between;gap:.5rem}
+.roll .total{font-family:'Cormorant Garamond',serif;font-size:1.45rem;font-weight:600;line-height:1.1}
+.roll .parts{color:var(--ink-faint);font-size:.74rem}
+.plot{font-size:.72rem;letter-spacing:.04em}
+.plot.opp{color:var(--ok)}
+.plot.comp{color:var(--warn)}
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:1.2rem;z-index:70;
+  background:var(--ink);color:var(--bg);padding:.5rem 1rem;border-radius:999px;font-size:.85rem;
+  opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.toast.show{opacity:.95}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <svg class="glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 1.5 15 9l7.5 3-7.5 3-3 7.5-3-7.5L1.5 12 9 9z" fill="url(#g)"/>
+      <circle cx="12" cy="12" r="10.2" stroke="currentColor" stroke-opacity=".35"/>
+      <defs><linearGradient id="g" x1="0" y1="0" x2="24" y2="24">
+        <stop stop-color="#C88A8A"/><stop offset="1" stop-color="#D4A373"/>
+      </linearGradient></defs>
+    </svg>
+    <b>Radiant Sheet</b>
+  </div>
+
+  <select class="charpick" id="charpick" aria-label="Active character"></select>
+  <button class="pill icon" data-action="new-char" title="New character">＋</button>
+  <span class="pill tier" id="tierbadge">Level 1 · Tier 1</span>
+
+  <span class="spacer"></span>
+
+  <button class="pill" data-action="short-rest">Short rest</button>
+  <button class="pill" data-action="long-rest">Long rest</button>
+  <button class="pill" data-action="import" title="Load a character file">Import</button>
+  <button class="pill" data-action="export" title="Save a character file">Export</button>
+  <button class="pill" data-action="go-social" title="Parties and friends">Parties</button>
+  <span class="pill saved" id="savepill"><span class="dot"></span><span id="savetext">Saved</span></span>
+  <button class="pill icon" data-action="settings" aria-label="Settings" title="Settings">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+      <circle cx="12" cy="12" r="3.2"/>
+      <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.9 19.3a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.7 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.7 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.7a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.7a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.3 9v.09A1.7 1.7 0 0 0 20.91 10H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15z"/>
+    </svg>
+  </button>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab" role="tab" data-tab="front" aria-selected="true">Combat &amp; stats</button>
+  <button class="tab" role="tab" data-tab="back" aria-selected="false">Narrative &amp; gear</button>
+  <button class="tab" role="tab" data-tab="social" aria-selected="false">Campaign party</button>
+</nav>
+
+<main>
+  <section id="view-front"></section>
+  <section id="view-back" hidden></section>
+  <section id="view-social" hidden></section>
+</main>
+
+<aside class="tray collapsed" id="tray">
+  <header>
+    <h4>Dice</h4>
+    <div style="display:flex;gap:.3rem">
+      <button class="iconbtn" data-action="clear-log" title="Clear log">Clear</button>
+      <button class="iconbtn" data-action="toggle-tray" id="traytoggle">Show</button>
+    </div>
+  </header>
+  <div class="quick">
+    <button data-roll="1d20">d20</button>
+    <button data-roll="1d4">d4</button>
+    <button data-roll="1d6">d6</button>
+    <button data-roll="1d8">d8</button>
+    <button data-roll="1d10">d10</button>
+    <button data-roll="1d12">d12</button>
+    <button data-roll="2d6">2d6</button>
+    <button data-action="plot-only">Plot die</button>
+  </div>
+  <div class="log" id="rolllog"><p class="empty">Rolls appear here. Tap any skill modifier to test it.</p></div>
+</aside>
+
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+<input type="file" id="filein" accept="application/json,.json" hidden>
+<div class="toast" id="toast"></div>
+<script>
+/* ============================================================
+   Radiant Sheet — Cosmere RPG character & party manager
+   Single file. No build step. LocalStorage by default,
+   optional Firebase sync configured in Settings.
+   ============================================================ */
+
+'use strict';
+
+/* ---------- static game data ---------- */
+const ATTRS = {
+  str:{name:'Strength', short:'STR', realm:'physical'},
+  spd:{name:'Speed', short:'SPD', realm:'physical'},
+  int:{name:'Intellect', short:'INT', realm:'cognitive'},
+  wil:{name:'Willpower', short:'WIL', realm:'cognitive'},
+  awa:{name:'Awareness', short:'AWA', realm:'spiritual'},
+  pre:{name:'Presence', short:'PRE', realm:'spiritual'}
+};
+
+const REALMS = [
+  {key:'physical',  name:'Physical',  blurb:'Body, motion, and the world you can touch', attrs:['str','spd'],
+   skills:[['agility','Agility','spd'],['athletics','Athletics','str'],['heavyWeapons','Heavy Weapons','str'],
+           ['lightWeapons','Light Weapons','spd'],['stealth','Stealth','spd'],['thievery','Thievery','spd']]},
+  {key:'cognitive', name:'Cognitive', blurb:'Thought, memory, and learned craft', attrs:['int','wil'],
+   skills:[['crafting','Crafting','int'],['deduction','Deduction','int'],['discipline','Discipline','wil'],
+           ['intimidation','Intimidation','wil'],['lore','Lore','int'],['medicine','Medicine','int']]},
+  {key:'spiritual', name:'Spiritual', blurb:'Connection, instinct, and force of self', attrs:['awa','pre'],
+   skills:[['deception','Deception','pre'],['insight','Insight','awa'],['leadership','Leadership','pre'],
+           ['perception','Perception','awa'],['persuasion','Persuasion','pre'],['survival','Survival','awa']]}
+];
+const ALL_SKILLS = REALMS.flatMap(r => r.skills.map(s => ({key:s[0], name:s[1], attr:s[2], realm:r.key})));
+
+const CONDITIONS = ['Afflicted','Determined','Disoriented','Empowered','Enhanced','Exhausted','Focused',
+  'Immobilized','Prone','Restrained','Slowed','Stunned','Surprised','Unconscious'];
+
+const EXPERTISES = {
+  Cultural:['Alethi','Azish','Herdazian','Iriali','Kharbranthian','Listener','Natan','Reshi','Shin','Thaylen','Unkalaki','Veden','Wayfarer'],
+  Armor:['Leather Armor','Chain Armor','Breastplate','Half Plate','Full Plate','Uniform'],
+  Weapon:['Axes','Crossbows','Greatswords','Hammers','Javelins','Knives','Longbows','Longspears','Longswords','Maces',
+          'Poleaxes','Rapiers','Shields','Shortbows','Shortspears','Sideswords','Slings','Staves','Improvised Weapons','Unarmed Attacks'],
+  Utility:['Animal Care','Armor Crafting','Engineering','Equipment Crafting','History','Military Strategy','Religion',
+           'Riding Horses','Weapon Crafting','Legal Codes','Medical Logistics'],
+  Specialist:['Fabrial Crafting','Half-Shards','Grandbows','Shardblades','Shardplate','Warhammers','Singer History','Knights Radiant']
+};
+
+const ARMORS = [
+  {name:'No armor', deflect:0}, {name:'Uniform', deflect:1}, {name:'Leather Armor', deflect:2},
+  {name:'Chain Armor', deflect:3}, {name:'Breastplate', deflect:4}, {name:'Half Plate', deflect:5},
+  {name:'Full Plate', deflect:6}, {name:'Half-Shard', deflect:7}, {name:'Shardplate', deflect:8}
+];
+
+const TABLES = {
+  lifting:[[0,'100 lbs'],[1,'200 lbs'],[3,'500 lbs'],[5,'1,000 lbs'],[7,'5,000 lbs'],[9,'10,000 lbs']],
+  movement:[[0,'20 ft'],[1,'25 ft'],[3,'30 ft'],[5,'40 ft'],[7,'60 ft'],[9,'80 ft']],
+  recovery:[[0,'d4'],[1,'d6'],[3,'d8'],[5,'d10'],[7,'d12'],[9,'d20']],
+  senses:[[0,'5 ft'],[1,'10 ft'],[3,'20 ft'],[5,'50 ft'],[7,'100 ft'],[9,'Unlimited']]
+};
+const lookup = (table, score) => {
+  let out = table[0][1];
+  for (const [min, val] of table) if (score >= min) out = val;
+  return out;
+};
+
+/* ---------- character factory ---------- */
+const uid = () => Math.random().toString(36).slice(2, 10);
+
+function blankSkills(){
+  const s = {};
+  ALL_SKILLS.forEach(sk => s[sk.key] = {ranks:0, bonus:0});
+  REALMS.forEach(r => s['custom_' + r.key] = {ranks:0, bonus:0, name:'', attr:r.attrs[0]});
+  return s;
+}
+
+function newCharacter(name){
+  return {
+    id: uid(),
+    name: name || 'Unnamed Radiant',
+    playerName:'', level:1, paths:'', ancestry:'', campaign:'Stormlight Archive',
+    attributes:{str:0, spd:0, int:0, wil:0, awa:0, pre:0},
+    defenseBonus:{physical:0, cognitive:0, spiritual:0},
+    skills: blankSkills(),
+    health:{current:10, bonus:0},
+    focus:{current:2, bonus:0},
+    investiture:{current:0, bonus:0},
+    radiant:false,
+    armor:'No armor', deflectBonus:0,
+    expertises:[], expertiseBonus:0,
+    talents:'',
+    weapons:[],
+    conditions:{}, injuries:[],
+    spheres:'', purpose:'', obstacle:'',
+    goals:[{text:'', ticks:[false,false,false]}],
+    appearance:'', equipment:'', connections:'', notes:''
+  };
+}
+
+/* ---------- derived values ---------- */
+const tierOf = lvl => Math.max(1, Math.min(5, Math.ceil((lvl || 1) / 4)));
+
+function derive(c){
+  const a = c.attributes;
+  const d = {
+    tier: tierOf(c.level),
+    physicalDefense: 10 + a.str + a.spd + (c.defenseBonus.physical|0),
+    cognitiveDefense: 10 + a.int + a.wil + (c.defenseBonus.cognitive|0),
+    spiritualDefense: 10 + a.awa + a.pre + (c.defenseBonus.spiritual|0),
+    lifting: lookup(TABLES.lifting, a.str),
+    movement: lookup(TABLES.movement, a.spd),
+    recovery: lookup(TABLES.recovery, a.wil),
+    senses: lookup(TABLES.senses, a.awa),
+    skills:{}
+  };
+  d.maxHealth = 10 + a.str + (d.tier - 1) * 10 + (c.health.bonus|0);
+  d.maxFocus = 2 + a.wil + (c.focus.bonus|0);
+  d.maxInvestiture = c.radiant ? 2 + Math.max(a.awa, a.pre) + (c.investiture.bonus|0) : 0;
+  const armor = ARMORS.find(x => x.name === c.armor) || ARMORS[0];
+  d.deflect = armor.deflect + (c.deflectBonus|0);
+  d.expertiseSlots = 2 + (a.int >= 1 ? a.int : 0) + (c.expertiseBonus|0);
+  ALL_SKILLS.forEach(sk => {
+    const s = c.skills[sk.key];
+    d.skills[sk.key] = s.ranks + a[sk.attr] + (s.bonus|0);
+  });
+  REALMS.forEach(r => {
+    const s = c.skills['custom_' + r.key];
+    d.skills['custom_' + r.key] = s.ranks + (a[s.attr] || 0) + (s.bonus|0);
+  });
+  return d;
+}
+
+/* ---------- app state & persistence ---------- */
+const STORE_KEY = 'radiant-sheet-v1';
+const state = {
+  characters:[], activeId:null, tab:'front',
+  settings:{theme:'light', scale:'m', plotDie:true, firebase:{apiKey:'',authDomain:'',projectId:'',databaseURL:''}},
+  profile:{username:''},
+  localParties:[],
+  rolls:[]
+};
+
+function activeChar(){
+  return state.characters.find(c => c.id === state.activeId) || state.characters[0];
+}
+
+function load(){
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw){
+      const parsed = JSON.parse(raw);
+      Object.assign(state, parsed, {settings:{...state.settings, ...(parsed.settings||{})}, rolls: parsed.rolls || []});
+    }
+  } catch(err){ console.warn('Could not read saved data', err); }
+  if (!state.characters.length){
+    const c = newCharacter('Unnamed Radiant');
+    state.characters = [c];
+    state.activeId = c.id;
+  }
+  if (!state.characters.some(c => c.id === state.activeId)) state.activeId = state.characters[0].id;
+  state.characters.forEach(migrate);
+}
+
+function migrate(c){
+  const fresh = newCharacter();
+  for (const k in fresh) if (c[k] === undefined) c[k] = fresh[k];
+  for (const k in fresh.skills) if (!c.skills[k]) c.skills[k] = fresh.skills[k];
+  c.goals = c.goals && c.goals.length ? c.goals : [{text:'', ticks:[false,false,false]}];
+}
+
+let saveTimer = null, saveState = 'saved';
+function save(){
+  setSavePill('saving');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        characters:state.characters, activeId:state.activeId, settings:state.settings,
+        profile:state.profile, localParties:state.localParties, rolls:state.rolls.slice(0,30)
+      }));
+      setSavePill('saved');
+    } catch(err){
+      setSavePill('error');
+      toast('Browser storage is full — export a backup file.');
+    }
+    cloud.pushCharacter();
+  }, 420);
+}
+function setSavePill(mode){
+  saveState = mode;
+  const pill = document.getElementById('savepill');
+  const text = document.getElementById('savetext');
+  if (!pill) return;
+  pill.classList.toggle('saved', mode === 'saved');
+  pill.querySelector('.dot').classList.toggle('pending', mode !== 'saved');
+  text.textContent = mode === 'saved' ? (cloud.on ? 'Synced' : 'Saved') : mode === 'saving' ? 'Saving' : 'Not saved';
+}
+
+/* ---------- tiny helpers ---------- */
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+const sgn = n => (n >= 0 ? '+' : '') + n;
+
+let toastTimer;
+function toast(msg){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function getPath(obj, path){
+  return path.split('.').reduce((o, k) => (o == null ? o : o[k]), obj);
+}
+function setPath(obj, path, value){
+  const keys = path.split('.');
+  const last = keys.pop();
+  const target = keys.reduce((o, k) => o[k], obj);
+  target[last] = value;
+}
+
+/* ============================================================
+   FRONT PAGE
+   ============================================================ */
+function pipsHTML(path, ranks){
+  let out = `<span class="pips" data-pips="${path}">`;
+  for (let i = 1; i <= 5; i++) out += `<i class="${i <= ranks ? 'on' : ''}" data-rank="${i}" role="button" tabindex="0" aria-label="Rank ${i}"></i>`;
+  return out + '</span>';
+}
+
+function skillRowHTML(c, d, sk){
+  return `<div class="skill">
+    <div class="mod" data-derived="skill.${sk.key}" data-test="${sk.key}" role="button" tabindex="0"
+         title="Roll ${esc(sk.name)}">${sgn(d.skills[sk.key])}</div>
+    <div class="nm">${esc(sk.name)} <span class="at">(${ATTRS[sk.attr].short})</span></div>
+    ${pipsHTML('skills.' + sk.key + '.ranks', c.skills[sk.key].ranks)}
+  </div>`;
+}
+
+function customSkillRowHTML(c, d, realm){
+  const key = 'custom_' + realm.key;
+  const s = c.skills[key];
+  const opts = Object.keys(ATTRS).map(a => `<option value="${a}" ${s.attr === a ? 'selected' : ''}>${ATTRS[a].short}</option>`).join('');
+  return `<div class="skill">
+    <div class="mod" data-derived="skill.${key}" data-test="${key}" role="button" tabindex="0" title="Roll custom skill">${sgn(d.skills[key])}</div>
+    <div class="nm customline">
+      <input type="text" value="${esc(s.name)}" data-path="skills.${key}.name" placeholder="Surge or custom skill" aria-label="Custom skill name">
+      <select data-path="skills.${key}.attr" aria-label="Custom skill attribute">${opts}</select>
+    </div>
+    ${pipsHTML('skills.' + key + '.ranks', s.ranks)}
+  </div>`;
+}
+
+function poolHTML(c, d, kind){
+  const cfg = {
+    health:{label:'Health', pool:c.health, max:d.maxHealth, note:'10 + STR + tier'},
+    focus:{label:'Focus', pool:c.focus, max:d.maxFocus, note:'2 + WIL'},
+    investiture:{label:'Investiture', pool:c.investiture, max:d.maxInvestiture, note:'2 + higher of AWA / PRE'}
+  }[kind];
+  const pct = cfg.max > 0 ? clamp(cfg.pool.current / cfg.max * 100, 0, 100) : 0;
+  return `<div class="pool">
+    <div class="top"><b>${cfg.label}</b><small>${cfg.note}</small></div>
+    <div class="track">
+      <button data-adjust="${kind}" data-by="-1" aria-label="Decrease ${cfg.label}">−</button>
+      <input type="number" data-path="${kind}.current" data-clamp="${kind}" value="${cfg.pool.current}" aria-label="Current ${cfg.label}">
+      <span class="of">/</span>
+      <span class="max" data-derived="max${kind}">${cfg.max}</span>
+      <button data-adjust="${kind}" data-by="1" aria-label="Increase ${cfg.label}">+</button>
+    </div>
+    <div class="bar"><i data-derived="bar${kind}" style="width:${pct}%"></i></div>
+  </div>`;
+}
+
+function realmHTML(c, d, realm){
+  const [a1, a2] = realm.attrs;
+  const defKey = realm.key + 'Defense';
+  const attrBox = k => `<div class="attr">
+      <div class="nm">${ATTRS[k].name}</div>
+      <div class="stepper">
+        <button data-attr="${k}" data-by="-1" aria-label="Lower ${ATTRS[k].name}">−</button>
+        <span class="val" data-derived="attr.${k}">${c.attributes[k]}</span>
+        <button data-attr="${k}" data-by="1" aria-label="Raise ${ATTRS[k].name}">+</button>
+      </div>
+    </div>`;
+  const pools = realm.key === 'physical' ? poolHTML(c, d, 'health')
+              : realm.key === 'cognitive' ? poolHTML(c, d, 'focus')
+              : poolHTML(c, d, 'investiture') + radiantToggleHTML(c);
+  return `<div class="card realm">
+    <div class="realm-head"><h2>${realm.name}</h2><p>${realm.blurb}</p></div>
+    <div class="trio">
+      ${attrBox(a1)}
+      <div>
+        <div class="shield">
+          <span class="lbl">Defense</span>
+          <span class="num" data-derived="${defKey}">${d[defKey]}</span>
+        </div>
+        <div class="defbonus"><input type="number" value="${c.defenseBonus[realm.key]}" data-path="defenseBonus.${realm.key}" title="Manual defense bonus" aria-label="${realm.name} defense bonus" placeholder="+0"></div>
+      </div>
+      ${attrBox(a2)}
+    </div>
+    ${pools}
+    <hr class="rule" style="margin-top:.9rem">
+    ${realm.skills.map(s => skillRowHTML(c, d, {key:s[0], name:s[1], attr:s[2]})).join('')}
+    ${customSkillRowHTML(c, d, realm)}
+  </div>`;
+}
+
+function radiantToggleHTML(c){
+  return `<div class="switchrow" style="padding-top:.5rem">
+    <span style="font-size:.84rem">Radiant — track Investiture
+      <span class="hint" style="display:block">Turn on once your character is bonded</span></span>
+    <button class="switch" data-toggle="radiant" aria-pressed="${c.radiant}" aria-label="Radiant"></button>
+  </div>`;
+}
+
+function weaponsHTML(c, d){
+  const skillOpts = w => ['heavyWeapons','lightWeapons','athletics','thievery','agility']
+    .concat(ALL_SKILLS.map(s => s.key).filter(k => !['heavyWeapons','lightWeapons','athletics','thievery','agility'].includes(k)))
+    .map(k => {
+      const s = ALL_SKILLS.find(x => x.key === k);
+      return `<option value="${k}" ${w.skill === k ? 'selected' : ''}>${s.name}</option>`;
+    }).join('');
+  const defOpts = w => ['physical','cognitive','spiritual']
+    .map(k => `<option value="${k}" ${w.defense === k ? 'selected' : ''}>vs ${k[0].toUpperCase() + k.slice(1)}</option>`).join('');
+
+  const rows = c.weapons.map((w, i) => `<div class="row wrow" data-widx="${i}">
+      <input type="text" value="${esc(w.name)}" data-path="weapons.${i}.name" placeholder="Weapon" aria-label="Weapon name">
+      <select data-path="weapons.${i}.skill" aria-label="Skill used">${skillOpts(w)}</select>
+      <input type="number" value="${w.bonus}" data-path="weapons.${i}.bonus" title="Extra attack bonus" aria-label="Attack bonus">
+      <input type="text" value="${esc(w.damage)}" data-path="weapons.${i}.damage" placeholder="1d6 + STR" aria-label="Damage">
+      <input type="text" value="${esc(w.traits)}" data-path="weapons.${i}.traits" placeholder="Traits" aria-label="Traits">
+      <select data-path="weapons.${i}.defense" aria-label="Target defense">${defOpts(w)}</select>
+      <span style="display:flex;gap:.25rem">
+        <button class="iconbtn" data-action="roll-weapon" data-i="${i}" title="Roll attack and damage">Roll</button>
+        <button class="iconbtn" data-action="del-weapon" data-i="${i}" aria-label="Remove weapon">✕</button>
+      </span>
+    </div>`).join('');
+
+  return `<div class="card">
+    <h3>Weapons <span class="hint">Attack = d20 + skill + bonus</span></h3><hr class="rule">
+    <div class="row wrow thead"><span>Weapon</span><span>Skill</span><span>Bonus</span><span>Damage</span><span>Traits</span><span>Target</span><span></span></div>
+    <div class="rows">${rows || '<p class="empty">No weapons yet. Add one to roll attacks from the sheet.</p>'}</div>
+    <button class="btn addbtn" data-action="add-weapon">Add weapon</button>
+  </div>`;
+}
+
+function expertisesHTML(c, d){
+  const chips = c.expertises.map((e, i) => {
+    let kind = 'Custom';
+    for (const g in EXPERTISES) if (EXPERTISES[g].includes(e)) kind = g;
+    return `<span class="chip"><span>${esc(e)}<span class="kind"> ${kind}</span></span>
+      <button data-action="del-expertise" data-i="${i}" aria-label="Remove ${esc(e)}">✕</button></span>`;
+  }).join('');
+  return `<div class="card">
+    <h3>Expertises <span class="slots"><b data-derived="expUsed">${c.expertises.length}</b> of <b data-derived="expSlots">${d.expertiseSlots}</b> slots</span></h3>
+    <hr class="rule">
+    <div class="chips">${chips || '<span class="empty">Two cultural expertises come free, plus one per point of Intellect.</span>'}</div>
+    <div class="combo">
+      <input type="text" id="expinput" placeholder="Search expertises, or type your own and press Enter" autocomplete="off" aria-label="Add expertise">
+      <div class="menu" id="expmenu" hidden></div>
+    </div>
+    <div class="f" style="margin-top:.5rem;max-width:12rem">
+      <label>Extra slots from talents</label>
+      <input type="number" value="${c.expertiseBonus}" data-path="expertiseBonus">
+    </div>
+  </div>`;
+}
+
+function conditionsHTML(c){
+  const conds = CONDITIONS.map(n =>
+    `<button class="cond" data-cond="${n}" aria-pressed="${!!c.conditions[n]}">${n}</button>`).join('');
+  const injuries = c.injuries.map((inj, i) => `<div class="row" style="grid-template-columns:1fr 5.5rem auto" data-iidx="${i}">
+      <input type="text" value="${esc(inj.text)}" data-path="injuries.${i}.text" placeholder="Injury" aria-label="Injury">
+      <input type="number" value="${inj.days}" data-path="injuries.${i}.days" title="Days of recovery left" aria-label="Recovery days">
+      <button class="iconbtn" data-action="del-injury" data-i="${i}" aria-label="Remove injury">✕</button>
+    </div>`).join('');
+  return `<div class="card">
+    <h3>Conditions &amp; injuries</h3><hr class="rule">
+    <div class="conds">${conds}</div>
+    <h4 style="margin-top:.9rem;font-size:1rem">Injuries</h4>
+    <div class="row thead" style="grid-template-columns:1fr 5.5rem auto"><span>Injury</span><span>Days left</span><span></span></div>
+    <div class="rows">${injuries || '<p class="empty">No injuries. Long rests reduce recovery days.</p>'}</div>
+    <button class="btn addbtn" data-action="add-injury">Add injury</button>
+  </div>`;
+}
+
+function renderFront(){
+  const c = activeChar(), d = derive(c);
+  const armorOpts = ARMORS.map(a => `<option value="${a.name}" ${c.armor === a.name ? 'selected' : ''}>${a.name} (deflect ${a.deflect})</option>`).join('');
+
+  $('#view-front').innerHTML = `
+  <div class="card">
+    <div class="identity">
+      <div class="f"><label>Character name</label><input type="text" value="${esc(c.name)}" data-path="name" data-renames="1"></div>
+      <div class="f"><label>Player name</label><input type="text" value="${esc(c.playerName)}" data-path="playerName"></div>
+      <div class="f"><label>Paths</label><input type="text" value="${esc(c.paths)}" data-path="paths" placeholder="Windrunner 1"></div>
+      <div class="f"><label>Ancestry</label><input type="text" value="${esc(c.ancestry)}" data-path="ancestry" placeholder="Human"></div>
+      <div class="f"><label>Level</label><input type="number" min="1" max="20" value="${c.level}" data-path="level"></div>
+    </div>
+    <p class="hint" id="pointsline" style="margin:.6rem 0 0"></p>
+  </div>
+
+  <div class="realms">
+    ${REALMS.map(r => realmHTML(c, d, r)).join('')}
+  </div>
+
+  <div class="card">
+    <div class="lookups">
+      <div class="lookup"><div class="lbl">Lifting capacity</div><div class="v" data-derived="lifting">${d.lifting}</div></div>
+      <div class="lookup"><div class="lbl">Movement</div><div class="v" data-derived="movement">${d.movement}</div></div>
+      <div class="lookup"><div class="lbl">Recovery die</div><div class="v" data-derived="recovery" data-test="recovery" role="button" tabindex="0" style="cursor:pointer" title="Roll recovery">${d.recovery}</div></div>
+      <div class="lookup"><div class="lbl">Senses range</div><div class="v" data-derived="senses">${d.senses}</div></div>
+    </div>
+    <div class="twocol" style="margin-top:.8rem">
+      <div class="f"><label>Worn armor</label><select data-path="armor">${armorOpts}</select></div>
+      <div class="row" style="grid-template-columns:1fr 1fr;align-items:end">
+        <div class="f"><label>Extra deflect</label><input type="number" value="${c.deflectBonus}" data-path="deflectBonus"></div>
+        <div class="lookup"><div class="lbl">Deflect</div><div class="v" data-derived="deflect">${d.deflect}</div></div>
+      </div>
+    </div>
+  </div>
+
+  ${expertisesHTML(c, d)}
+
+  <div class="card">
+    <h3>Talents</h3><hr class="rule">
+    <textarea data-path="talents" placeholder="Path talents, ancestry talents, and anything you have taken from a talent tree." style="min-height:9rem">${esc(c.talents)}</textarea>
+  </div>
+
+  ${weaponsHTML(c, d)}
+  ${conditionsHTML(c)}
+  `;
+  bindCombo();
+  updatePointsSpent();
+}
+
+function updatePointsSpent(){
+  const line = $('#pointsline');
+  if (!line) return;
+  const c = activeChar();
+  const spent = Object.values(c.attributes).reduce((a, b) => a + b, 0);
+  const over = Object.entries(c.attributes).filter(([, v]) => v > 3).map(([k]) => ATTRS[k].short);
+  line.textContent = `${spent} of 12 attribute points spent`
+    + (spent > 12 ? ' — over the level 1 budget' : '')
+    + (over.length ? `. Creation caps each attribute at 3: ${over.join(', ')} ${over.length > 1 ? 'are' : 'is'} above it.` : '.');
+  line.style.color = (spent > 12 || over.length) ? 'var(--warn)' : '';
+}
+
+/* ============================================================
+   BACK PAGE
+   ============================================================ */
+function renderBack(){
+  const c = activeChar(), d = derive(c);
+  const goals = c.goals.map((g, i) => `<div class="goal" data-gidx="${i}">
+      <input type="text" value="${esc(g.text)}" data-path="goals.${i}.text" placeholder="A goal your character is working toward">
+      <span style="display:flex;align-items:center;gap:.4rem">
+        <span class="ticks" data-ticks="${i}">
+          ${[0,1,2].map(t => `<i class="${g.ticks[t] ? 'on' : ''}" data-t="${t}" role="button" tabindex="0" aria-label="Progress ${t+1}"></i>`).join('')}
+        </span>
+        <button class="iconbtn" data-action="del-goal" data-i="${i}" aria-label="Remove goal">✕</button>
+      </span>
+    </div>`).join('');
+
+  $('#view-back').innerHTML = `
+  <div class="card">
+    <div class="identity">
+      <div class="f"><label>Character name</label><input type="text" value="${esc(c.name)}" data-path="name" data-renames="1"></div>
+      <div class="f"><label>Campaign setting</label><input type="text" value="${esc(c.campaign)}" data-path="campaign"></div>
+      <div class="f"><label>Paths</label><input type="text" value="${esc(c.paths)}" data-path="paths"></div>
+      <div class="f"><label>Ancestry</label><input type="text" value="${esc(c.ancestry)}" data-path="ancestry"></div>
+      <div class="f"><label>Level</label><input type="number" min="1" max="20" value="${c.level}" data-path="level"></div>
+    </div>
+    <div class="lookups" style="margin-top:.8rem;grid-template-columns:repeat(3,1fr)">
+      <div class="lookup"><div class="lbl">Physical defense</div><div class="v" data-derived="physicalDefense">${d.physicalDefense}</div></div>
+      <div class="lookup"><div class="lbl">Cognitive defense</div><div class="v" data-derived="cognitiveDefense">${d.cognitiveDefense}</div></div>
+      <div class="lookup"><div class="lbl">Spiritual defense</div><div class="v" data-derived="spiritualDefense">${d.spiritualDefense}</div></div>
+    </div>
+  </div>
+
+  <div class="back-grid">
+    <div>
+      <div class="card">
+        <h3>Character appearance</h3><hr class="rule">
+        <textarea data-path="appearance" style="min-height:13rem" placeholder="Build, features, bearing, the marks a life on Roshar leaves.">${esc(c.appearance)}</textarea>
+      </div>
+      <div class="card">
+        <h3>Talents, continued</h3><hr class="rule">
+        <textarea data-path="notes" style="min-height:11rem" placeholder="Overflow from the front page, plus anything else worth keeping.">${esc(c.notes)}</textarea>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h3>Armor &amp; equipment</h3><hr class="rule">
+        <textarea data-path="equipment" style="min-height:16rem" placeholder="Starting kit, weapons, packs, fabrials, and anything you are carrying.">${esc(c.equipment)}</textarea>
+        <div class="f" style="margin-top:.6rem"><label>Spheres — diamond marks</label>
+          <input type="text" value="${esc(c.spheres)}" data-path="spheres" placeholder="e.g. 4 diamond marks, 2 clearchips"></div>
+      </div>
+      <div class="card">
+        <h3>Connections</h3><hr class="rule">
+        <textarea data-path="connections" style="min-height:9rem" placeholder="Patrons, allies, squires, and the spren you are bonded to.">${esc(c.connections)}</textarea>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h3>Purpose</h3><hr class="rule">
+        <textarea data-path="purpose" style="min-height:5rem" placeholder="What drives this character forward.">${esc(c.purpose)}</textarea>
+      </div>
+      <div class="card">
+        <h3>Obstacle</h3><hr class="rule">
+        <textarea data-path="obstacle" style="min-height:5rem" placeholder="The flaw or fear that gets in the way.">${esc(c.obstacle)}</textarea>
+      </div>
+      <div class="card">
+        <h3>Goals <span class="hint">Tick a circle each time you make progress</span></h3><hr class="rule">
+        <div class="rows">${goals}</div>
+        <button class="btn addbtn" data-action="add-goal">Add goal</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ============================================================
+   LIVE VALUE SYNC — updates computed nodes without rebuilding
+   ============================================================ */
+function syncDerived(){
+  const c = activeChar(), d = derive(c);
+  const set = (key, val) => $$(`[data-derived="${key}"]`).forEach(n => { if (n.textContent !== String(val)) n.textContent = val; });
+
+  ['physicalDefense','cognitiveDefense','spiritualDefense','lifting','movement','recovery','senses','deflect'].forEach(k => set(k, d[k]));
+  Object.keys(ATTRS).forEach(k => set('attr.' + k, c.attributes[k]));
+  Object.keys(d.skills).forEach(k => set('skill.' + k, sgn(d.skills[k])));
+  set('maxhealth', d.maxHealth); set('maxfocus', d.maxFocus); set('maxinvestiture', d.maxInvestiture);
+  set('expUsed', c.expertises.length); set('expSlots', d.expertiseSlots);
+
+  [['health', d.maxHealth], ['focus', d.maxFocus], ['investiture', d.maxInvestiture]].forEach(([k, max]) => {
+    const bar = $(`[data-derived="bar${k}"]`);
+    if (bar) bar.style.width = (max > 0 ? clamp(c[k].current / max * 100, 0, 100) : 0) + '%';
+  });
+
+  const badge = $('#tierbadge');
+  if (badge) badge.textContent = `Level ${c.level} · Tier ${d.tier}`;
+  const slots = $('[data-derived="expSlots"]');
+  if (slots && slots.parentElement) slots.parentElement.style.color = c.expertises.length > d.expertiseSlots ? 'var(--warn)' : '';
+}
+
+function renderCharPicker(){
+  const sel = $('#charpick');
+  sel.innerHTML = state.characters.map(c =>
+    `<option value="${c.id}" ${c.id === state.activeId ? 'selected' : ''}>${esc(c.name || 'Unnamed')}</option>`).join('');
+}
+
+function render(){
+  renderCharPicker();
+  if (state.tab === 'front') renderFront();
+  else if (state.tab === 'back') renderBack();
+  else renderSocial();
+  syncDerived();
+  renderRolls();
+}
+
+function switchTab(tab){
+  state.tab = tab;
+  $$('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === tab)));
+  ['front','back','social'].forEach(t => $('#view-' + t).hidden = (t !== tab));
+  render();
+}
+
+/* ============================================================
+   DICE
+   ============================================================ */
+function rollDie(sides){ return 1 + Math.floor(Math.random() * sides); }
+
+function parseDice(expr){
+  // returns {total, detail} for expressions like "2d6 + 3"
+  let total = 0, parts = [];
+  const tokens = String(expr).replace(/\s+/g, '').match(/[+-]?[^+-]+/g) || [];
+  tokens.forEach(tok => {
+    const sign = tok.startsWith('-') ? -1 : 1;
+    const body = tok.replace(/^[+-]/, '');
+    const m = body.match(/^(\d*)d(\d+)$/i);
+    if (m){
+      const n = parseInt(m[1] || '1', 10), s = parseInt(m[2], 10);
+      const rolls = Array.from({length:clamp(n, 1, 50)}, () => rollDie(s));
+      total += sign * rolls.reduce((a, b) => a + b, 0);
+      parts.push(`${sign < 0 ? '−' : ''}${n}d${s} [${rolls.join(', ')}]`);
+    } else if (/^\d+$/.test(body)){
+      total += sign * parseInt(body, 10);
+      parts.push(`${sign < 0 ? '−' : '+'}${body}`);
+    } else if (body){
+      parts.push(body); // free text like STR — left for the player to add
+    }
+  });
+  return {total, detail:parts.join(' ')};
+}
+
+function expandAttrs(expr, c){
+  return String(expr).replace(/\b(STR|SPD|INT|WIL|AWA|PRE)\b/gi, m => String(c.attributes[m.toLowerCase()]));
+}
+
+function plotDie(){
+  const v = rollDie(6);
+  return {value:v, label: v <= 2 ? 'Complication' : v <= 4 ? 'Blank' : 'Opportunity',
+          cls: v <= 2 ? 'comp' : v <= 4 ? '' : 'opp'};
+}
+
+function logRoll(entry){
+  entry.at = Date.now();
+  state.rolls.unshift(entry);
+  state.rolls = state.rolls.slice(0, 30);
+  $('#tray').classList.remove('collapsed');
+  $('#traytoggle').textContent = 'Hide';
+  renderRolls();
+  save();
+}
+
+function renderRolls(){
+  const log = $('#rolllog');
+  if (!log) return;
+  if (!state.rolls.length){ log.innerHTML = '<p class="empty">Rolls appear here. Tap any skill modifier to test it.</p>'; return; }
+  log.innerHTML = state.rolls.map(r => `<div class="roll">
+    <div class="what"><span>${esc(r.what)}</span><span>${new Date(r.at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span></div>
+    <div class="total">${esc(r.total)}</div>
+    <div class="parts">${esc(r.detail)}</div>
+    ${r.plot ? `<div class="plot ${r.plot.cls}">Plot die ${r.plot.value} — ${r.plot.label}</div>` : ''}
+  </div>`).join('');
+}
+
+function rollTest(label, modifier){
+  const die = rollDie(20);
+  const entry = {
+    what: label,
+    total: String(die + modifier),
+    detail: `d20 [${die}] ${sgn(modifier)}${die === 20 ? ' — natural 20' : die === 1 ? ' — natural 1' : ''}`
+  };
+  if (state.settings.plotDie) entry.plot = plotDie();
+  logRoll(entry);
+}
+
+function rollWeapon(i){
+  const c = activeChar(), d = derive(c), w = c.weapons[i];
+  if (!w) return;
+  const mod = (d.skills[w.skill] || 0) + (w.bonus | 0);
+  const die = rollDie(20);
+  const dmg = parseDice(expandAttrs(w.damage || '1d6', c));
+  const entry = {
+    what: `${w.name || 'Weapon'} — attack vs ${w.defense} defense`,
+    total: `${die + mod} to hit · ${dmg.total} damage`,
+    detail: `d20 [${die}] ${sgn(mod)} · damage ${w.damage || '1d6'} = ${dmg.detail}`
+  };
+  if (state.settings.plotDie) entry.plot = plotDie();
+  logRoll(entry);
+}
+
+/* ---------- rests ---------- */
+function shortRest(){
+  const c = activeChar(), d = derive(c);
+  const die = parseInt(d.recovery.slice(1), 10);
+  const roll = rollDie(die) + c.attributes.wil;
+  c.health.current = clamp(c.health.current + roll, 0, d.maxHealth);
+  c.focus.current = d.maxFocus;
+  logRoll({what:`${c.name} takes a short rest`, total:`+${roll} health`,
+           detail:`Recovery ${d.recovery} + WIL, focus restored to ${d.maxFocus}`});
+  render();
+  save();
+  toast(`Recovered ${roll} health. Focus is full.`);
+}
+
+function longRest(){
+  const c = activeChar(), d = derive(c);
+  c.health.current = d.maxHealth;
+  c.focus.current = d.maxFocus;
+  if (c.radiant) c.investiture.current = d.maxInvestiture;
+  c.injuries.forEach(inj => inj.days = Math.max(0, (inj.days | 0) - 1));
+  c.injuries = c.injuries.filter(inj => inj.days > 0 || !inj.text);
+  ['Exhausted','Disoriented','Slowed','Stunned','Surprised','Prone'].forEach(k => delete c.conditions[k]);
+  render();
+  save();
+  toast('Long rest complete. Pools are full and injuries advanced a day.');
+}
+
+/* ============================================================
+   EXPERTISE COMBOBOX
+   ============================================================ */
+function bindCombo(){
+  const input = $('#expinput'), menu = $('#expmenu');
+  if (!input) return;
+  let hl = -1, items = [];
+
+  const flat = () => {
+    const out = [];
+    for (const g in EXPERTISES) EXPERTISES[g].forEach(n => out.push({name:n, group:g}));
+    return out;
+  };
+
+  const open = () => {
+    const q = input.value.trim().toLowerCase();
+    const c = activeChar();
+    const matches = flat().filter(x => !c.expertises.includes(x.name) && (!q || x.name.toLowerCase().includes(q)));
+    items = matches.slice(0, 40);
+    let html = '', lastGroup = '';
+    items.forEach((x, i) => {
+      if (x.group !== lastGroup){ html += `<div class="grp">${x.group}</div>`; lastGroup = x.group; }
+      html += `<button data-exp="${esc(x.name)}" class="${i === hl ? 'hl' : ''}">${esc(x.name)}</button>`;
+    });
+    if (q && !flat().some(x => x.name.toLowerCase() === q))
+      html = `<div class="grp">Custom</div><button data-exp="${esc(input.value.trim())}">Add “${esc(input.value.trim())}”</button>` + html;
+    menu.innerHTML = html || '<div class="grp">Nothing left to add</div>';
+    menu.hidden = false;
+  };
+
+  const close = () => { menu.hidden = true; hl = -1; };
+
+  input.addEventListener('focus', open);
+  input.addEventListener('input', () => { hl = -1; open(); });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+      e.preventDefault();
+      hl = clamp(hl + (e.key === 'ArrowDown' ? 1 : -1), 0, items.length - 1);
+      open();
+    } else if (e.key === 'Enter'){
+      e.preventDefault();
+      const pick = hl >= 0 && items[hl] ? items[hl].name : input.value.trim();
+      if (pick) addExpertise(pick);
+    } else if (e.key === 'Escape') close();
+  });
+  menu.addEventListener('mousedown', e => {
+    const btn = e.target.closest('[data-exp]');
+    if (btn){ e.preventDefault(); addExpertise(btn.dataset.exp); }
+  });
+  input.addEventListener('blur', () => setTimeout(close, 120));
+}
+
+function addExpertise(name){
+  const c = activeChar();
+  name = name.trim();
+  if (!name) return;
+  if (c.expertises.includes(name)){ toast(`${name} is already on the sheet.`); return; }
+  c.expertises.push(name);
+  save();
+  renderFront();
+  syncDerived();
+  const input = $('#expinput');
+  if (input){ input.value = ''; input.focus(); }
+}
+
+/* ============================================================
+   EVENTS
+   ============================================================ */
+document.addEventListener('input', e => {
+  const t = e.target;
+  const path = t.dataset.path;
+  if (path === undefined) return;
+  const c = activeChar();
+  let value = t.value;
+  if (t.type === 'number'){
+    value = t.value === '' ? 0 : parseInt(t.value, 10);
+    if (Number.isNaN(value)) value = 0;
+    if (path === 'level') value = clamp(value, 1, 20);
+  }
+  setPath(c, path, value);
+  if (t.dataset.clamp){
+    const d = derive(c);
+    const max = {health:d.maxHealth, focus:d.maxFocus, investiture:d.maxInvestiture}[t.dataset.clamp];
+    const fixed = clamp(value, 0, max);
+    if (fixed !== value){ setPath(c, path, fixed); t.value = fixed; }
+  }
+  if (t.dataset.renames) renderCharPicker();
+  syncDerived();
+  save();
+});
+
+document.addEventListener('click', e => {
+  const c = activeChar();
+
+  const tab = e.target.closest('.tab');
+  if (tab) return switchTab(tab.dataset.tab);
+
+  const pip = e.target.closest('[data-pips] i');
+  if (pip){
+    const path = pip.parentElement.dataset.pips;
+    const rank = parseInt(pip.dataset.rank, 10);
+    const current = getPath(c, path);
+    setPath(c, path, current === rank ? rank - 1 : rank);
+    renderFront(); syncDerived(); save();
+    return;
+  }
+
+  const tick = e.target.closest('[data-ticks] i');
+  if (tick){
+    const gi = parseInt(tick.parentElement.dataset.ticks, 10);
+    const ti = parseInt(tick.dataset.t, 10);
+    c.goals[gi].ticks[ti] = !c.goals[gi].ticks[ti];
+    tick.classList.toggle('on', c.goals[gi].ticks[ti]);
+    save();
+    return;
+  }
+
+  const attrBtn = e.target.closest('[data-attr]');
+  if (attrBtn){
+    const k = attrBtn.dataset.attr;
+    c.attributes[k] = clamp(c.attributes[k] + parseInt(attrBtn.dataset.by, 10), 0, 9);
+    const d = derive(c);
+    ['health','focus','investiture'].forEach(kind => {
+      const max = {health:d.maxHealth, focus:d.maxFocus, investiture:d.maxInvestiture}[kind];
+      c[kind].current = clamp(c[kind].current, 0, max);
+      const field = $(`[data-path="${kind}.current"]`);
+      if (field) field.value = c[kind].current;
+    });
+    syncDerived(); updatePointsSpent(); save();
+    return;
+  }
+
+  const adj = e.target.closest('[data-adjust]');
+  if (adj){
+    const kind = adj.dataset.adjust, by = parseInt(adj.dataset.by, 10);
+    const d = derive(c);
+    const max = {health:d.maxHealth, focus:d.maxFocus, investiture:d.maxInvestiture}[kind];
+    c[kind].current = clamp(c[kind].current + by, 0, max);
+    const field = $(`[data-path="${kind}.current"]`);
+    if (field) field.value = c[kind].current;
+    syncDerived(); save();
+    return;
+  }
+
+  const cond = e.target.closest('[data-cond]');
+  if (cond && !cond.dataset.action){
+    const n = cond.dataset.cond;
+    c.conditions[n] = !c.conditions[n];
+    if (!c.conditions[n]) delete c.conditions[n];
+    cond.setAttribute('aria-pressed', String(!!c.conditions[n]));
+    save();
+    return;
+  }
+
+  const toggle = e.target.closest('[data-toggle]');
+  if (toggle){
+    const k = toggle.dataset.toggle;
+    c[k] = !c[k];
+    toggle.setAttribute('aria-pressed', String(c[k]));
+    if (k === 'radiant' && c[k]) c.investiture.current = derive(c).maxInvestiture;
+    renderFront(); syncDerived(); save();
+    return;
+  }
+
+  const test = e.target.closest('[data-test]');
+  if (test){
+    const key = test.dataset.test;
+    if (key === 'recovery'){
+      const d = derive(c);
+      const die = parseInt(d.recovery.slice(1), 10);
+      const r = rollDie(die);
+      logRoll({what:`${c.name} — recovery die`, total:String(r + c.attributes.wil), detail:`${d.recovery} [${r}] + WIL ${sgn(c.attributes.wil)}`});
+    } else {
+      const d = derive(c);
+      const sk = ALL_SKILLS.find(s => s.key === key);
+      const label = sk ? sk.name : (c.skills[key].name || 'Custom skill');
+      rollTest(`${c.name} — ${label}`, d.skills[key]);
+    }
+    return;
+  }
+
+  const roll = e.target.closest('[data-roll]');
+  if (roll){
+    const res = parseDice(roll.dataset.roll);
+    const entry = {what:`Quick roll — ${roll.dataset.roll}`, total:String(res.total), detail:res.detail};
+    if (state.settings.plotDie && roll.dataset.roll === '1d20') entry.plot = plotDie();
+    logRoll(entry);
+    return;
+  }
+
+  const act = e.target.closest('[data-action]');
+  if (act) handleAction(act.dataset.action, act, c);
+});
+
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-pips] i, [data-ticks] i, [data-test]')){
+    e.preventDefault();
+    e.target.click();
+  }
+  if (e.key === 'Escape' && $('#overlay').classList.contains('open')) closeModal();
+});
+
+function handleAction(action, node, c){
+  switch (action){
+    case 'new-char': {
+      const nc = newCharacter('New character');
+      state.characters.push(nc);
+      state.activeId = nc.id;
+      render(); save();
+      toast('New character created.');
+      break;
+    }
+    case 'settings': openSettings(); break;
+    case 'go-social': switchTab('social'); break;
+    case 'short-rest': shortRest(); break;
+    case 'long-rest': longRest(); break;
+    case 'export': exportCharacter(c); break;
+    case 'export-all': exportAll(); break;
+    case 'import': $('#filein').click(); break;
+    case 'add-weapon':
+      c.weapons.push({name:'', skill:'lightWeapons', bonus:0, damage:'1d6', traits:'', defense:'physical'});
+      renderFront(); save(); break;
+    case 'del-weapon':
+      c.weapons.splice(parseInt(node.dataset.i, 10), 1);
+      renderFront(); save(); break;
+    case 'roll-weapon': rollWeapon(parseInt(node.dataset.i, 10)); break;
+    case 'add-injury': c.injuries.push({text:'', days:1}); renderFront(); save(); break;
+    case 'del-injury': c.injuries.splice(parseInt(node.dataset.i, 10), 1); renderFront(); save(); break;
+    case 'del-expertise': c.expertises.splice(parseInt(node.dataset.i, 10), 1); renderFront(); syncDerived(); save(); break;
+    case 'add-goal': c.goals.push({text:'', ticks:[false,false,false]}); renderBack(); save(); break;
+    case 'del-goal': c.goals.splice(parseInt(node.dataset.i, 10), 1); renderBack(); save(); break;
+    case 'toggle-tray': {
+      const tray = $('#tray');
+      tray.classList.toggle('collapsed');
+      $('#traytoggle').textContent = tray.classList.contains('collapsed') ? 'Show' : 'Hide';
+      break;
+    }
+    case 'clear-log': state.rolls = []; renderRolls(); save(); break;
+    case 'plot-only': { const p = plotDie(); logRoll({what:'Plot die', total:String(p.value), detail:p.label, plot:p}); break; }
+    case 'clear-sheet': {
+      if (confirm('Clear every field on this character? This cannot be undone.')){
+        const keep = c.id;
+        const fresh = newCharacter('Unnamed Radiant');
+        fresh.id = keep;
+        state.characters = state.characters.map(x => x.id === keep ? fresh : x);
+        closeModal(); render(); save();
+        toast('Sheet cleared.');
+      }
+      break;
+    }
+    case 'reset-level': {
+      c.level = 1;
+      const d = derive(c);
+      c.health.current = d.maxHealth; c.focus.current = d.maxFocus;
+      closeModal(); render(); save();
+      toast('Back to level 1.');
+      break;
+    }
+    case 'delete-char': {
+      if (state.characters.length === 1){ toast('Keep at least one character.'); break; }
+      if (confirm(`Delete ${c.name}?`)){
+        state.characters = state.characters.filter(x => x.id !== c.id);
+        state.activeId = state.characters[0].id;
+        closeModal(); render(); save();
+      }
+      break;
+    }
+    case 'duplicate-char': {
+      const copy = JSON.parse(JSON.stringify(c));
+      copy.id = uid(); copy.name = c.name + ' (copy)';
+      state.characters.push(copy); state.activeId = copy.id;
+      closeModal(); render(); save();
+      break;
+    }
+    case 'save-firebase': saveFirebaseConfig(); break;
+    case 'disconnect-firebase': cloud.disconnect(); break;
+    case 'close-modal': closeModal(); break;
+    default: handleSocialAction(action, node, c);
+  }
+}
+
+$('#charpick').addEventListener('change', e => {
+  state.activeId = e.target.value;
+  render(); save();
+});
+
+/* ---------- import / export ---------- */
+function download(filename, data){
+  const blob = new Blob([data], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+const slug = s => (s || 'character').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+function exportCharacter(c){ download(`${slug(c.name)}.json`, JSON.stringify({type:'radiant-sheet-character', character:c}, null, 2)); toast('Character file downloaded.'); }
+function exportAll(){ download('radiant-sheet-all.json', JSON.stringify({type:'radiant-sheet-collection', characters:state.characters, profile:state.profile, localParties:state.localParties}, null, 2)); toast('All characters downloaded.'); }
+
+$('#filein').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    const incoming = data.characters ? data.characters : data.character ? [data.character] : Array.isArray(data) ? data : [data];
+    let added = 0;
+    incoming.forEach(ch => {
+      if (!ch || !ch.attributes) return;
+      ch.id = uid();
+      migrate(ch);
+      state.characters.push(ch);
+      added++;
+    });
+    if (added){
+      state.activeId = state.characters[state.characters.length - 1].id;
+      render(); save();
+      toast(added === 1 ? 'Character imported.' : `${added} characters imported.`);
+    } else toast('That file has no character data in it.');
+  } catch(err){
+    toast('That file could not be read as a character sheet.');
+  }
+  e.target.value = '';
+});
+
+/* ============================================================
+   SETTINGS MODAL
+   ============================================================ */
+function openModal(html){
+  $('#modal').innerHTML = html;
+  $('#overlay').classList.add('open');
+  const first = $('#modal').querySelector('input,button,select');
+  if (first) first.focus();
+}
+function closeModal(){ $('#overlay').classList.remove('open'); }
+$('#overlay').addEventListener('mousedown', e => { if (e.target.id === 'overlay') closeModal(); });
+
+function openSettings(){
+  const s = state.settings, f = s.firebase;
+  openModal(`
+    <h2>Settings</h2><hr class="rule">
+
+    <section>
+      <div class="switchrow"><span>Theme</span>
+        <span class="seg">
+          <button data-set="theme" data-val="light" aria-pressed="${s.theme === 'light'}">Light</button>
+          <button data-set="theme" data-val="dark" aria-pressed="${s.theme === 'dark'}">Dark</button>
+        </span>
+      </div>
+      <div class="switchrow"><span>Text size</span>
+        <span class="seg">
+          <button data-set="scale" data-val="s" aria-pressed="${s.scale === 's'}">Small</button>
+          <button data-set="scale" data-val="m" aria-pressed="${s.scale === 'm'}">Medium</button>
+          <button data-set="scale" data-val="l" aria-pressed="${s.scale === 'l'}">Large</button>
+        </span>
+      </div>
+      <div class="switchrow">
+        <span>Roll a plot die with every d20 test
+          <span class="hint" style="display:block">1–2 complication · 3–4 blank · 5–6 opportunity</span></span>
+        <button class="switch" data-setbool="plotDie" aria-pressed="${s.plotDie}" aria-label="Plot die"></button>
+      </div>
+    </section>
+
+    <section>
+      <h4>This character</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:.4rem">
+        <button class="btn" data-action="duplicate-char">Duplicate</button>
+        <button class="btn" data-action="reset-level">Reset to level 1</button>
+        <button class="btn danger" data-action="clear-sheet">Clear sheet</button>
+        <button class="btn danger" data-action="delete-char">Delete character</button>
+      </div>
+    </section>
+
+    <section>
+      <h4>Backups</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:.4rem">
+        <button class="btn" data-action="export">Export this character</button>
+        <button class="btn" data-action="export-all">Export all characters</button>
+        <button class="btn" data-action="import">Import from file</button>
+      </div>
+    </section>
+
+    <section>
+      <h4>Sync across devices</h4>
+      <p class="hint" style="margin:.1rem 0 .6rem">Sheets live in this browser until you add a Firebase project. Adding one turns on accounts, friends, and shared party dashboards.</p>
+      <div class="grid2">
+        <div class="f"><label>API key</label><input type="text" id="fb-apiKey" value="${esc(f.apiKey)}" placeholder="AIza…"></div>
+        <div class="f"><label>Auth domain</label><input type="text" id="fb-authDomain" value="${esc(f.authDomain)}" placeholder="my-app.firebaseapp.com"></div>
+        <div class="f"><label>Project ID</label><input type="text" id="fb-projectId" value="${esc(f.projectId)}" placeholder="my-app"></div>
+        <div class="f"><label>Database URL</label><input type="text" id="fb-databaseURL" value="${esc(f.databaseURL)}" placeholder="https://my-app.firebaseio.com"></div>
+      </div>
+      <div style="display:flex;gap:.4rem;margin-top:.6rem;flex-wrap:wrap">
+        <button class="btn primary" data-action="save-firebase">Save and connect</button>
+        ${cloud.on ? '<button class="btn danger" data-action="disconnect-firebase">Disconnect</button>' : ''}
+      </div>
+      <p class="hint" style="margin-top:.5rem">${cloud.on ? 'Connected as ' + esc(cloud.user && cloud.user.email || 'signed in') : 'Not connected.'}</p>
+    </section>
+
+    <div style="text-align:right;margin-top:1.2rem"><button class="btn" data-action="close-modal">Done</button></div>
+  `);
+}
+
+document.addEventListener('click', e => {
+  const seg = e.target.closest('[data-set]');
+  if (seg){
+    state.settings[seg.dataset.set] = seg.dataset.val;
+    applySettings(); save(); openSettings();
+    return;
+  }
+  const sw = e.target.closest('[data-setbool]');
+  if (sw){
+    const k = sw.dataset.setbool;
+    state.settings[k] = !state.settings[k];
+    sw.setAttribute('aria-pressed', String(state.settings[k]));
+    save();
+  }
+});
+
+function applySettings(){
+  document.documentElement.dataset.theme = state.settings.theme;
+  document.documentElement.dataset.scale = state.settings.scale;
+}
+
+function saveFirebaseConfig(){
+  const cfg = {};
+  ['apiKey','authDomain','projectId','databaseURL'].forEach(k => cfg[k] = $('#fb-' + k).value.trim());
+  state.settings.firebase = cfg;
+  save();
+  if (!cfg.apiKey || !cfg.projectId){ toast('An API key and project ID are needed to connect.'); return; }
+  closeModal();
+  cloud.connect().then(ok => {
+    if (ok){ toast('Connected. Sign in on the campaign party tab.'); switchTab('social'); }
+  });
+}
+
+/* ============================================================
+   CLOUD — optional Firebase sync
+   ============================================================ */
+const cloud = {
+  on:false, ready:false, app:null, auth:null, db:null, user:null,
+  me:{username:'', friends:[], parties:[]}, requests:[], friendProfiles:[], parties:[],
+  unsubs:[], lastPatchAt:0, pushTimer:null,
+
+  async connect(){
+    const cfg = state.settings.firebase;
+    if (!cfg.apiKey || !cfg.projectId) return false;
+    try {
+      const [appMod, authMod, fsMod] = await Promise.all([
+        import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js'),
+        import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js'),
+        import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js')
+      ]);
+      this.fb = {...authMod, ...fsMod};
+      this.app = appMod.initializeApp(cfg, 'radiant-sheet');
+      this.auth = authMod.getAuth(this.app);
+      this.db = fsMod.getFirestore(this.app);
+      this.on = true;
+      authMod.onAuthStateChanged(this.auth, user => {
+        this.user = user;
+        if (user) this.listen(); else this.stopListening();
+        renderSocial();
+        setSavePill('saved');
+      });
+      return true;
+    } catch(err){
+      console.error(err);
+      toast('Could not reach Firebase. Check the keys and your connection.');
+      this.on = false;
+      return false;
+    }
+  },
+
+  disconnect(){
+    this.stopListening();
+    if (this.auth) this.fb.signOut(this.auth).catch(() => {});
+    this.on = false; this.user = null;
+    state.settings.firebase = {apiKey:'', authDomain:'', projectId:'', databaseURL:''};
+    save(); closeModal(); renderSocial();
+    toast('Disconnected. Sheets stay in this browser.');
+  },
+
+  async signUp(email, pw){
+    try {
+      await this.fb.createUserWithEmailAndPassword(this.auth, email, pw);
+      toast('Account created. Pick a username next.');
+    } catch(err){ toast(this.readable(err)); }
+  },
+  async signIn(email, pw){
+    try { await this.fb.signInWithEmailAndPassword(this.auth, email, pw); }
+    catch(err){ toast(this.readable(err)); }
+  },
+  async signOut(){ await this.fb.signOut(this.auth); this.me = {username:'', friends:[], parties:[]}; renderSocial(); },
+
+  readable(err){
+    const code = (err && err.code || '').replace('auth/', '');
+    return {
+      'invalid-email':'That email address is not valid.',
+      'missing-password':'Enter a password.',
+      'weak-password':'Use at least six characters for the password.',
+      'email-already-in-use':'That email already has an account — sign in instead.',
+      'invalid-credential':'Email or password did not match.',
+      'operation-not-allowed':'Turn on email sign-in in your Firebase console.'
+    }[code] || (err && err.message) || 'Something went wrong.';
+  },
+
+  doc(...p){ return this.fb.doc(this.db, ...p); },
+
+  listen(){
+    this.stopListening();
+    const uidv = this.user.uid;
+    this.unsubs.push(this.fb.onSnapshot(this.doc('users', uidv), snap => {
+      this.me = Object.assign({username:'', friends:[], parties:[]}, snap.data() || {});
+      this.loadFriendProfiles();
+      this.watchParties();
+      renderSocial();
+    }));
+    this.unsubs.push(this.fb.onSnapshot(this.fb.collection(this.db, 'users', uidv, 'requests'), snap => {
+      this.requests = snap.docs.map(d => ({id:d.id, ...d.data()}));
+      renderSocial();
+    }));
+  },
+
+  stopListening(){ this.unsubs.forEach(u => { try{ u(); }catch(e){} }); this.unsubs = []; this.partyUnsubs = []; },
+
+  async loadFriendProfiles(){
+    const out = [];
+    for (const fid of (this.me.friends || [])){
+      try {
+        const s = await this.fb.getDoc(this.doc('users', fid));
+        if (s.exists()) out.push({uid:fid, username:s.data().username});
+      } catch(e){}
+    }
+    this.friendProfiles = out;
+    renderSocial();
+  },
+
+  watchParties(){
+    (this.me.parties || []).forEach(pid => {
+      if (this.parties.some(p => p.id === pid && p._watching)) return;
+      const unsub = this.fb.onSnapshot(this.doc('parties', pid), snap => {
+        if (!snap.exists()) return;
+        const data = {id:snap.id, _watching:true, ...snap.data()};
+        const i = this.parties.findIndex(p => p.id === snap.id);
+        if (i >= 0) this.parties[i] = data; else this.parties.push(data);
+        this.applyIncomingPatch(data);
+        renderSocial();
+      });
+      this.unsubs.push(unsub);
+      this.parties.push({id:pid, _watching:true, name:'…', members:{}});
+    });
+  },
+
+  applyIncomingPatch(party){
+    const mine = party.members && party.members[this.user.uid];
+    if (!mine || !mine.patchedBy || mine.patchedBy === this.user.uid) return;
+    if ((mine.patchedAt || 0) <= this.lastPatchAt) return;
+    this.lastPatchAt = mine.patchedAt;
+    const c = state.characters.find(x => x.id === mine.charId);
+    if (!c || !mine.char) return;
+    c.health.current = mine.char.health.current;
+    c.focus.current = mine.char.focus.current;
+    c.investiture.current = mine.char.investiture.current;
+    c.conditions = mine.char.conditions || {};
+    if (mine.char.goals) mine.char.goals.forEach((g, i) => { if (c.goals[i]) c.goals[i].ticks = g.ticks; });
+    save(); render();
+    toast(`${party.name}: your game master updated this sheet.`);
+  },
+
+  snapshot(c){
+    const d = derive(c);
+    return {
+      id:c.id, name:c.name, level:c.level, tier:d.tier, paths:c.paths, ancestry:c.ancestry,
+      health:{current:c.health.current, max:d.maxHealth},
+      focus:{current:c.focus.current, max:d.maxFocus},
+      investiture:{current:c.investiture.current, max:d.maxInvestiture, radiant:c.radiant},
+      defenses:{physical:d.physicalDefense, cognitive:d.cognitiveDefense, spiritual:d.spiritualDefense},
+      deflect:d.deflect, movement:d.movement,
+      conditions:c.conditions || {},
+      surges:(c.skills.custom_physical.name || '') + (c.skills.custom_spiritual.name ? ', ' + c.skills.custom_spiritual.name : ''),
+      goals:(c.goals || []).map(g => ({text:g.text, ticks:g.ticks}))
+    };
+  },
+
+  pushCharacter(){
+    if (!this.on || !this.user) return;
+    clearTimeout(this.pushTimer);
+    this.pushTimer = setTimeout(async () => {
+      const c = activeChar();
+      for (const p of this.parties){
+        const mine = p.members && p.members[this.user.uid];
+        if (!mine || mine.charId !== c.id) continue;
+        try {
+          await this.fb.updateDoc(this.doc('parties', p.id), {
+            [`members.${this.user.uid}.char`]: this.snapshot(c),
+            [`members.${this.user.uid}.updatedAt`]: Date.now(),
+            [`members.${this.user.uid}.patchedBy`]: this.user.uid,
+            [`members.${this.user.uid}.patchedAt`]: Date.now()
+          });
+        } catch(e){ /* offline is fine — local copy still holds */ }
+      }
+    }, 900);
+  }
+};
+
+/* ============================================================
+   CAMPAIGN PARTY VIEW
+   ============================================================ */
+function memberCardHTML(m, uidKey, opts){
+  const ch = m.char || {};
+  const conds = Object.keys(ch.conditions || {}).filter(k => ch.conditions[k]);
+  const bar = (cur, max) => `<div class="bar"><i style="width:${max ? clamp(cur / max * 100, 0, 100) : 0}%"></i></div>`;
+  const line = (label, kind, cur, max) => `<div class="track" style="margin-top:.35rem">
+      ${opts.canEdit ? `<button data-action="${opts.scope}-adjust" data-uid="${uidKey}" data-kind="${kind}" data-by="-1" aria-label="Lower ${label}">−</button>` : ''}
+      <div style="flex:1;font-size:.8rem">${label}
+        <b style="font-family:'Cormorant Garamond',serif;font-size:1.1rem">${cur}</b>
+        <span class="of">/ ${max}</span>${bar(cur, max)}</div>
+      ${opts.canEdit ? `<button data-action="${opts.scope}-adjust" data-uid="${uidKey}" data-kind="${kind}" data-by="1" aria-label="Raise ${label}">+</button>` : ''}
+    </div>`;
+
+  const goals = (ch.goals || []).filter(g => g.text).map((g, gi) => `<div class="goal" style="padding:.2rem 0">
+      <span style="font-size:.8rem">${esc(g.text)}</span>
+      <span class="ticks">${[0,1,2].map(t => `<i class="${g.ticks[t] ? 'on' : ''}" ${opts.canEdit ? `data-action="${opts.scope}-goal" data-uid="${uidKey}" data-g="${gi}" data-t="${t}" role="button" tabindex="0"` : ''}></i>`).join('')}</span>
+    </div>`).join('');
+
+  return `<div class="member">
+    <h4>${esc(ch.name || 'No character assigned')}</h4>
+    <div class="sub">${esc(m.username || '')}${m.role ? ` · <span class="badge">${esc(m.role)}</span>` : ''}
+      ${ch.level ? ` · Level ${ch.level} ${esc(ch.paths || '')}` : ''}</div>
+    ${ch.name ? `
+      ${line('Health', 'health', ch.health.current, ch.health.max)}
+      ${line('Focus', 'focus', ch.focus.current, ch.focus.max)}
+      ${ch.investiture && ch.investiture.radiant ? line('Investiture', 'investiture', ch.investiture.current, ch.investiture.max) : ''}
+      <div class="defs">
+        <div><div class="v">${ch.defenses.physical}</div><div class="l">Phys</div></div>
+        <div><div class="v">${ch.defenses.cognitive}</div><div class="l">Cog</div></div>
+        <div><div class="v">${ch.defenses.spiritual}</div><div class="l">Spir</div></div>
+        <div><div class="v">${ch.deflect}</div><div class="l">Deflect</div></div>
+      </div>
+      ${ch.surges && ch.surges.trim() ? `<div class="sub">Surges: ${esc(ch.surges)}</div>` : ''}
+      <div class="conds" style="margin-top:.3rem">
+        ${(opts.canEdit ? CONDITIONS : conds).map(n => `<button class="cond" ${opts.canEdit ? `data-action="${opts.scope}-cond" data-uid="${uidKey}" data-cond="${n}"` : ''} aria-pressed="${conds.includes(n)}">${n}</button>`).join('') || '<span class="empty">No conditions</span>'}
+      </div>
+      ${goals ? `<hr class="rule" style="margin:.6rem 0 .3rem">${goals}` : ''}
+    ` : '<p class="empty">Waiting for this player to pick a character.</p>'}
+  </div>`;
+}
+
+function renderSocial(){
+  const view = $('#view-social');
+  if (!view || state.tab !== 'social') return;
+  view.innerHTML = cloud.on && cloud.user ? onlineSocialHTML() : offlineSocialHTML();
+}
+
+function offlineSocialHTML(){
+  const parties = state.localParties;
+  const pid = state.activePartyId && parties.some(p => p.id === state.activePartyId) ? state.activePartyId : (parties[0] && parties[0].id);
+  const party = parties.find(p => p.id === pid);
+  const charOpts = state.characters.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+
+  const cards = party ? party.charIds.map(cid => {
+    const c = state.characters.find(x => x.id === cid);
+    if (!c) return '';
+    return memberCardHTML({username:c.playerName || 'Player', role:'', char:cloud.snapshot(c)}, cid, {canEdit:true, scope:'local'});
+  }).join('') : '';
+
+  return `
+  <div class="card">
+    <h3>Campaign party</h3><hr class="rule">
+    <p class="hint">This table runs on your own device. Every character saved here can be dropped into a party and tracked live during a session — health, focus, defenses, conditions, and goal progress all in one view.</p>
+    <p class="hint" style="margin-top:.4rem">${cloud.on
+      ? 'Firebase is connected. Sign in below to play with friends across devices.'
+      : 'To share a party with other players on their own devices, add your Firebase keys under Settings → Sync across devices.'}</p>
+    ${cloud.on ? authFormHTML() : ''}
+  </div>
+
+  <div class="twocol">
+    <div class="card">
+      <h3>Your parties</h3><hr class="rule">
+      <div class="rows">
+        ${parties.map(p => `<div class="listitem">
+            <button class="btn ghost" data-action="select-local-party" data-pid="${p.id}" style="${p.id === pid ? 'border-color:var(--accent);color:var(--accent)' : ''}">${esc(p.name)}</button>
+            <span class="hint">${p.charIds.length} at the table
+              <button class="iconbtn" data-action="del-local-party" data-pid="${p.id}" aria-label="Delete party">✕</button></span>
+          </div>`).join('') || '<p class="empty">No parties yet. Name one below to start tracking a table.</p>'}
+      </div>
+      <div class="row" style="grid-template-columns:1fr auto;margin-top:.6rem">
+        <input type="text" id="localpartyname" placeholder="Shattered Plains campaign">
+        <button class="btn primary" data-action="create-local-party">Create party</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Add a character</h3><hr class="rule">
+      ${party ? `<div class="row" style="grid-template-columns:1fr auto">
+        <select id="localcharpick">${charOpts}</select>
+        <button class="btn" data-action="add-local-char" data-pid="${party.id}">Add to ${esc(party.name)}</button>
+      </div>
+      <p class="hint" style="margin-top:.5rem">Cards below edit the real sheets, so anything you change here is saved to the character.</p>`
+      : '<p class="empty">Create a party first.</p>'}
+    </div>
+  </div>
+
+  ${party ? `<div class="card">
+    <h3>${esc(party.name)} <span class="hint">Live table view</span></h3><hr class="rule">
+    <div class="party-grid">${cards || '<p class="empty">No characters at this table yet.</p>'}</div>
+  </div>` : ''}`;
+}
+
+function authFormHTML(){
+  return `<div class="grid2" style="margin-top:.7rem">
+      <div class="f"><label>Email</label><input type="email" id="authemail" autocomplete="username"></div>
+      <div class="f"><label>Password</label><input type="password" id="authpw" autocomplete="current-password"></div>
+    </div>
+    <div style="display:flex;gap:.4rem;margin-top:.6rem">
+      <button class="btn primary" data-action="sign-in">Sign in</button>
+      <button class="btn" data-action="sign-up">Create account</button>
+    </div>`;
+}
+
+function onlineSocialHTML(){
+  const me = cloud.me;
+  const parties = cloud.parties.filter(p => p.members);
+  const pid = state.activePartyId && parties.some(p => p.id === state.activePartyId) ? state.activePartyId : (parties[0] && parties[0].id);
+  const party = parties.find(p => p.id === pid);
+  const isGM = party && party.gm === cloud.user.uid;
+
+  if (!me.username){
+    return `<div class="card">
+      <h3>Pick a username</h3><hr class="rule">
+      <p class="hint">Friends will find you by this handle. Letters, numbers, and underscores.</p>
+      <div class="row" style="grid-template-columns:1fr auto;margin-top:.6rem">
+        <input type="text" id="unameinput" placeholder="KaladinBridge4">
+        <button class="btn primary" data-action="claim-username">Claim handle</button>
+      </div>
+      <button class="btn ghost" data-action="sign-out" style="margin-top:.8rem">Sign out</button>
+    </div>`;
+  }
+
+  const myCharOpts = state.characters.map(c => {
+    const mine = party && party.members[cloud.user.uid];
+    return `<option value="${c.id}" ${mine && mine.charId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`;
+  }).join('');
+
+  return `
+  <div class="card">
+    <h3>@${esc(me.username)} <span class="hint">Signed in · sheets sync to every device</span></h3><hr class="rule">
+    <button class="btn ghost" data-action="sign-out">Sign out</button>
+  </div>
+
+  <div class="twocol">
+    <div class="card">
+      <h3>Friends</h3><hr class="rule">
+      <div class="row" style="grid-template-columns:1fr auto">
+        <input type="text" id="friendinput" placeholder="@username">
+        <button class="btn" data-action="send-request">Send request</button>
+      </div>
+      ${cloud.requests.length ? `<h4 style="margin-top:.9rem;font-size:1rem">Requests waiting</h4>
+        <div class="rows">${cloud.requests.map(r => `<div class="listitem">
+          <span>@${esc(r.username)}</span>
+          <span style="display:flex;gap:.3rem">
+            <button class="iconbtn" data-action="accept-request" data-uid="${r.id}">Accept</button>
+            <button class="iconbtn" data-action="decline-request" data-uid="${r.id}">Decline</button>
+          </span></div>`).join('')}</div>` : ''}
+      <h4 style="margin-top:.9rem;font-size:1rem">Your friends</h4>
+      <div class="rows">${cloud.friendProfiles.map(f => `<div class="listitem"><span>@${esc(f.username)}</span></div>`).join('')
+        || '<p class="empty">No friends yet. Send a request with their handle.</p>'}</div>
+    </div>
+
+    <div class="card">
+      <h3>Parties</h3><hr class="rule">
+      <div class="rows">
+        ${parties.map(p => `<div class="listitem">
+          <button class="btn ghost" data-action="select-party" data-pid="${p.id}" style="${p.id === pid ? 'border-color:var(--accent);color:var(--accent)' : ''}">${esc(p.name)}</button>
+          <span class="hint">${Object.keys(p.members || {}).length} members${p.gm === cloud.user.uid ? ' · you run it' : ''}</span>
+        </div>`).join('') || '<p class="empty">No parties yet. Create one and invite your friends.</p>'}
+      </div>
+      <div class="row" style="grid-template-columns:1fr auto;margin-top:.6rem">
+        <input type="text" id="partyname" placeholder="Shattered Plains campaign">
+        <button class="btn primary" data-action="create-party">Create party</button>
+      </div>
+    </div>
+  </div>
+
+  ${party ? `<div class="card">
+    <h3>${esc(party.name)} ${isGM ? '<span class="badge">Game master</span>' : ''}</h3><hr class="rule">
+    <div class="twocol">
+      <div class="f"><label>Your character in this party</label>
+        <select data-change="assign-char" data-pid="${party.id}">${myCharOpts}</select></div>
+      ${isGM ? `<div class="f"><label>Invite a friend by handle</label>
+        <div class="row" style="grid-template-columns:1fr auto">
+          <input type="text" id="partyadd" placeholder="@username">
+          <button class="btn" data-action="party-add" data-pid="${party.id}">Add</button>
+        </div></div>` : ''}
+    </div>
+    <div class="party-grid" style="margin-top:.9rem">
+      ${Object.entries(party.members || {}).map(([mUid, m]) =>
+        memberCardHTML(m, mUid, {canEdit:isGM || mUid === cloud.user.uid, scope:'party'})).join('')}
+    </div>
+    <button class="btn danger" style="margin-top:.8rem" data-action="leave-party" data-pid="${party.id}">Leave party</button>
+  </div>` : ''}`;
+}
+
+/* ---------- social actions ---------- */
+function handleSocialAction(action, node, c){
+  const val = id => { const el = $('#' + id); return el ? el.value.trim() : ''; };
+  const pid = node.dataset.pid;
+
+  switch (action){
+    /* local parties */
+    case 'create-local-party': {
+      const name = val('localpartyname');
+      if (!name) return toast('Give the party a name.');
+      const p = {id:uid(), name, charIds:[]};
+      state.localParties.push(p);
+      state.activePartyId = p.id;
+      renderSocial(); save();
+      break;
+    }
+    case 'select-local-party': state.activePartyId = pid; renderSocial(); break;
+    case 'del-local-party':
+      state.localParties = state.localParties.filter(p => p.id !== pid);
+      renderSocial(); save(); break;
+    case 'add-local-char': {
+      const p = state.localParties.find(x => x.id === pid);
+      const cid = val('localcharpick') || ($('#localcharpick') && $('#localcharpick').value);
+      if (p && cid && !p.charIds.includes(cid)){ p.charIds.push(cid); renderSocial(); save(); }
+      else toast('That character is already at the table.');
+      break;
+    }
+    case 'local-adjust': {
+      const target = state.characters.find(x => x.id === node.dataset.uid);
+      if (!target) break;
+      const kind = node.dataset.kind, by = parseInt(node.dataset.by, 10);
+      const d = derive(target);
+      const max = {health:d.maxHealth, focus:d.maxFocus, investiture:d.maxInvestiture}[kind];
+      target[kind].current = clamp(target[kind].current + by, 0, max);
+      renderSocial(); save(); break;
+    }
+    case 'local-cond': {
+      const target = state.characters.find(x => x.id === node.dataset.uid);
+      if (!target) break;
+      const n = node.dataset.cond;
+      target.conditions[n] = !target.conditions[n];
+      if (!target.conditions[n]) delete target.conditions[n];
+      renderSocial(); save(); break;
+    }
+    case 'local-goal': {
+      const target = state.characters.find(x => x.id === node.dataset.uid);
+      const g = target && target.goals[parseInt(node.dataset.g, 10)];
+      if (!g) break;
+      const t = parseInt(node.dataset.t, 10);
+      g.ticks[t] = !g.ticks[t];
+      renderSocial(); save(); break;
+    }
+
+    /* auth */
+    case 'sign-in': cloud.signIn(val('authemail'), val('authpw')); break;
+    case 'sign-up': cloud.signUp(val('authemail'), val('authpw')); break;
+    case 'sign-out': cloud.signOut(); break;
+    case 'claim-username': claimUsername(val('unameinput')); break;
+
+    /* friends */
+    case 'send-request': sendFriendRequest(val('friendinput')); break;
+    case 'accept-request': acceptRequest(node.dataset.uid); break;
+    case 'decline-request': declineRequest(node.dataset.uid); break;
+
+    /* parties */
+    case 'create-party': createParty(val('partyname')); break;
+    case 'select-party': state.activePartyId = pid; renderSocial(); break;
+    case 'party-add': partyAdd(pid, val('partyadd')); break;
+    case 'leave-party': leaveParty(pid); break;
+    case 'party-adjust': partyPatch(node, m => {
+      const kind = node.dataset.kind, by = parseInt(node.dataset.by, 10);
+      m.char[kind].current = clamp(m.char[kind].current + by, 0, m.char[kind].max);
+    }); break;
+    case 'party-cond': partyPatch(node, m => {
+      const n = node.dataset.cond;
+      m.char.conditions = m.char.conditions || {};
+      if (m.char.conditions[n]) delete m.char.conditions[n]; else m.char.conditions[n] = true;
+    }); break;
+    case 'party-goal': partyPatch(node, m => {
+      const g = m.char.goals[parseInt(node.dataset.g, 10)];
+      const t = parseInt(node.dataset.t, 10);
+      g.ticks[t] = !g.ticks[t];
+    }); break;
+  }
+}
+
+document.addEventListener('change', e => {
+  const sel = e.target.closest('[data-change="assign-char"]');
+  if (sel) assignCharacter(sel.dataset.pid, sel.value);
+});
+
+/* ---------- firestore operations ---------- */
+async function claimUsername(raw){
+  const name = raw.replace(/^@/, '').trim();
+  if (!/^[A-Za-z0-9_]{3,20}$/.test(name)) return toast('Use 3–20 letters, numbers, or underscores.');
+  const lower = name.toLowerCase();
+  try {
+    const taken = await cloud.fb.getDoc(cloud.doc('usernames', lower));
+    if (taken.exists() && taken.data().uid !== cloud.user.uid) return toast('That handle is taken.');
+    await cloud.fb.setDoc(cloud.doc('usernames', lower), {uid:cloud.user.uid, username:name});
+    await cloud.fb.setDoc(cloud.doc('users', cloud.user.uid),
+      {username:name, usernameLower:lower, friends:cloud.me.friends || [], parties:cloud.me.parties || []}, {merge:true});
+    toast(`You are @${name}.`);
+  } catch(err){ toast('Could not save that handle: ' + err.message); }
+}
+
+async function lookupUser(handle){
+  const lower = handle.replace(/^@/, '').trim().toLowerCase();
+  if (!lower) return null;
+  const snap = await cloud.fb.getDoc(cloud.doc('usernames', lower));
+  return snap.exists() ? snap.data() : null;
+}
+
+async function sendFriendRequest(handle){
+  try {
+    const target = await lookupUser(handle);
+    if (!target) return toast('No one is using that handle.');
+    if (target.uid === cloud.user.uid) return toast('That is you.');
+    await cloud.fb.setDoc(cloud.doc('users', target.uid, 'requests', cloud.user.uid),
+      {username:cloud.me.username, at:Date.now()});
+    toast(`Request sent to @${target.username}.`);
+  } catch(err){ toast('Request failed: ' + err.message); }
+}
+
+async function acceptRequest(fromUid){
+  try {
+    await cloud.fb.setDoc(cloud.doc('users', cloud.user.uid), {friends:cloud.fb.arrayUnion(fromUid)}, {merge:true});
+    await cloud.fb.setDoc(cloud.doc('users', fromUid), {friends:cloud.fb.arrayUnion(cloud.user.uid)}, {merge:true});
+    await cloud.fb.deleteDoc(cloud.doc('users', cloud.user.uid, 'requests', fromUid));
+    toast('Friend added.');
+  } catch(err){ toast('Could not accept: ' + err.message); }
+}
+async function declineRequest(fromUid){
+  try { await cloud.fb.deleteDoc(cloud.doc('users', cloud.user.uid, 'requests', fromUid)); }
+  catch(err){ toast('Could not decline: ' + err.message); }
+}
+
+async function createParty(name){
+  if (!name) return toast('Give the party a name.');
+  try {
+    const c = activeChar();
+    const ref = await cloud.fb.addDoc(cloud.fb.collection(cloud.db, 'parties'), {
+      name, gm:cloud.user.uid, memberUids:[cloud.user.uid],
+      members:{[cloud.user.uid]:{username:cloud.me.username, role:'GM', charId:c.id, char:cloud.snapshot(c), updatedAt:Date.now()}}
+    });
+    await cloud.fb.setDoc(cloud.doc('users', cloud.user.uid), {parties:cloud.fb.arrayUnion(ref.id)}, {merge:true});
+    state.activePartyId = ref.id;
+    toast('Party created. You are the game master.');
+  } catch(err){ toast('Could not create the party: ' + err.message); }
+}
+
+async function partyAdd(pid, handle){
+  try {
+    const target = await lookupUser(handle);
+    if (!target) return toast('No one is using that handle.');
+    await cloud.fb.updateDoc(cloud.doc('parties', pid), {
+      memberUids:cloud.fb.arrayUnion(target.uid),
+      [`members.${target.uid}`]:{username:target.username, role:'Player', charId:'', char:null, updatedAt:Date.now()}
+    });
+    await cloud.fb.setDoc(cloud.doc('users', target.uid), {parties:cloud.fb.arrayUnion(pid)}, {merge:true});
+    toast(`@${target.username} added.`);
+  } catch(err){ toast('Could not add them: ' + err.message); }
+}
+
+async function assignCharacter(pid, charId){
+  const c = state.characters.find(x => x.id === charId);
+  if (!c) return;
+  try {
+    await cloud.fb.updateDoc(cloud.doc('parties', pid), {
+      [`members.${cloud.user.uid}.charId`]:charId,
+      [`members.${cloud.user.uid}.char`]:cloud.snapshot(c),
+      [`members.${cloud.user.uid}.patchedBy`]:cloud.user.uid,
+      [`members.${cloud.user.uid}.updatedAt`]:Date.now()
+    });
+    toast(`${c.name} is now your character in this party.`);
+  } catch(err){ toast('Could not assign: ' + err.message); }
+}
+
+async function leaveParty(pid){
+  try {
+    await cloud.fb.updateDoc(cloud.doc('parties', pid), {memberUids:cloud.fb.arrayRemove(cloud.user.uid)});
+    await cloud.fb.setDoc(cloud.doc('users', cloud.user.uid), {parties:cloud.fb.arrayRemove(pid)}, {merge:true});
+    cloud.parties = cloud.parties.filter(p => p.id !== pid);
+    state.activePartyId = null;
+    renderSocial();
+    toast('You left the party.');
+  } catch(err){ toast('Could not leave: ' + err.message); }
+}
+
+async function partyPatch(node, mutate){
+  const party = cloud.parties.find(p => p.members && p.members[node.dataset.uid]);
+  if (!party) return;
+  const m = JSON.parse(JSON.stringify(party.members[node.dataset.uid]));
+  if (!m.char) return;
+  mutate(m);
+  try {
+    await cloud.fb.updateDoc(cloud.doc('parties', party.id), {
+      [`members.${node.dataset.uid}.char`]:m.char,
+      [`members.${node.dataset.uid}.patchedBy`]:cloud.user.uid,
+      [`members.${node.dataset.uid}.patchedAt`]:Date.now()
+    });
+    if (node.dataset.uid === cloud.user.uid){
+      const own = state.characters.find(x => x.id === m.charId);
+      if (own){
+        own.health.current = m.char.health.current;
+        own.focus.current = m.char.focus.current;
+        own.investiture.current = m.char.investiture.current;
+        own.conditions = m.char.conditions || {};
+        (m.char.goals || []).forEach((g, i) => { if (own.goals[i]) own.goals[i].ticks = g.ticks; });
+        save();
+      }
+    }
+  } catch(err){ toast('Change did not save: ' + err.message); }
+}
+
+/* ============================================================
+   START
+   ============================================================ */
+load();
+applySettings();
+switchTab('front');
+if (state.settings.firebase.apiKey && state.settings.firebase.projectId) cloud.connect();
+setSavePill('saved');
+</script>
+</body>
+</html>
