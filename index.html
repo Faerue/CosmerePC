@@ -179,6 +179,12 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 textarea{resize:vertical;min-height:5.5rem;line-height:1.55}
 input[type=number]{-moz-appearance:textfield}
 input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.numstep{position:relative;display:inline-block}
+.numstep input[type=number]{width:100%;padding-right:1.35rem}
+.numstep-btns{position:absolute;right:2px;top:2px;bottom:2px;display:flex;flex-direction:column;width:1.05rem}
+.numstep-btns button{flex:1;min-height:0;padding:0;border:none;background:transparent;color:var(--ink-faint);font-size:.5rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:3px}
+.numstep-btns button:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.numstep-btns button:active{color:var(--accent)}
 
 /* ---------- realms ---------- */
 .realms{display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem;align-items:start}
@@ -1679,6 +1685,54 @@ setInterval(updateSyncIndicator, 5000);
 /* ---------- tiny helpers ---------- */
 const $ = sel => document.querySelector(sel);
 const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+/* ---------- +/- steppers on every number field ----------
+   Native number-input spin buttons are hidden (see input[type=number] rules
+   above), so every numeric field gets its own small increase/decrease pair
+   instead. Wraps the input in-place (moving any inline width to the wrapper
+   so existing grid/flex layouts keep their exact sizing) and overlays the
+   buttons on the input's own right edge rather than adding extra width. A
+   MutationObserver re-runs this on anything rendered later — sheet cards,
+   modals, party views — so no render function needs to call it explicitly. */
+function enhanceNumberInput(input){
+  if (input.dataset.stepped || input.disabled || input.readOnly) return;
+  input.dataset.stepped = '1';
+  const wrap = document.createElement('span');
+  wrap.className = 'numstep';
+  if (input.style.width){ wrap.style.width = input.style.width; input.style.width = ''; }
+  input.parentNode.insertBefore(wrap, input);
+  wrap.appendChild(input);
+  const btns = document.createElement('span');
+  btns.className = 'numstep-btns';
+  const step = (dir, label, aria) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.tabIndex = -1;
+    btn.setAttribute('aria-label', aria);
+    btn.textContent = label;
+    btn.addEventListener('click', () => {
+      const by = parseFloat(input.step) || 1;
+      let cur = parseFloat(input.value);
+      if (Number.isNaN(cur)) cur = 0;
+      let next = Math.round((cur + dir * by) * 1e6) / 1e6;
+      if (input.min !== '') next = Math.max(parseFloat(input.min), next);
+      if (input.max !== '') next = Math.min(parseFloat(input.max), next);
+      input.value = next;
+      input.dispatchEvent(new Event('input', {bubbles:true}));
+      input.dispatchEvent(new Event('change', {bubbles:true}));
+    });
+    return btn;
+  };
+  btns.appendChild(step(1, '▲', 'Increase'));
+  btns.appendChild(step(-1, '▼', 'Decrease'));
+  wrap.appendChild(btns);
+}
+function enhanceAllNumberInputs(root){
+  (root || document).querySelectorAll('input[type=number]').forEach(el => { if (!el.dataset.stepped) enhanceNumberInput(el); });
+}
+new MutationObserver(muts => {
+  for (const m of muts) if (m.addedNodes.length){ enhanceAllNumberInputs(document); break; }
+}).observe(document.body, {childList:true, subtree:true});
 
 /* Rebuilding a card's innerHTML can shift the page's total scrollable height
    (a warning line appearing/disappearing, content-visibility re-estimating
