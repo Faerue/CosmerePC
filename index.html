@@ -179,6 +179,12 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 textarea{resize:vertical;min-height:5.5rem;line-height:1.55}
 input[type=number]{-moz-appearance:textfield}
 input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.numstep{position:relative;display:inline-block}
+.numstep input[type=number]{width:100%;padding-right:1.35rem}
+.numstep-btns{position:absolute;right:2px;top:2px;bottom:2px;display:flex;flex-direction:column;width:1.05rem}
+.numstep-btns button{flex:1;min-height:0;padding:0;border:none;background:transparent;color:var(--ink-faint);font-size:.5rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:3px}
+.numstep-btns button:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.numstep-btns button:active{color:var(--accent)}
 
 /* ---------- realms ---------- */
 .realms{display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem;align-items:start}
@@ -702,7 +708,22 @@ const RADIANT_ORDERS = [
 const IDEAL_NAMES = ['First Ideal', 'Second Ideal', 'Third Ideal', 'Fourth Ideal'];
 
 /* ---------- spheres ---------- */
-const SPHERE_CHIPS_PER_MARK = 5, SPHERE_MARKS_PER_BROAM = 5;
+const SPHERE_CHIPS_PER_MARK = 5, SPHERE_MARKS_PER_BROAM = 4;
+
+/* Gemstone value multipliers, in Diamond Marks — Diamond is the base currency;
+   other gemstones hold proportionally more value per sphere. */
+const GEMSTONE_VALUES = {
+  Diamond:   {chip:0.2, mark:1,  broam:4},
+  Garnet:    {chip:1,   mark:5,  broam:20},
+  Heliodor:  {chip:1,   mark:5,  broam:20},
+  Topaz:     {chip:1,   mark:5,  broam:20},
+  Ruby:      {chip:2,   mark:10, broam:40},
+  Smokestone:{chip:2,   mark:10, broam:40},
+  Zircon:    {chip:2,   mark:10, broam:40},
+  Amethyst:  {chip:5,   mark:25, broam:100},
+  Sapphire:  {chip:5,   mark:25, broam:100},
+  Emerald:   {chip:10,  mark:50, broam:200}
+};
 
 /* ---------- rules lookup data ---------- */
 const SKILL_BLURBS = {
@@ -758,6 +779,23 @@ const SURGE_BLURBS = [
   {name:'Transportation', desc:'Moves a target partially or fully to Shadesmar and back.'},
   {name:'Cohesion', desc:'Softens or hardens matter, letting it be reshaped like clay.'},
   {name:'Tension', desc:'Reinforces the surface of an object, letting it hold enormous stress.'}
+];
+
+/* ---------- advanced crafting features (cost 2 upgrades each when crafting a high-quality item or fabrial) ---------- */
+const ADVANCED_ITEM_FEATURES = [
+  {name:'Adorned', sub:'2 upgrades', desc:'Grants the Presentable trait to armor.'},
+  {name:'Hidden Compartment', sub:'2 upgrades', desc:"Stores up to 1/4 of the item's volume of gear out of sight."},
+  {name:'Lethal Design', sub:'2 upgrades', desc:"Subtracts 3 from the target's injury roll on a hit."},
+  {name:'Perfect Balance', sub:'2 upgrades', desc:'Reduces the Cumbersome threshold by 1 and grants the Defensive trait.'},
+  {name:'Unconventional Weapon', sub:'2 upgrades', desc:'Grants the Discreet trait, or removes Fragile from an improvised weapon.'}
+];
+const ADVANCED_FABRIAL_FEATURES = [
+  {name:'Expanded Capacity', sub:'2 upgrades', desc:"Increases the fabrial's maximum charges by +3."},
+  {name:'Wide Area', sub:'2 upgrades', desc:'Expands the target area to all characters within a 5-foot radius.'},
+  {name:'Security Lock', sub:'2 upgrades', desc:'Requires a secret mechanism to activate.'},
+  {name:'Quick Activation', sub:'2 upgrades', desc:'Reduces the activation action cost by 1 (e.g. 2 actions becomes 1 action).'},
+  {name:'Timed Activation', sub:'2 upgrades', desc:'Sets a delayed trigger timer, from 1 round up to 1 hour.'},
+  {name:'Extra Effect', sub:'2 upgrades', desc:'Adds a second, unique fabrial effect to a single device.'}
 ];
 
 /* ---------- talent database (drives the talent picker, tooltips, and prerequisite checker) ---------- */
@@ -1153,14 +1191,88 @@ const GAME_DATABASE = {
     "Shardblade":       {skill:"Heavy Weaponry", damage:"2d8 spirit", range:"Melee", traits:"Dangerous, Deadly, 10 Heartbeats, Spiritual Injury", expertTraits:"Loses Dangerous", weight:4, price:0, category:"Special"},
     "Shardblade (Radiant)": {skill:"Heavy Weaponry", damage:"2d8 spirit", range:"Melee", traits:"Deadly, Instant Summoning, Malleable Form", expertTraits:"Malleable Form", weight:0, price:0, category:"Special"},
     "Warhammer":        {skill:"Heavy Weaponry", damage:"1d10 impact", range:"Melee", traits:"Two-Handed, Momentum", expertTraits:"Deadly", weight:9, price:120, category:"Special"},
-    "Grandbow":         {skill:"Heavy Weaponry", damage:"1d10 keen", range:"Ranged (200/800)", traits:"Two-Handed, Cumbersome [4]", expertTraits:"Deadly", weight:6, price:400, category:"Special"}
+    "Grandbow":         {skill:"Heavy Weaponry", damage:"1d10 keen", range:"Ranged (200/800)", traits:"Two-Handed, Cumbersome [4]", expertTraits:"Deadly", weight:6, price:400, category:"Special"},
+    "Anti-Stormlight Arrow": {skill:"Light Weaponry", damage:"3d10 energy", range:"Ranged (as bow)", traits:"Anti-Stormlight — deals damage only to Invested characters; detonates on contact with Stormlight", expertTraits:"", weight:0.1, price:250, category:"Special"}
   }
 };
 
 /* Complete equipment / fabrial / travel data dictionary — flat items with a `category`
    field (equipment), separate standard vs unique fabrial catalogs, and read-only
    travel & lodging reference tables. Drives the Back Page gear/fabrial pickers. */
-const GAME_ITEMS_DATABASE = { equipment: { /* --- SURVIVAL & OUTDOOR --- */ "Backpack": { weight: 5, price: 8, category: "Survival & Outdoor", description: "Standard container for carrying gear." }, "Barrel": { weight: 70, price: 15, category: "Survival & Outdoor", description: "Large wooden container." }, "Blanket": { weight: 2, price: 2, category: "Survival & Outdoor", description: "Warm bedding blanket." }, "Bucket": { weight: 2, price: 1, category: "Survival & Outdoor", description: "Wooden or crem bucket." }, "Candle": { weight: 0.2, price: 0.2, category: "Survival & Outdoor", description: "Sheds light in a 15-foot radius for 6 hours." }, "Chest": { weight: 25, price: 30, category: "Survival & Outdoor", description: "Heavy wooden storage chest." }, "Crowbar": { weight: 3, price: 10, category: "Survival & Outdoor", description: "Grants advantage on Athletics tests where leverage applies." }, "Flint and Steel (Sparkflicker)": { weight: 1.5, price: 4, category: "Survival & Outdoor", description: "Used as 1 Action to ignite fuel. Herdazians can strike sparkflickers with crystalline fingernails." }, "Food (ration, 1 day)": { weight: 0.5, price: 0.2, category: "Survival & Outdoor", description: "Travel food like jerky and lavis cakes; stays edible indefinitely if dry." }, "Food (street, 1 day)": { weight: 1.5, price: 3, category: "Survival & Outdoor", description: "Local street food (e.g. Herdazian chouta or lavis grain wraps)." }, "Food (fine, 1 day)": { weight: 0.5, price: 25, category: "Survival & Outdoor", description: "High-class gourmet meals served at feasts." }, "Grappling Hook": { weight: 4, price: 10, category: "Survival & Outdoor", description: "Grants advantage on Acrobatics and Athletics tests made to climb attached rope." }, "Lantern (oil)": { weight: 2, price: 20, category: "Survival & Outdoor", description: "Sheds light in a 30-foot radius. Burns 1 pint of oil per 6 hours." }, "Lantern (sphere)": { weight: 2, price: 20, category: "Survival & Outdoor", description: "Cage for infused spheres. Sheds light up to 60 ft depending on fullness." }, "Net (hunting)": { weight: 5, price: 4, category: "Survival & Outdoor", description: "1 Action: Athletics vs Physical Def (15ft). On hit, target is Restrained and Prone." }, "Net (fishing)": { weight: 15, price: 10, category: "Survival & Outdoor", description: "Grants advantage on physical tests related to fishing." }, "Oil (1 flask)": { weight: 1, price: 1, category: "Survival & Outdoor", description: "1-pint flask of flammable oil. Can fuel lanterns or create dangerous terrain." }, "Pick (mining)": { weight: 10, price: 10, category: "Survival & Outdoor", description: "Heavy mining pick." }, "Pot (iron)": { weight: 10, price: 8, category: "Survival & Outdoor", description: "Cooking pot." }, "Pouch": { weight: 1, price: 1, category: "Survival & Outdoor", description: "Small belt pouch." }, "Rope (50 feet)": { weight: 5, price: 30, category: "Survival & Outdoor", description: "Seasilk or rockbud fiber rope. DC 20 Athletics to break." }, "Sack": { weight: 0.5, price: 0.2, category: "Survival & Outdoor", description: "Simple cloth sack." }, "Shovel": { weight: 5, price: 8, category: "Survival & Outdoor", description: "Standard digging shovel." }, "Tent (two-person)": { weight: 20, price: 10, category: "Survival & Outdoor", description: "Portable shelter for two." }, "Waterskin": { weight: 1, price: 1, category: "Survival & Outdoor", description: "Container for drinking water." }, /* --- TOOLS & SCHOLARLY --- */ "Book (reference)": { weight: 3, price: 50, category: "Tools & Scholarly", description: "Contains information on a specific subject. Grants expertise benefits while researching." }, "Case (leather)": { weight: 1, price: 4, category: "Tools & Scholarly", description: "Waterproof leather tube holding up to 10 pages of parchment." }, "Chain (thick, 10 feet)": { weight: 10, price: 20, category: "Tools & Scholarly", description: "Sturdy chain. DC 30 Athletics or 15 damage to break." }, "Chain (thin, 1 foot)": { weight: 0.5, price: 20, category: "Tools & Scholarly", description: "Fine metal chain. DC 20 Athletics or 5 damage to break." }, "Ear Trumpet": { weight: 1, price: 50, category: "Tools & Scholarly", description: "Distant sounds heard through trumpet are perceived as half the distance." }, "Hammer (handheld)": { weight: 3, price: 4, category: "Tools & Scholarly", description: "Handheld tool hammer." }, "Ink (1-ounce bottle)": { weight: 0.2, price: 40, category: "Tools & Scholarly", description: "Writing ink bottle." }, "Ink pen": { weight: 0.1, price: 0.1, category: "Tools & Scholarly", description: "Standard nib pen." }, "Jug or pitcher": { weight: 4, price: 2, category: "Tools & Scholarly", description: "Liquid container." }, "Ladder (10-foot)": { weight: 20, price: 5, category: "Tools & Scholarly", description: "Wooden climbing ladder." }, "Lock and key": { weight: 1, price: 50, category: "Tools & Scholarly", description: "Sturdy lock. DC 20 Thievery test to pick." }, "Lockpick": { weight: 0.5, price: 5, category: "Tools & Scholarly", description: "Grants advantage on Thievery tests made to pick locks." }, "Magnifying Lens": { weight: 0.2, price: 400, category: "Tools & Scholarly", description: "Grants advantage on skill tests to appraise or inspect detailed objects." }, "Manacles": { weight: 6, price: 10, category: "Tools & Scholarly", description: "Restrains Medium or smaller characters. DC 25 Agility, DC 25 Athletics, or DC 20 Thievery." }, "Mirror (handheld)": { weight: 2, price: 25, category: "Tools & Scholarly", description: "Glass mirror." }, "Musical Instrument": { weight: 2, price: 20, category: "Tools & Scholarly", description: "Playing grants advantage if character has matching instrument expertise." }, "Paper or parchment (1 sheet)": { weight: 0.1, price: 0.5, category: "Tools & Scholarly", description: "Writing sheet." }, "Pulley system": { weight: 12, price: 100, category: "Tools & Scholarly", description: "Four pulley wheels and 30ft rope. Reduces lifted object weight to one quarter." }, "Scale": { weight: 3, price: 20, category: "Tools & Scholarly", description: "Accurately measures weight up to 2 lbs." }, "Spyglass": { weight: 1, price: 500, category: "Tools & Scholarly", description: "Distant objects viewed through spyglass appear at half distance." }, "Tuning Fork": { weight: 0.5, price: 50, category: "Tools & Scholarly", description: "Transfers Stormlight between spheres/gems; recharges fabrials and Shardplate with spheres." }, "Unencased gem (infused)": { weight: 0.01, price: 2, category: "Tools & Scholarly", description: "Permeable gem; leaks Stormlight over days. Used to recharge fabrials and Shardplate." }, "Wax (1 block)": { weight: 0.5, price: 2, category: "Tools & Scholarly", description: "Sealing wax block." }, "Whetstone": { weight: 1, price: 0.2, category: "Tools & Scholarly", description: "Blade sharpening stone." }, /* --- ALCHEMY, MEDICAL & CLOTHING --- */ "Alcohol (1 serving)": { weight: 0.2, price: 2, category: "Alchemy & Medical", description: "Vorin wines (Pink, Orange, Yellow, Auburn, Red, Sapphire, Blue, Violet)." }, "Alcohol (bottle)": { weight: 3, price: 15, category: "Alchemy & Medical", description: "Full bottle of wine/liquor." }, "Anesthetic (5 doses)": { weight: 1.5, price: 75, category: "Alchemy & Medical", description: "Applied after rest to reduce injury recovery time by 1d4 days." }, "Antiseptic (potent, 5 doses)": { weight: 1, price: 50, category: "Alchemy & Medical", description: "Applied after short rest to restore 2d6 health." }, "Antiseptic (weak, 5 doses)": { weight: 1, price: 25, category: "Alchemy & Medical", description: "Applied after short rest to restore 1d6 health." }, "Clothing (common)": { weight: 3, price: 2, category: "Clothing", description: "Plain undyed clothes. Advantage on spiritual tests to pass as lower class." }, "Clothing (fine)": { weight: 6, price: 100, category: "Clothing", description: "Silks and fine embroidery. Advantage on spiritual tests in high society." }, "Clothing (ragged)": { weight: 1.5, price: 0.5, category: "Clothing", description: "Tattered clothes. Advantage on spiritual tests to pass as destitute." }, "Perfume (1 vial)": { weight: 0.5, price: 20, category: "Alchemy & Medical", description: "Fragrant perfume vial." }, "Poison (weak, 1 dose)": { weight: 0.2, price: 20, category: "Alchemy & Medical", description: "Target must test DC 12 Athletics or take 1d6 vital damage." }, "Poison (effectual, 1 dose)": { weight: 0.2, price: 50, category: "Alchemy & Medical", description: "Target must test DC 14 Athletics or take 2d8 vital damage and be Stunned 1hr." }, "Poison (potent, 1 dose)": { weight: 0.2, price: 120, category: "Alchemy & Medical", description: "Target must test DC 16 Athletics or take 3d10 vital damage, Stunned 1hr, and Immobilized." }, "Soap": { weight: 0.1, price: 1, category: "Alchemy & Medical", description: "Washing soap bar." }, "Surgical Supplies": { weight: 3, price: 20, category: "Alchemy & Medical", description: "10 uses. Spend 1 use to gain advantage on Medicine tests." }, "Treatment (medical, 1 dose)": { weight: 0.2, price: 10, category: "Alchemy & Medical", description: "During short rest, cures Disoriented, Stunned, or reduces Exhausted penalty by 1." } }, standardFabrials: { "Alerter": { charges: 5, weight: 2, price: 500, description: "Blinks when targeted people/objects enter radius. Expends 1 charge/day." }, "Attractor": { charges: 5, weight: 8, price: 750, description: "Attracts attuned Essence at 1 ft/round within radius. Expends 1 charge/hour." }, "Clock Fabrial": { charges: 3, weight: 2, price: 200, description: "Announces/displays exact time. Expends 1 charge per 5 days." }, "Drainer": { charges: 2, weight: 0.5, price: 1000, description: "1 Action: Touches Invested target to drain 1 Investiture/charge into fabrial." }, "Emotion Bracelet": { charges: 3, weight: 0.2, price: 200, description: "Changes color with emotions. Spend 1 charge for advantage on Insight test (10ft)." }, "Freechair": { charges: "Unlimited", weight: 12, price: 800, description: "Levitating mobility device for disabled characters; moves at normal movement rate." }, "Heatrial": { charges: 5, weight: 3, price: 150, description: "Generates heat (1 charge/day ambient, 1 charge/hour forge). Touching gem deals 1d6 energy." }, "Painrial (amplifying)": { charges: 3, weight: 1, price: 750, description: "Melee weapon (Light Weaponry, 1d6 vital). On hit, spend 1 charge to add skill mod damage again." }, "Painrial (numbing)": { charges: 3, weight: 1, price: 750, description: "Reaction before taking damage: spend 1 charge to reduce damage by 1d4." }, "Repeller": { charges: 5, weight: 8, price: 1500, description: "Pushes away attuned Essence at 1 ft/round within radius. Expends 1 charge/hour." }, "Soulcaster": { charges: 5, weight: 5, price: 0, description: "Reward only. Mimics Transformation surge to transform materials into 1 specific Essence." }, "Spanreed (1 pair)": { charges: 3, weight: 2, price: 100, description: "Conjoined ruby quills allow long-distance written communication. Expends 1 charge per 5 days." }, "Suppressor": { charges: 2, weight: 1, price: 0, description: "Reward only. Suppresses surges/Shardblades in 30ft radius. Expends 1 charge/hour." } }, uniqueFabrialEffects: { "Bindrial (Area)": { tier: 1, charges: 3, weight: 12, description: "Tier 1: 1 Action, spend 1 charge/round. Immobilizes all objects/characters within 5 ft." }, "Bindrial (Self)": { tier: 1, charges: 5, weight: 12, description: "Tier 1: 1 Action, spend 1 charge. Grants ability to climb any surface without Slowed." }, "Compressor": { tier: 1, charges: 3, weight: 12, description: "Tier 1: 1 Action, Agility vs Phys Def. Target becomes Slowed with disadvantage on physical tests." }, "Cremrial": { tier: 1, charges: 5, weight: 12, description: "Tier 1: 1 Action, spend 1 charge. Turns 5ft stone area into soft clay until end of turn." }, "Cultivator": { tier: 1, charges: 3, weight: 12, description: "Tier 1: 1 Action, spend 1 charge. Rapidly grows plants to Medium (5ft) size for cover/climbing." }, "Accelerator": { tier: 2, charges: 3, weight: 5, description: "Tier 2: 1 Action, spend 1 charge. Frictionless movement up to full movement rate in straight line." }, "Armor Augmenter": { tier: 2, charges: 2, weight: 5, description: "Tier 2: 1 Action, spend 1 charge. Increases attached non-Invested armor's Deflect value by 2 until scene end." }, "Ascender": { tier: 2, charges: 5, weight: 5, description: "Tier 2: 1 Action, spend 1 charge. Grants 30ft flying rate until end of next turn." }, "Liferial": { tier: 2, charges: 3, weight: 1, description: "Tier 2: 1 Action, spend 1 charge. Heals target within reach for 1d6 health." }, "Lightrial": { tier: 2, charges: 3, weight: 2, description: "Tier 2: 1 Action, Deception vs Cog Def (30ft). On success, spend 1 charge to drain 3 focus." }, "Projectile Fabrial": { tier: 2, charges: 5, weight: 5, description: "Tier 2: Spend 1 charge as ranged weapon (30/120, Light Weaponry, Offhand, 1d10 impact)." }, "Disruptor": { tier: 3, charges: 4, weight: 5, description: "Tier 3: 1 Action, spend 1 charge. Touches Small non-Invested object and disintegrates it." }, "Surge Fabrial": { tier: 4, charges: 4, weight: 5, description: "Tier 4: Activates one chosen Radiant surge using fabrial charges in place of Investiture." } }, travelAndLodging: { mounts: { "Chull": { speed: "2 mph", capacity: "1,500 lbs", price: "200 mk" }, "Horse": { speed: "4 mph", capacity: "500 lbs", price: "4,000 mk" }, "Ryshadium": { speed: "6 mph", capacity: "1,000 lbs", price: "Reward only" } }, vehicles: { "Chull Cart": { speed: "2 mph", rent: "5 mk/day", purchase: "500 mk" }, "Rowboat": { speed: "3 mph down / 1 mph up", rent: "3 mk/day", purchase: "250 mk" }, "Merchant Vessel": { speed: "5 mph", rent: "50 mk/day", purchase: "10,000 mk" }, "Warship": { speed: "8 mph", rent: "250 mk/day", purchase: "100,000 mk" } }, lodging: { "Stormshelter": { price: "Free (public)" }, "Modest Inn": { price: "2 mk/night" }, "Comfortable Inn": { price: "4 mk/night" }, "Wealthy Inn": { price: "8 mk/night" }, "Aristocratic Estate": { price: "20 mk/night" } } } };
+const GAME_ITEMS_DATABASE = { equipment: { /* --- SURVIVAL & OUTDOOR --- */ "Backpack": { weight: 5, price: 8, category: "Survival & Outdoor", description: "Standard container for carrying gear." }, "Barrel": { weight: 70, price: 15, category: "Survival & Outdoor", description: "Large wooden container." }, "Blanket": { weight: 2, price: 2, category: "Survival & Outdoor", description: "Warm bedding blanket." }, "Bucket": { weight: 2, price: 1, category: "Survival & Outdoor", description: "Wooden or crem bucket." }, "Candle": { weight: 0.2, price: 0.2, category: "Survival & Outdoor", description: "Sheds light in a 15-foot radius for 6 hours." }, "Chest": { weight: 25, price: 30, category: "Survival & Outdoor", description: "Heavy wooden storage chest." }, "Crowbar": { weight: 3, price: 10, category: "Survival & Outdoor", description: "Grants advantage on Athletics tests where leverage applies." }, "Flint and Steel (Sparkflicker)": { weight: 1.5, price: 4, category: "Survival & Outdoor", description: "Used as 1 Action to ignite fuel. Herdazians can strike sparkflickers with crystalline fingernails." }, "Food (ration, 1 day)": { weight: 0.5, price: 0.2, category: "Survival & Outdoor", description: "Travel food like jerky and lavis cakes; stays edible indefinitely if dry." }, "Food (street, 1 day)": { weight: 1.5, price: 3, category: "Survival & Outdoor", description: "Local street food (e.g. Herdazian chouta or lavis grain wraps)." }, "Food (fine, 1 day)": { weight: 0.5, price: 25, category: "Survival & Outdoor", description: "High-class gourmet meals served at feasts." }, "Grappling Hook": { weight: 4, price: 10, category: "Survival & Outdoor", description: "Grants advantage on Acrobatics and Athletics tests made to climb attached rope." }, "Lantern (oil)": { weight: 2, price: 20, category: "Survival & Outdoor", description: "Sheds light in a 30-foot radius. Burns 1 pint of oil per 6 hours." }, "Lantern (sphere)": { weight: 2, price: 20, category: "Survival & Outdoor", description: "Cage for infused spheres. Sheds light up to 60 ft depending on fullness." }, "Net (hunting)": { weight: 5, price: 4, category: "Survival & Outdoor", description: "1 Action: Athletics vs Physical Def (15ft). On hit, target is Restrained and Prone." }, "Net (fishing)": { weight: 15, price: 10, category: "Survival & Outdoor", description: "Grants advantage on physical tests related to fishing." }, "Oil (1 flask)": { weight: 1, price: 1, category: "Survival & Outdoor", description: "1-pint flask of flammable oil. Can fuel lanterns or create dangerous terrain." }, "Pick (mining)": { weight: 10, price: 10, category: "Survival & Outdoor", description: "Heavy mining pick." }, "Pot (iron)": { weight: 10, price: 8, category: "Survival & Outdoor", description: "Cooking pot." }, "Pouch": { weight: 1, price: 1, category: "Survival & Outdoor", description: "Small belt pouch." }, "Rope (50 feet)": { weight: 5, price: 30, category: "Survival & Outdoor", description: "Seasilk or rockbud fiber rope. DC 20 Athletics to break." }, "Sack": { weight: 0.5, price: 0.2, category: "Survival & Outdoor", description: "Simple cloth sack." }, "Shovel": { weight: 5, price: 8, category: "Survival & Outdoor", description: "Standard digging shovel." }, "Tent (two-person)": { weight: 20, price: 10, category: "Survival & Outdoor", description: "Portable shelter for two." }, "Waterskin": { weight: 1, price: 1, category: "Survival & Outdoor", description: "Container for drinking water." }, /* --- TOOLS & SCHOLARLY --- */ "Book (reference)": { weight: 3, price: 50, category: "Tools & Scholarly", description: "Contains information on a specific subject. Grants expertise benefits while researching." }, "Case (leather)": { weight: 1, price: 4, category: "Tools & Scholarly", description: "Waterproof leather tube holding up to 10 pages of parchment." }, "Chain (thick, 10 feet)": { weight: 10, price: 20, category: "Tools & Scholarly", description: "Sturdy chain. DC 30 Athletics or 15 damage to break." }, "Chain (thin, 1 foot)": { weight: 0.5, price: 20, category: "Tools & Scholarly", description: "Fine metal chain. DC 20 Athletics or 5 damage to break." }, "Ear Trumpet": { weight: 1, price: 50, category: "Tools & Scholarly", description: "Distant sounds heard through trumpet are perceived as half the distance." }, "Hammer (handheld)": { weight: 3, price: 4, category: "Tools & Scholarly", description: "Handheld tool hammer." }, "Ink (1-ounce bottle)": { weight: 0.2, price: 40, category: "Tools & Scholarly", description: "Writing ink bottle." }, "Ink pen": { weight: 0.1, price: 0.1, category: "Tools & Scholarly", description: "Standard nib pen." }, "Jug or pitcher": { weight: 4, price: 2, category: "Tools & Scholarly", description: "Liquid container." }, "Ladder (10-foot)": { weight: 20, price: 5, category: "Tools & Scholarly", description: "Wooden climbing ladder." }, "Lock and key": { weight: 1, price: 50, category: "Tools & Scholarly", description: "Sturdy lock. DC 20 Thievery test to pick." }, "Lockpick": { weight: 0.5, price: 5, category: "Tools & Scholarly", description: "Grants advantage on Thievery tests made to pick locks." }, "Magnifying Lens": { weight: 0.2, price: 400, category: "Tools & Scholarly", description: "Grants advantage on skill tests to appraise or inspect detailed objects." }, "Manacles": { weight: 6, price: 10, category: "Tools & Scholarly", description: "Restrains Medium or smaller characters. DC 25 Agility, DC 25 Athletics, or DC 20 Thievery." }, "Mirror (handheld)": { weight: 2, price: 25, category: "Tools & Scholarly", description: "Glass mirror." }, "Musical Instrument": { weight: 2, price: 20, category: "Tools & Scholarly", description: "Playing grants advantage if character has matching instrument expertise." }, "Paper or parchment (1 sheet)": { weight: 0.1, price: 0.5, category: "Tools & Scholarly", description: "Writing sheet." }, "Pulley system": { weight: 12, price: 100, category: "Tools & Scholarly", description: "Four pulley wheels and 30ft rope. Reduces lifted object weight to one quarter." }, "Scale": { weight: 3, price: 20, category: "Tools & Scholarly", description: "Accurately measures weight up to 2 lbs." }, "Spyglass": { weight: 1, price: 500, category: "Tools & Scholarly", description: "Distant objects viewed through spyglass appear at half distance." }, "Tuning Fork": { weight: 0.5, price: 50, category: "Tools & Scholarly", description: "Transfers Stormlight between spheres/gems; recharges fabrials and Shardplate with spheres." }, "Unencased gem (infused)": { weight: 0.01, price: 2, category: "Tools & Scholarly", description: "Permeable gem; leaks Stormlight over days. Used to recharge fabrials and Shardplate." }, "Wax (1 block)": { weight: 0.5, price: 2, category: "Tools & Scholarly", description: "Sealing wax block." }, "Whetstone": { weight: 1, price: 0.2, category: "Tools & Scholarly", description: "Blade sharpening stone." }, /* --- ALCHEMY, MEDICAL & CLOTHING --- */ "Alcohol (1 serving)": { weight: 0.2, price: 2, category: "Alchemy & Medical", description: "Vorin wines (Pink, Orange, Yellow, Auburn, Red, Sapphire, Blue, Violet)." }, "Alcohol (bottle)": { weight: 3, price: 15, category: "Alchemy & Medical", description: "Full bottle of wine/liquor." }, "Anesthetic (5 doses)": { weight: 1.5, price: 75, category: "Alchemy & Medical", description: "Applied after rest to reduce injury recovery time by 1d4 days." }, "Antiseptic (potent, 5 doses)": { weight: 1, price: 50, category: "Alchemy & Medical", description: "Applied after short rest to restore 2d6 health." }, "Antiseptic (weak, 5 doses)": { weight: 1, price: 25, category: "Alchemy & Medical", description: "Applied after short rest to restore 1d6 health." }, "Clothing (common)": { weight: 3, price: 2, category: "Clothing", description: "Plain undyed clothes. Advantage on spiritual tests to pass as lower class." }, "Clothing (fine)": { weight: 6, price: 100, category: "Clothing", description: "Silks and fine embroidery. Advantage on spiritual tests in high society." }, "Clothing (ragged)": { weight: 1.5, price: 0.5, category: "Clothing", description: "Tattered clothes. Advantage on spiritual tests to pass as destitute." }, "Perfume (1 vial)": { weight: 0.5, price: 20, category: "Alchemy & Medical", description: "Fragrant perfume vial." }, "Poison (weak, 1 dose)": { weight: 0.2, price: 20, category: "Alchemy & Medical", description: "Target must test DC 12 Athletics or take 1d6 vital damage." }, "Poison (effectual, 1 dose)": { weight: 0.2, price: 50, category: "Alchemy & Medical", description: "Target must test DC 14 Athletics or take 2d8 vital damage and be Stunned 1hr." }, "Poison (potent, 1 dose)": { weight: 0.2, price: 120, category: "Alchemy & Medical", description: "Target must test DC 16 Athletics or take 3d10 vital damage, Stunned 1hr, and Immobilized." }, "Soap": { weight: 0.1, price: 1, category: "Alchemy & Medical", description: "Washing soap bar." }, "Surgical Supplies": { weight: 3, price: 20, category: "Alchemy & Medical", description: "10 uses. Spend 1 use to gain advantage on Medicine tests." }, "Treatment (medical, 1 dose)": { weight: 0.2, price: 10, category: "Alchemy & Medical", description: "During short rest, cures Disoriented, Stunned, or reduces Exhausted penalty by 1." },
+"Pink Wine": { weight: 3, price: 1.25, category: "Alchemy & Beverages", description: "Non-intoxicating, floral aroma, aids alertness. 0.5–2 Marks per bottle." },
+"Orange Wine": { weight: 3, price: 1.25, category: "Alchemy & Beverages", description: "Non-intoxicating, fruit and ginger notes, popular with clergy. 0.5–2 Marks per bottle." },
+"Yellow Wine": { weight: 3, price: 3, category: "Alchemy & Beverages", description: "Bold flavor, minimal intoxication. 1–5 Marks per bottle." },
+"Auburn Wine": { weight: 3, price: 6, category: "Alchemy & Beverages", description: "Spicy, fermented fruit. 2–10 Marks per bottle." },
+"Red Wine": { weight: 3, price: 9, category: "Alchemy & Beverages", description: "Flavorful, with a pleasant burn. 3–15 Marks per bottle." },
+"Sapphire Wine": { weight: 3, price: 30, category: "Alchemy & Beverages", description: "Nutty, honeyed, lavis grain. 10–50 Marks per bottle." },
+"Blue Wine": { weight: 3, price: 57.5, category: "Alchemy & Beverages", description: "Berry and lemon notes. 15–100 Marks per bottle." },
+"Violet Wine": { weight: 3, price: 160, category: "Alchemy & Beverages", description: "Potent liquor with a spiced sandalwood aroma. 20–300 Marks per bottle." },
+"Horneater White": { weight: 3, price: 30, category: "Alchemy & Beverages", description: "High-potency Unkalaki liquor. 10–50 Marks per bottle." },
+"White Sand (Pouch)": { weight: 1, price: 100, category: "Tactical & Rare Gear", description: "Turns bright white when within 15 feet of active Investiture or Surgebinding." },
+"Anti-Stormlight Gem": { weight: 0.1, price: 500, category: "Tactical & Rare Gear", description: "Deals 3d10 energy damage to Invested characters. Detonates on contact with Stormlight." } }, standardFabrials: { "Alerter": { charges: 5, weight: 2, price: 500, description: "Blinks when targeted people/objects enter radius. Expends 1 charge/day." }, "Attractor": { charges: 5, weight: 8, price: 750, description: "Attracts attuned Essence at 1 ft/round within radius. Expends 1 charge/hour." }, "Clock Fabrial": { charges: 3, weight: 2, price: 200, description: "Announces/displays exact time. Expends 1 charge per 5 days." }, "Drainer": { charges: 2, weight: 0.5, price: 1000, description: "1 Action: Touches Invested target to drain 1 Investiture/charge into fabrial." }, "Emotion Bracelet": { charges: 3, weight: 0.2, price: 200, description: "Changes color with emotions. Spend 1 charge for advantage on Insight test (10ft)." }, "Freechair": { charges: "Unlimited", weight: 12, price: 800, description: "Levitating mobility device for disabled characters; moves at normal movement rate." }, "Heatrial": { charges: 5, weight: 3, price: 150, description: "Generates heat (1 charge/day ambient, 1 charge/hour forge). Touching gem deals 1d6 energy." }, "Painrial (amplifying)": { charges: 3, weight: 1, price: 750, description: "Melee weapon (Light Weaponry, 1d6 vital). On hit, spend 1 charge to add skill mod damage again." }, "Painrial (numbing)": { charges: 3, weight: 1, price: 750, description: "Reaction before taking damage: spend 1 charge to reduce damage by 1d4." }, "Repeller": { charges: 5, weight: 8, price: 1500, description: "Pushes away attuned Essence at 1 ft/round within radius. Expends 1 charge/hour." }, "Soulcaster": { charges: 5, weight: 5, price: 0, description: "Reward only. Mimics Transformation surge to transform materials into 1 specific Essence." }, "Spanreed (1 pair)": { charges: 3, weight: 2, price: 100, description: "Conjoined ruby quills allow long-distance written communication. Expends 1 charge per 5 days." }, "Suppressor": { charges: 2, weight: 1, price: 0, description: "Reward only. Suppresses surges/Shardblades in 30ft radius. Expends 1 charge/hour." } }, uniqueFabrialEffects: { "Bindrial (Area)": { tier: 1, charges: 3, weight: 12, description: "Tier 1: 1 Action, spend 1 charge/round. Immobilizes all objects/characters within 5 ft." }, "Bindrial (Self)": { tier: 1, charges: 5, weight: 12, description: "Tier 1: 1 Action, spend 1 charge. Grants ability to climb any surface without Slowed." }, "Compressor": { tier: 1, charges: 3, weight: 12, description: "Tier 1: 1 Action, Agility vs Phys Def. Target becomes Slowed with disadvantage on physical tests." }, "Cremrial": { tier: 1, charges: 5, weight: 12, description: "Tier 1: 1 Action, spend 1 charge. Turns 5ft stone area into soft clay until end of turn." }, "Cultivator": { tier: 1, charges: 3, weight: 12, description: "Tier 1: 1 Action, spend 1 charge. Rapidly grows plants to Medium (5ft) size for cover/climbing." }, "Accelerator": { tier: 2, charges: 3, weight: 5, description: "Tier 2: 1 Action, spend 1 charge. Frictionless movement up to full movement rate in straight line." }, "Armor Augmenter": { tier: 2, charges: 2, weight: 5, description: "Tier 2: 1 Action, spend 1 charge. Increases attached non-Invested armor's Deflect value by 2 until scene end." }, "Ascender": { tier: 2, charges: 5, weight: 5, description: "Tier 2: 1 Action, spend 1 charge. Grants 30ft flying rate until end of next turn." }, "Liferial": { tier: 2, charges: 3, weight: 1, description: "Tier 2: 1 Action, spend 1 charge. Heals target within reach for 1d6 health." }, "Lightrial": { tier: 2, charges: 3, weight: 2, description: "Tier 2: 1 Action, Deception vs Cog Def (30ft). On success, spend 1 charge to drain 3 focus." }, "Projectile Fabrial": { tier: 2, charges: 5, weight: 5, description: "Tier 2: Spend 1 charge as ranged weapon (30/120, Light Weaponry, Offhand, 1d10 impact)." }, "Disruptor": { tier: 3, charges: 4, weight: 5, description: "Tier 3: 1 Action, spend 1 charge. Touches Small non-Invested object and disintegrates it." }, "Surge Fabrial": { tier: 4, charges: 4, weight: 5, description: "Tier 4: Activates one chosen Radiant surge using fabrial charges in place of Investiture." },
+"Honor's Drop": { tier: "Legendary", charges: "Unlimited", weight: 0.1, description: "A perfect ruby that holds unlimited Investiture without leaking. Legendary fabrial gem." } }, travelAndLodging: { mounts: { "Chull": { speed: "2 mph", capacity: "1,500 lbs", price: "200 mk" }, "Horse": { speed: "4 mph", capacity: "500 lbs", price: "4,000 mk" }, "Ryshadium": { speed: "6 mph", capacity: "1,000 lbs", price: "Reward only" } }, vehicles: { "Chull Cart": { speed: "2 mph", rent: "5 mk/day", purchase: "500 mk" }, "Rowboat": { speed: "3 mph down / 1 mph up", rent: "3 mk/day", purchase: "250 mk" }, "Merchant Vessel": { speed: "5 mph", rent: "50 mk/day", purchase: "10,000 mk" }, "Warship": { speed: "8 mph", rent: "250 mk/day", purchase: "100,000 mk" } }, lodging: { "Stormshelter": { price: "Free (public)" }, "Modest Inn": { price: "2 mk/night" }, "Comfortable Inn": { price: "4 mk/night" }, "Wealthy Inn": { price: "8 mk/night" }, "Aristocratic Estate": { price: "20 mk/night" } } } };
+
+/* Starting equipment kits — a "Load Starting Kit" preset on the Back Page fills
+   weapons, armor, itemized gear, currency, expertise, and connections in one click.
+   weaponSlots/weaponChoices/weaponFilter describe the weapon picker(s) shown before loading. */
+const STARTING_KITS = {
+  'Academic Kit': {
+    weaponSlots: 1, weaponChoices: ['Knife', 'Sling', 'Staff'],
+    armor: 'Uniform',
+    gear: [
+      {name:'Backpack'}, {name:'Clothing (common)'}, {name:'Ink pen'}, {name:'Ink (1-ounce bottle)'},
+      {name:'Paper or parchment (1 sheet)', qty:10}, {name:'Wax (1 block)'}, {name:'Book (reference)'},
+      {name:'Poison (weak, 1 dose)'}
+    ],
+    customGear: [{name:'Empty Vial', weight:0.1, price:1, qty:3, desc:'An empty glass vial for storing reagents or samples.'}],
+    expertise: 'Literature',
+    currencyDice: '3d12'
+  },
+  'Artisan Kit': {
+    weaponSlots: 1, weaponChoices: ['Hammer', 'Knife'],
+    armor: 'Leather Armor',
+    gear: [
+      {name:'Chest'}, {name:'Clothing (common)'}, {name:'Surgical Supplies'}, {name:'Antiseptic (weak, 5 doses)'},
+      {name:'Ink pen'}, {name:'Ink (1-ounce bottle)'}, {name:'Paper or parchment (1 sheet)', qty:5},
+      {name:'Candle', qty:5}, {name:'Flint and Steel (Sparkflicker)'}, {name:'Tuning Fork'},
+      {name:'Musical Instrument'}, {name:'Scale'}
+    ],
+    customGear: [{name:'Empty Glass Bottle', weight:0.3, price:1, qty:3, desc:'A small stoppered glass bottle.'}],
+    currencyDice: '4d8'
+  },
+  'Military Kit': {
+    weaponSlots: 2, weaponFilter: w => w.category !== 'Special',
+    armor: 'Chain Armor',
+    gear: [
+      {name:'Backpack'}, {name:'Clothing (common)'}, {name:'Waterskin'}, {name:'Flint and Steel (Sparkflicker)'},
+      {name:'Whetstone'}, {name:'Blanket'}, {name:'Food (ration, 1 day)', qty:10}
+    ],
+    customGear: [{name:'Uniform (dress clothing)', weight:2, price:0, qty:1, desc:'Standard-issue dress uniform, worn off duty.'}],
+    currencyDice: '2d6'
+  },
+  'Courtier Kit': {
+    weaponSlots: 1, weaponChoices: ['Sidesword', 'Greatsword', 'Longsword', 'Longbow'],
+    gear: [{name:'Clothing (fine)'}, {name:'Violet Wine'}],
+    connections: 'Patron: a noble house sponsors and vouches for you.',
+    currencyDice: '4d20'
+  },
+  'Underworld Kit': {
+    weaponSlots: 2, weaponFilter: w => w.category === 'Light',
+    armor: 'Leather Armor',
+    gear: [
+      {name:'Backpack'}, {name:'Clothing (common)'}, {name:'Horneater White'}, {name:'Crowbar'}, {name:'Lockpick'},
+      {name:'Rope (50 feet)'}, {name:'Flint and Steel (Sparkflicker)'}, {name:'Lantern (oil)'}, {name:'Oil (1 flask)'},
+      {name:'Food (street, 1 day)', qty:5}
+    ],
+    currencyDice: '1d20'
+  },
+  'Prisoner Kit': {
+    gear: [{name:'Manacles'}, {name:'Clothing (ragged)'}],
+    connections: 'Bound to a Radiant spren, drawn to you even here.',
+    goal: {text:'Spren connection — progress toward the First Ideal', ticks:[true, true, false]}
+  }
+};
 
 /* Weapon name -> the EXPERTISES entry that unlocks its Expert Traits */
 const WEAPON_EXPERTISE_NAME = {
@@ -1169,7 +1281,8 @@ const WEAPON_EXPERTISE_NAME = {
   'Axe':'Axes', 'Greatsword':'Greatswords', 'Hammer':'Hammers', 'Longspear':'Longspears', 'Longsword':'Longswords',
   'Poleaxe':'Poleaxes', 'Shield':'Shields', 'Crossbow':'Crossbows', 'Longbow':'Longbows',
   'Improvised Weapon':'Improvised Weapons', 'Unarmed Attack':'Unarmed Attacks', 'Half-Shard':'Half-Shards',
-  'Shardblade':'Shardblades', 'Shardblade (Radiant)':'Shardblades', 'Warhammer':'Warhammers', 'Grandbow':'Grandbows'
+  'Shardblade':'Shardblades', 'Shardblade (Radiant)':'Shardblades', 'Warhammer':'Warhammers', 'Grandbow':'Grandbows',
+  'Anti-Stormlight Arrow':'Anti-Stormlight Arrows'
 };
 
 const TABLES = {
@@ -1573,6 +1686,54 @@ setInterval(updateSyncIndicator, 5000);
 const $ = sel => document.querySelector(sel);
 const $$ = sel => Array.from(document.querySelectorAll(sel));
 
+/* ---------- +/- steppers on every number field ----------
+   Native number-input spin buttons are hidden (see input[type=number] rules
+   above), so every numeric field gets its own small increase/decrease pair
+   instead. Wraps the input in-place (moving any inline width to the wrapper
+   so existing grid/flex layouts keep their exact sizing) and overlays the
+   buttons on the input's own right edge rather than adding extra width. A
+   MutationObserver re-runs this on anything rendered later — sheet cards,
+   modals, party views — so no render function needs to call it explicitly. */
+function enhanceNumberInput(input){
+  if (input.dataset.stepped || input.disabled || input.readOnly) return;
+  input.dataset.stepped = '1';
+  const wrap = document.createElement('span');
+  wrap.className = 'numstep';
+  if (input.style.width){ wrap.style.width = input.style.width; input.style.width = ''; }
+  input.parentNode.insertBefore(wrap, input);
+  wrap.appendChild(input);
+  const btns = document.createElement('span');
+  btns.className = 'numstep-btns';
+  const step = (dir, label, aria) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.tabIndex = -1;
+    btn.setAttribute('aria-label', aria);
+    btn.textContent = label;
+    btn.addEventListener('click', () => {
+      const by = parseFloat(input.step) || 1;
+      let cur = parseFloat(input.value);
+      if (Number.isNaN(cur)) cur = 0;
+      let next = Math.round((cur + dir * by) * 1e6) / 1e6;
+      if (input.min !== '') next = Math.max(parseFloat(input.min), next);
+      if (input.max !== '') next = Math.min(parseFloat(input.max), next);
+      input.value = next;
+      input.dispatchEvent(new Event('input', {bubbles:true}));
+      input.dispatchEvent(new Event('change', {bubbles:true}));
+    });
+    return btn;
+  };
+  btns.appendChild(step(1, '▲', 'Increase'));
+  btns.appendChild(step(-1, '▼', 'Decrease'));
+  wrap.appendChild(btns);
+}
+function enhanceAllNumberInputs(root){
+  (root || document).querySelectorAll('input[type=number]').forEach(el => { if (!el.dataset.stepped) enhanceNumberInput(el); });
+}
+new MutationObserver(muts => {
+  for (const m of muts) if (m.addedNodes.length){ enhanceAllNumberInputs(document); break; }
+}).observe(document.body, {childList:true, subtree:true});
+
 /* Rebuilding a card's innerHTML can shift the page's total scrollable height
    (a warning line appearing/disappearing, content-visibility re-estimating
    off-screen cards, etc.), which makes the browser clamp/jump the scroll
@@ -1591,6 +1752,8 @@ const val = id => { const el = document.getElementById(id); return el ? el.value
 let talentPick = {category:'', path:'', specialty:'', talent:''};
 let weaponPick = {category:'', weapon:''};
 let gearPick = {category:'', item:''};
+let currencyCalc = {gem:'Diamond', chips:0, marks:0, broams:0};
+let kitPick = {kit:'', weapon1:'', weapon2:''};
 
 let toastTimer;
 function toast(msg, duration){
@@ -1737,6 +1900,7 @@ function weaponsHTML(c, d){
     if (disp.signatureBonus) notes.push(`Signature Weapon: Opportunity range +${disp.signatureBonus}`);
     if (disp.talentNotes.length) notes.push(esc(disp.talentNotes.join(', ')));
     notes.push(`Offhand Strike: ${disp.offhandFocusCost} Focus${disp.isOffhand ? ' (has Offhand trait)' : ''}`);
+    if (w.raysium) notes.push('Raysium Inlaid: on hit or graze, drains 1 Investiture or charge from the target');
     const isThrown = /\bthrown\b/i.test(disp.traits) ||
       (disp.catalog && (/\bthrown\b/i.test(disp.catalog.range || '') || (disp.hasExpertise && /\bthrown\b/i.test(disp.catalog.expertTraits || ''))));
     return `<div class="row wrow" data-widx="${i}">
@@ -1758,7 +1922,10 @@ function weaponsHTML(c, d){
     </div>
     <p class="hint" style="margin:.1rem 0 0"><b>Attack ${sgn(disp.attackMod)} vs ${defenseLabel}${disp.disadvantage ? ' <span style="color:var(--warn)">⚠ Disadvantage</span>' : ''}</b> · <b>Damage ${esc(disp.diceExpr)} ${sgn(disp.totalDamageMod)} ${esc(disp.damageType)}</b></p>
     <p class="hint" style="margin:.05rem 0 ${isThrown ? '.3rem' : '.5rem'}">${notes.join(' · ')}</p>
-    ${isThrown ? `<button class="cond" style="margin:0 0 .5rem" data-action="toggle-weapon-thrown" data-i="${i}" aria-pressed="${!!w.thrownUsed}" title="Track whether this thrown weapon has left your hand">Thrown: ${w.thrownUsed ? 'Used' : 'In hand'}</button>` : ''}`;
+    <span style="display:inline-flex;gap:.4rem;flex-wrap:wrap">
+      ${isThrown ? `<button class="cond" style="margin:0 0 .5rem" data-action="toggle-weapon-thrown" data-i="${i}" aria-pressed="${!!w.thrownUsed}" title="Track whether this thrown weapon has left your hand">Thrown: ${w.thrownUsed ? 'Used' : 'In hand'}</button>` : ''}
+      <button class="cond" style="margin:0 0 .5rem" data-action="toggle-weapon-raysium" data-i="${i}" aria-pressed="${!!w.raysium}" title="Raysium Inlaid: on hit or graze, drains 1 Investiture or charge from the target">Raysium Overlay: ${w.raysium ? 'On' : 'Off'}</button>
+    </span>`;
   }).join('');
 
   const catNames = ['Light', 'Heavy', 'Special'];
@@ -2040,6 +2207,17 @@ function radiantIdealsHTML(c){
   </div>`;
 }
 
+const COMPANION_PRESETS = {
+  'Larkin': {
+    type: 'Companion (Beast)',
+    notes: "Drains Investiture/charges from nearby sources. 'Drain Light' action: drains 2d4 charges or Investiture per turn from a target within reach."
+  },
+  'Greater Larkin': {
+    type: 'Companion (Beast, Tier 3+)',
+    notes: "42 Health, 40ft flying speed. 'Drain Light' action: drains 3d6 charges or Investiture per turn from a target within reach."
+  }
+};
+
 function squiresHTML(c){
   const rows = c.squires.map((s, i) => `<div class="row" style="grid-template-columns:1fr 1fr 2fr auto" data-sqidx="${i}">
       <input type="text" value="${esc(s.name)}" data-path="squires.${i}.name" placeholder="Name">
@@ -2047,11 +2225,16 @@ function squiresHTML(c){
       <input type="text" value="${esc(s.notes)}" data-path="squires.${i}.notes" placeholder="Health, key attributes, notes">
       <button class="iconbtn" data-action="del-squire" data-i="${i}" aria-label="Remove">✕</button>
     </div>`).join('');
+  const presetOpts = Object.keys(COMPANION_PRESETS).map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
   return `<div class="card">
     <h3>Squires &amp; Companions</h3><hr class="rule">
     <div class="row thead" style="grid-template-columns:1fr 1fr 2fr auto"><span>Name</span><span>Type</span><span>Stat block / notes</span><span></span></div>
     <div class="rows">${rows || '<p class="empty">No squires or companions yet.</p>'}</div>
-    <button class="btn addbtn" data-action="add-squire">Add squire or companion</button>
+    <div class="row" style="grid-template-columns:1fr auto;margin-top:.5rem">
+      <select id="companionPresetSel">${presetOpts}</select>
+      <button class="btn" data-action="add-companion-preset">Add preset companion</button>
+    </div>
+    <button class="btn addbtn" data-action="add-squire" style="margin-top:.4rem">Add squire or companion</button>
   </div>`;
 }
 
@@ -2209,6 +2392,41 @@ function sphereTotalText(c){
   return `Total value: ${totalChips} chips (≈ ${(totalChips / SPHERE_CHIPS_PER_MARK).toFixed(2)} marks, ≈ ${(totalChips / (SPHERE_CHIPS_PER_MARK * SPHERE_MARKS_PER_BROAM)).toFixed(2)} broams)`;
 }
 
+function currencyConverterValue(){
+  const gv = GEMSTONE_VALUES[currencyCalc.gem] || GEMSTONE_VALUES.Diamond;
+  return (currencyCalc.chips|0) * gv.chip + (currencyCalc.marks|0) * gv.mark + (currencyCalc.broams|0) * gv.broam;
+}
+
+function currencyConverterHTML(){
+  const gemOpts = Object.keys(GEMSTONE_VALUES).map(g => `<option value="${esc(g)}" ${currencyCalc.gem === g ? 'selected' : ''}>${esc(g)}</option>`).join('');
+  const total = currencyConverterValue();
+  return `<div class="textbox-like" style="margin-top:.7rem;padding-top:.6rem;border-top:1px solid var(--border)">
+    <p class="hint" style="margin-bottom:.4rem"><b>Currency converter</b> — value of any gemstone's spheres in Diamond Marks</p>
+    <div class="row" style="grid-template-columns:1fr 1fr 1fr 1fr">
+      <div class="f"><label>Gemstone</label><select id="currGemSel">${gemOpts}</select></div>
+      <div class="f"><label>Chips</label><input type="number" min="0" id="currChips" value="${currencyCalc.chips}"></div>
+      <div class="f"><label>Marks</label><input type="number" min="0" id="currMarks" value="${currencyCalc.marks}"></div>
+      <div class="f"><label>Broams</label><input type="number" min="0" id="currBroams" value="${currencyCalc.broams}"></div>
+    </div>
+    <p class="hint" id="currencyTotal" style="margin-top:.4rem">= <b>${total.toFixed(2)}</b> Diamond Marks</p>
+    <button class="btn addbtn" data-action="add-currency-to-total" style="margin-top:.3rem">Add to sphere total</button>
+  </div>`;
+}
+
+function bindCurrencyConverter(){
+  const gemSel = $('#currGemSel'), chips = $('#currChips'), marks = $('#currMarks'), broams = $('#currBroams');
+  if (!gemSel) return;
+  const refresh = () => {
+    currencyCalc.gem = gemSel.value;
+    currencyCalc.chips = parseFloat(chips.value) || 0;
+    currencyCalc.marks = parseFloat(marks.value) || 0;
+    currencyCalc.broams = parseFloat(broams.value) || 0;
+    const line = $('#currencyTotal');
+    if (line) line.innerHTML = `= <b>${currencyConverterValue().toFixed(2)}</b> Diamond Marks`;
+  };
+  [gemSel, chips, marks, broams].forEach(el => el.addEventListener('input', refresh));
+}
+
 function sphereConverterHTML(c){
   const s = c.spheres;
   return `<div class="card">
@@ -2220,6 +2438,7 @@ function sphereConverterHTML(c){
     </div>
     <p class="hint" id="sphereTotal" style="margin-top:.5rem">${sphereTotalText(c)}</p>
     <div class="f" style="margin-top:.4rem"><label>Notes</label><input type="text" value="${esc(s.notes)}" data-path="spheres.notes" placeholder="Sphere pouch, infused state, spheres held in trust…"></div>
+    ${currencyConverterHTML()}
   </div>`;
 }
 
@@ -2294,6 +2513,14 @@ function openCustomGearModal(){
         <div class="f"><label>Quantity</label><input type="number" id="gcQty" value="1" min="1"></div>
       </div>
       <div class="f" style="margin-top:.5rem"><label>Description / rules</label><textarea id="gcDesc" style="min-height:4rem"></textarea></div>
+      <div class="f" style="margin-top:.5rem">
+        <label>Advanced features <span class="hint">(crafting a high-quality item — 2 upgrades each)</span></label>
+        <div style="display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.3rem">
+          ${ADVANCED_ITEM_FEATURES.map(f => `<label style="display:flex;gap:.3rem;align-items:center;font-size:.78rem">
+            <input type="checkbox" class="gcFeature" value="${esc(f.name)}" title="${esc(f.desc)}"> ${esc(f.name)}
+          </label>`).join('')}
+        </div>
+      </div>
       <div style="display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem">
         <button type="button" class="btn" data-action="close-modal">Cancel</button>
         <button type="submit" class="btn">Add item</button>
@@ -2423,6 +2650,43 @@ function travelLodgingHTML(){
   </div>`;
 }
 
+function kitWeaponOptions(kit){
+  if (kit.weaponChoices) return kit.weaponChoices;
+  if (kit.weaponFilter) return Object.keys(GAME_DATABASE.weapons).filter(n => kit.weaponFilter(GAME_DATABASE.weapons[n]));
+  return Object.keys(GAME_DATABASE.weapons);
+}
+
+function startingKitHTML(){
+  const kit = STARTING_KITS[kitPick.kit];
+  const kitOpts = Object.keys(STARTING_KITS).map(n => `<option value="${esc(n)}" ${kitPick.kit === n ? 'selected' : ''}>${esc(n)}</option>`).join('');
+  let weaponSelects = '';
+  if (kit && kit.weaponSlots >= 1){
+    const opts = kitWeaponOptions(kit);
+    const optHTML = sel => `<option value="">— Choose —</option>` + opts.map(n => `<option value="${esc(n)}" ${sel === n ? 'selected' : ''}>${esc(n)}</option>`).join('');
+    weaponSelects = `<div class="row" style="grid-template-columns:repeat(${kit.weaponSlots},1fr);margin-top:.5rem">
+      <div class="f"><label>${kit.weaponSlots > 1 ? 'Weapon 1' : 'Weapon'}</label><select id="kitWeaponSel1">${optHTML(kitPick.weapon1)}</select></div>
+      ${kit.weaponSlots > 1 ? `<div class="f"><label>Weapon 2</label><select id="kitWeaponSel2">${optHTML(kitPick.weapon2)}</select></div>` : ''}
+    </div>`;
+  }
+  const ready = kit && (!kit.weaponSlots || (kitPick.weapon1 && (kit.weaponSlots < 2 || kitPick.weapon2)));
+  return `<div class="card">
+    <h3>Starting Kit <span class="hint">Quickly fill starting gear, currency, and connections</span></h3><hr class="rule">
+    <div class="f"><label>Kit</label><select id="kitSel"><option value="">— Choose —</option>${kitOpts}</select></div>
+    ${weaponSelects}
+    <button class="btn addbtn" style="margin-top:.6rem" data-action="load-starting-kit" ${ready ? '' : 'disabled'}>Load Starting Kit</button>
+    <p class="hint" style="margin-top:.4rem">Adds to your current gear, armor, currency, expertise, and connections — it doesn't clear anything you already have.</p>
+  </div>`;
+}
+
+function bindKitPicker(){
+  const kitSel = $('#kitSel');
+  if (!kitSel) return;
+  kitSel.addEventListener('change', () => { kitPick = {kit:kitSel.value, weapon1:'', weapon2:''}; renderBack(); });
+  const w1 = $('#kitWeaponSel1'), w2 = $('#kitWeaponSel2');
+  if (w1) w1.addEventListener('change', () => { kitPick.weapon1 = w1.value; renderBack(); });
+  if (w2) w2.addEventListener('change', () => { kitPick.weapon2 = w2.value; renderBack(); });
+}
+
 function renderBack(){ preserveScroll(renderBackImpl); }
 function renderBackImpl(){
   const c = activeChar();
@@ -2454,6 +2718,8 @@ function renderBackImpl(){
       <div class="lookup"><div class="lbl">Spiritual defense</div><div class="v" data-derived="spiritualDefense">${d.spiritualDefense}</div></div>
     </div>
   </div>
+
+  ${startingKitHTML()}
 
   <div class="back-grid">
     <div>
@@ -2501,6 +2767,8 @@ function renderBackImpl(){
   </div>`;
   bindGearPicker();
   bindFabrialPicker();
+  bindCurrencyConverter();
+  bindKitPicker();
 }
 
 /* ============================================================
@@ -3120,6 +3388,13 @@ function handleAction(action, node, c){
       save();
       break;
     }
+    case 'toggle-weapon-raysium': {
+      const w = c.weapons[parseInt(node.dataset.i, 10)];
+      if (!w) break;
+      w.raysium = !w.raysium;
+      renderFront(); save();
+      break;
+    }
     case 'cycle-turn-speed': {
       const mode = TURN_SPEED_ORDER[(TURN_SPEED_ORDER.indexOf(c.turnSpeed || 'passive') + 1) % TURN_SPEED_ORDER.length];
       c.turnSpeed = mode;
@@ -3141,6 +3416,15 @@ function handleAction(action, node, c){
     case 'add-injury': c.injuries.push({text:'', days:1}); renderFront(); save(); break;
     case 'del-injury': c.injuries.splice(parseInt(node.dataset.i, 10), 1); renderFront(); save(); break;
     case 'add-squire': c.squires.push({name:'', type:'Squire', notes:''}); renderFront(); save(); break;
+    case 'add-companion-preset': {
+      const sel = $('#companionPresetSel');
+      const preset = sel && COMPANION_PRESETS[sel.value];
+      if (preset){
+        c.squires.push({name:sel.value, type:preset.type, notes:preset.notes});
+        renderFront(); save();
+      }
+      break;
+    }
     case 'del-squire': c.squires.splice(parseInt(node.dataset.i, 10), 1); renderFront(); save(); break;
     case 'add-fabrial': c.fabrials.push({name:'', type:'', maxCharge:10, charge:10, weight:0, notes:''}); renderBack(); save(); break;
     case 'add-fabrial-catalog': {
@@ -3211,15 +3495,70 @@ function handleAction(action, node, c){
       renderBack(); syncDerived(); save();
       break;
     }
+    case 'load-starting-kit': {
+      const kitName = kitPick.kit;
+      const kit = STARTING_KITS[kitName];
+      if (!kit) break;
+      const addedWeapons = [];
+      [kitPick.weapon1, kitPick.weapon2].filter(Boolean).forEach(wname => {
+        const cat = GAME_DATABASE.weapons[wname];
+        if (!cat) return;
+        c.weapons.push({
+          name: wname, skill: GAME_SKILL_KEY[cat.skill] || 'lightWeapons', bonus:0,
+          damage: cat.damage, traits: cat.traits === 'None' ? '' : cat.traits,
+          defense:'physical', catalogName: wname, handKey:false
+        });
+        addedWeapons.push(wname);
+      });
+      if (kit.armor) c.armor = kit.armor;
+      c.gear = c.gear || [];
+      (kit.gear || []).forEach(g => {
+        const item = GAME_ITEMS_DATABASE.equipment[g.name];
+        if (!item) return;
+        c.gear.push({name:g.name, category:item.category, weight:item.weight, price:item.price, qty:g.qty || 1, desc:item.description, custom:false});
+      });
+      (kit.customGear || []).forEach(g => {
+        c.gear.push({name:g.name, category:'Custom', weight:g.weight, price:g.price, qty:g.qty || 1, desc:g.desc, custom:true});
+      });
+      if (kit.expertise && !hasExpertiseNamed(c, kit.expertise)) c.expertises.push({name:kit.expertise, temporary:false});
+      if (kit.connections) c.connections = c.connections ? `${c.connections}\n${kit.connections}` : kit.connections;
+      if (kit.goal) c.goals.push({text:kit.goal.text, ticks:kit.goal.ticks.slice()});
+      let currencyNote = '';
+      if (kit.currencyDice){
+        const roll = parseDice(kit.currencyDice);
+        c.spheres.marks = Math.round(((c.spheres.marks|0) + roll.total) * 100) / 100;
+        currencyNote = ` +${roll.total} Marks (${kit.currencyDice})`;
+      }
+      kitPick = {kit:'', weapon1:'', weapon2:''};
+      renderBack(); syncDerived(); save();
+      toast(`${kitName} loaded.${currencyNote}`);
+      break;
+    }
+    case 'add-currency-to-total': {
+      const value = currencyConverterValue();
+      if (value > 0){
+        c.spheres.marks = Math.round(((c.spheres.marks|0) + value) * 100) / 100;
+        toast(`Added ${value.toFixed(2)} Diamond Marks to your sphere total.`);
+      }
+      currencyCalc = {gem:'Diamond', chips:0, marks:0, broams:0};
+      renderBack(); save();
+      break;
+    }
     case 'add-gear-custom': openCustomGearModal(); break;
     case 'add-gear-custom-submit': {
       const name = val('gcName').trim();
       if (name){
         c.gear = c.gear || [];
+        const chosenFeatures = $$('.gcFeature:checked').map(el => el.value);
+        const featureText = chosenFeatures.map(n => {
+          const f = ADVANCED_ITEM_FEATURES.find(x => x.name === n);
+          return f ? `${f.name}: ${f.desc}` : n;
+        }).join(' · ');
+        const desc = [val('gcDesc').trim(), featureText].filter(Boolean).join(' — ');
         c.gear.push({
           name, category: val('gcCategory').trim() || 'Custom',
           weight: parseFloat(val('gcWeight')) || 0, price: parseFloat(val('gcPrice')) || 0,
-          qty: parseInt(val('gcQty'), 10) || 1, desc: val('gcDesc').trim(), custom:true
+          qty: parseInt(val('gcQty'), 10) || 1, desc, custom:true
         });
       }
       closeModal(); renderBack(); syncDerived(); save();
@@ -3511,6 +3850,10 @@ function renderRulesDrawer(q){
   if (condItems.length) sections.push(ruleSection('Conditions', condItems));
   const surgeItems = SURGE_BLURBS.filter(match);
   if (surgeItems.length) sections.push(ruleSection('Surges', surgeItems));
+  const itemFeatureItems = ADVANCED_ITEM_FEATURES.filter(match);
+  if (itemFeatureItems.length) sections.push(ruleSection('Advanced Item Features (crafting)', itemFeatureItems));
+  const fabrialFeatureItems = ADVANCED_FABRIAL_FEATURES.filter(match);
+  if (fabrialFeatureItems.length) sections.push(ruleSection('Advanced Fabrial Features (crafting)', fabrialFeatureItems));
   body.innerHTML = sections.join('') || '<p class="empty">No matches for that search.</p>';
 }
 function openRules(){
