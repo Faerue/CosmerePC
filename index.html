@@ -4144,7 +4144,7 @@ function offlineSocialHTML(){
   const parties = state.localParties;
   const pid = state.activePartyId && parties.some(p => p.id === state.activePartyId) ? state.activePartyId : (parties[0] && parties[0].id);
   const party = parties.find(p => p.id === pid);
-  const charOpts = state.characters.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  const charOpts = state.characters.map(c => `<option value="${c.id}" ${c.id === state.activeId ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
 
   const cards = party ? party.charIds.map(cid => {
     const c = state.characters.find(x => x.id === cid);
@@ -4227,10 +4227,10 @@ function onlineSocialHTML(){
     </div>`;
   }
 
-  const myCharOpts = state.characters.map(c => {
-    const mine = party && party.members[cloud.user.uid];
-    return `<option value="${c.id}" ${mine && mine.charId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`;
-  }).join('');
+  const mine = party && party.members[cloud.user.uid];
+  const myCharSelectedId = (mine && mine.charId) || state.activeId;
+  const myCharOpts = state.characters.map(c =>
+    `<option value="${c.id}" ${c.id === myCharSelectedId ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
 
   return `
   <div class="card">
@@ -4317,9 +4317,14 @@ function handleSocialAction(action, node, c){
       renderSocial(); save(); break;
     case 'add-local-char': {
       const p = state.localParties.find(x => x.id === pid);
-      const cid = val('localcharpick') || ($('#localcharpick') && $('#localcharpick').value);
-      if (p && cid && !p.charIds.includes(cid)){ p.charIds.push(cid); renderSocial(); save(); }
-      else toast('That character is already at the table.');
+      const sel = $('#localcharpick');
+      const cid = sel ? sel.value : '';
+      if (!p || !cid){ toast('Pick a character to add.'); break; }
+      if (p.charIds.includes(cid)){ toast('That character is already at the table.'); break; }
+      const ch = state.characters.find(x => x.id === cid);
+      p.charIds.push(cid);
+      renderSocial(); save();
+      toast(`${ch ? ch.name : 'Character'} added to ${p.name}.`);
       break;
     }
     case 'local-adjust': {
