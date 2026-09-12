@@ -62,6 +62,26 @@ service cloud.firestore {
         allow create, update: if signedIn() && request.auth.uid == senderUid;
         allow delete: if signedIn() && (request.auth.uid == uid || request.auth.uid == senderUid);
       }
+
+      // ---- pending campaign invites addressed to {uid} ----
+      // A GM can't write into an invited player's `users/{uid}` doc directly
+      // (that's owner-only, same as everything else under users/{uid}), so
+      // inviting by handle drops a notice here instead. The invited player's
+      // OWN client is what actually joins the party — reading this invite,
+      // then writing the party doc and their own users/{uid}.parties array,
+      // exactly like joining by code.
+      match /partyInvites/{partyId} {
+        allow get, list: if signedIn() && request.auth.uid == uid;
+        allow create: if signedIn()
+          && get(/databases/$(database)/documents/parties/$(partyId)).data.gm == request.auth.uid;
+        allow update: if false;
+        // The invited player deletes it on accept/decline; the inviting GM
+        // may also rescind it.
+        allow delete: if signedIn() && (
+          request.auth.uid == uid
+          || get(/databases/$(database)/documents/parties/$(partyId)).data.gm == request.auth.uid
+        );
+      }
     }
 
     // ---------------- @handle -> uid registry ----------------
