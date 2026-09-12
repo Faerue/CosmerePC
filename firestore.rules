@@ -1,0 +1,164 @@
+rules_version = '2';
+
+// Radiant Sheet — Firestore security rules.
+//
+// Data model this maps to (see index.html for the exact read/write calls):
+//   users/{uid}                        profile doc (username, avatar, friends[], parties[])
+//   users/{uid}/characters/{charId}    the player's OWN authoritative character sheet
+//   users/{uid}/requests/{senderUid}   pending friend requests addressed to {uid}
+//   usernames/{lowercaseName}          handle -> uid registry, for @handle lookup
+//   partyCodes/{sixDigitCode}          join-code -> partyId lookup (nothing sensitive)
+//   parties/{partyId}                  a campaign's shared live-table snapshot
+//
+// Golden rule this whole file enforces: a player's real character sheet
+// (users/{uid}/characters/*) can ONLY ever be written by that same uid —
+// full stop, no exceptions, including the GM. The GM's live-table tools
+// (health/condition/goal adjustments, item gifts, GM notes, hide flags,
+// reordering, GM transfer) all operate on the separate `parties/{partyId}`
+// snapshot instead; a gifted item or GM stat tweak reaches the player's own
+// character only because THAT PLAYER'S OWN CLIENT reads the party doc and
+// writes the change into their own characters/{charId} — never the GM.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+
+    // ---------------- profiles ----------------
+    match /users/{uid} {
+      allow get: if signedIn();          // needed to look up a friend's profile by uid
+      allow list: if false;
+      allow create: if signedIn() && request.auth.uid == uid;
+      allow update: if signedIn() && (
+        request.auth.uid == uid
+        ||
+        // Accepting a friend request writes into the SENDER's doc too (adding
+        // yourself to their `friends` array). Allowed only if you're adding
+        // exactly yourself, touching nothing else, and the sender actually
+        // has a pending request from you sitting in your own inbox.
+        (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['friends']) &&
+          request.resource.data.friends.size() == resource.data.friends.size() + 1 &&
+          request.resource.data.friends.hasAll(resource.data.friends) &&
+          request.resource.data.friends.hasAll([request.auth.uid]) &&
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)/requests/$(uid))
+        )
+      );
+      allow delete: if false;
+
+      // ---- the player's real, authoritative character sheet ----
+      // Owner only. No GM exception. Nothing else in this file can touch this.
+      match /characters/{charId} {
+        allow read, write: if signedIn() && request.auth.uid == uid;
+      }
+
+      // ---- friend requests addressed to {uid} ----
+      match /requests/{senderUid} {
+        allow get: if signedIn() && (request.auth.uid == uid || request.auth.uid == senderUid);
+        allow list: if signedIn() && request.auth.uid == uid;
+        allow create: if signedIn() && request.auth.uid == senderUid;
+        allow delete: if signedIn() && (request.auth.uid == uid || request.auth.uid == senderUid);
+        allow update: if false;
+      }
+    }
+
+    // ---------------- @handle -> uid registry ----------------
+    match /usernames/{name} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow update: if false;
+    }
+
+    // ---------------- join-code -> partyId lookup ----------------
+    // Deliberately a separate tiny collection: `parties` is member-only
+    // readable, so a not-yet-member could never find a party by querying it.
+    // This doc holds nothing but the id, so it's safe for any signed-in user
+    // to read directly by code (a `get`, never a `list`/query).
+    match /partyCodes/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && get(/databases/$(database)/documents/parties/$(request.resource.data.partyId)).data.gm == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // ---------------- campaign parties (the shared live-table snapshot) ----------------
+    match /parties/{partyId} {
+      function isMember() { return request.auth.uid in resource.data.memberUids; }
+      function isGM()     { return request.auth.uid == resource.data.gm; }
+      function isOwner()  { return request.auth.uid == resource.data.ownerUid; }
+      function topLevelOnly(keys) {
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+      }
+
+      allow get: if signedIn() && isMember();
+      allow list: if false; // never query this collection — resolve join codes via partyCodes instead
+
+      allow create: if signedIn()
+        && request.resource.data.gm == request.auth.uid
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.memberUids == [request.auth.uid];
+
+      allow update: if signedIn() && (
+        // Any current member may edit only their OWN row: their live sheet
+        // snapshot, assigning a character, clearing their own gift queue.
+        (
+          isMember() &&
+          topLevelOnly(['members']) &&
+          request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid])
+        )
+        ||
+        // The GM may edit exactly one member's row at a time — stat/condition/
+        // goal adjustments, hide flags, GM notes, gifting an item.
+        (
+          isGM() &&
+          topLevelOnly(['members']) &&
+          request.resource.data.members.diff(resource.data.members).affectedKeys().size() <= 1
+        )
+        ||
+        // The GM may add a new member (invite by handle) — grows the roster
+        // by exactly one and writes that one member's row.
+        (
+          isGM() &&
+          topLevelOnly(['memberUids', 'members']) &&
+          request.resource.data.memberUids.size() == resource.data.memberUids.size() + 1 &&
+          request.resource.data.memberUids.hasAll(resource.data.memberUids) &&
+          request.resource.data.members.diff(resource.data.members).affectedKeys().size() == 1
+        )
+        ||
+        // The GM may edit session scheduling, sheet-visibility default, or
+        // reorder the roster.
+        (isGM() && topLevelOnly(['sessionDate', 'visibility', 'memberUids']))
+        ||
+        // Joining by code: a non-member adds exactly themself.
+        (
+          !isMember() &&
+          topLevelOnly(['memberUids', 'members']) &&
+          request.resource.data.memberUids == resource.data.memberUids.concat([request.auth.uid]) &&
+          request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid])
+        )
+        ||
+        // Leaving: a member removes only themself from the roster.
+        (
+          topLevelOnly(['memberUids']) &&
+          resource.data.memberUids.hasAll([request.auth.uid]) &&
+          request.resource.data.memberUids.size() == resource.data.memberUids.size() - 1 &&
+          !(request.auth.uid in request.resource.data.memberUids)
+        )
+        ||
+        // The campaign's original creator may transfer GM duty to someone
+        // else — they keep this power even after handing GM off, since it's
+        // keyed to ownerUid, not to who currently holds gm.
+        (
+          isOwner() &&
+          topLevelOnly(['gm', 'members']) &&
+          request.resource.data.gm != resource.data.gm
+        )
+      );
+
+      allow delete: if false; // no delete flow implemented client-side
+    }
+  }
+}

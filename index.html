@@ -2735,6 +2735,7 @@ function renderBackImpl(){
         <textarea data-path="appearance" style="min-height:13rem" placeholder="Build, features, bearing, the marks a life on Roshar leaves.">${esc(c.appearance)}</textarea>
       </div>
       ${notebookHTML(c)}
+      ${sphereConverterHTML(c)}
     </div>
 
     <div>
@@ -2748,7 +2749,6 @@ function renderBackImpl(){
         <p class="hint" id="weightline" style="margin-top:.3rem${d.totalCarriedWeight > d.liftingLbs ? ';color:var(--warn)' : ''}">${weightLineText(c, d)}</p>
         ${overburdenedBadgeHTML(d)}
       </div>
-      ${sphereConverterHTML(c)}
       <div class="card">
         <h3>Connections</h3><hr class="rule">
         <textarea data-path="connections" style="min-height:9rem" placeholder="Patrons, allies, squires, and the spren you are bonded to.">${esc(c.connections)}</textarea>
@@ -3888,7 +3888,22 @@ function openModal(html){
   const first = $('#modal').querySelector('input,button,select');
   if (first) first.focus();
 }
-function closeModal(){ $('#overlay').classList.remove('open'); noteEditing = null; }
+/* Closing the note editor (X, backdrop click, Escape — anything but the
+   explicit checkmark) used to discard whatever was typed. Autosave it here
+   instead, so only Delete ever throws a note away. */
+function saveNoteInProgress(){
+  if (!noteEditing) return;
+  const titleEl = $('#noteTitleInput'), textEl = $('#noteTextInput');
+  if (!titleEl && !textEl) return;
+  const c = activeChar();
+  const note = c && (c.notebook || []).find(n => n.id === noteEditing);
+  if (!note) return;
+  if (titleEl && titleEl.value.trim()) note.title = titleEl.value.trim();
+  if (textEl) note.text = textEl.value;
+  note.updatedAt = Date.now();
+  renderBack(); save();
+}
+function closeModal(){ saveNoteInProgress(); $('#overlay').classList.remove('open'); noteEditing = null; }
 $('#overlay').addEventListener('mousedown', e => { if (e.target.id === 'overlay') closeModal(); });
 
 /* ---------- styled confirm dialog (replaces native confirm()) ---------- */
@@ -4025,6 +4040,7 @@ const cloud = {
   me:{username:'', friends:[], parties:[]}, requests:[], friendProfiles:[], parties:[],
   unsubs:[], lastPatchAt:0, pushTimer:null,
   lastPushedAt:{}, knownRemoteIds:new Set(), charPushTimer:null, attempted:false, pendingDeletes:new Set(),
+  appliedGiftIds:new Set(), gmNoteTimers:{},
 
   async connect(){
     const cfg = state.settings.firebase;
@@ -4229,19 +4245,42 @@ const cloud = {
 
   applyIncomingPatch(party){
     const mine = party.members && party.members[this.user.uid];
-    if (!mine || !mine.patchedBy || mine.patchedBy === this.user.uid) return;
-    if ((mine.patchedAt || 0) <= this.lastPatchAt) return;
-    this.lastPatchAt = mine.patchedAt;
-    const c = state.characters.find(x => x.id === mine.charId);
-    if (!c || !mine.char) return;
-    c.health.current = mine.char.health.current;
-    c.focus.current = mine.char.focus.current;
-    c.investiture.current = mine.char.investiture.current;
-    c.conditions = mine.char.conditions || {};
-    if (mine.char.goals) mine.char.goals.forEach((g, i) => { if (c.goals[i]) c.goals[i].ticks = g.ticks; });
-    c.updatedAt = Date.now();
-    save(); render();
-    toast(`${party.name}: your game master updated this sheet.`);
+    if (!mine) return;
+
+    if (mine.patchedBy && mine.patchedBy !== this.user.uid && (mine.patchedAt || 0) > this.lastPatchAt){
+      this.lastPatchAt = mine.patchedAt;
+      const c = state.characters.find(x => x.id === mine.charId);
+      if (c && mine.char){
+        c.health.current = mine.char.health.current;
+        c.focus.current = mine.char.focus.current;
+        c.investiture.current = mine.char.investiture.current;
+        c.conditions = mine.char.conditions || {};
+        if (mine.char.goals) mine.char.goals.forEach((g, i) => { if (c.goals[i]) c.goals[i].ticks = g.ticks; });
+        c.updatedAt = Date.now();
+        save(); render();
+        toast(`${party.name}: your game master updated this sheet.`);
+      }
+    }
+
+    /* GM-gifted items land in a small pending queue rather than overwriting
+       this player's own gear list wholesale (which could clobber concurrent
+       edits) — apply each new one once, then clear the queue. */
+    const gifts = mine.gmGifts || [];
+    const unapplied = gifts.filter(g => g.id && !this.appliedGiftIds.has(g.id));
+    if (unapplied.length){
+      const c = state.characters.find(x => x.id === mine.charId);
+      if (c){
+        c.gear = c.gear || [];
+        unapplied.forEach(g => {
+          c.gear.push({name:g.name, category:g.category || 'Gift', weight:g.weight || 0, price:g.price || 0, qty:g.qty || 1, desc:g.desc || '', custom:true});
+          this.appliedGiftIds.add(g.id);
+        });
+        c.updatedAt = Date.now();
+        save(); render(); syncDerived();
+        toast(`${party.name}: your game master gave you ${unapplied.map(g => g.name).join(', ')}.`);
+        this.fb.updateDoc(this.doc('parties', party.id), {[`members.${this.user.uid}.gmGifts`]: []}).catch(() => {});
+      }
+    }
   },
 
   snapshot(c){
@@ -4257,7 +4296,15 @@ const cloud = {
       conditions:c.conditions || {},
       surges:(c.skills.custom_physical.name || '') + (c.skills.custom_spiritual.name ? ', ' + c.skills.custom_spiritual.name : ''),
       goals:(c.goals || []).map(g => ({text:g.text, ticks:g.ticks})),
-      spren:(c.spren && c.spren.order) ? {name:c.spren.name, order:c.spren.order} : null
+      spren:(c.spren && c.spren.order) ? {name:c.spren.name, order:c.spren.order} : null,
+      /* Narrative fields — carried only so the GM's read-only "View full sheet"
+         can show them; never rendered on the regular party card. */
+      appearance:c.appearance || '', purpose:c.purpose || '', obstacle:c.obstacle || '', connections:c.connections || '',
+      notebook:(c.notebook || []).map(n => ({id:n.id, title:n.title, text:n.text, updatedAt:n.updatedAt})),
+      talents:c.talents || '', talentIds:c.talentIds || [],
+      expertises:(c.expertises || []).map(e => e.name),
+      weapons:(c.weapons || []).map(w => ({name:w.name || w.catalogName || 'Weapon', damage:w.damage || '', traits:w.traits || ''})),
+      gear:(c.gear || []).map(g => ({name:g.name, weight:g.weight || 0, price:g.price || 0, qty:g.qty || 1, desc:g.desc || ''}))
     };
   },
 
@@ -4595,16 +4642,15 @@ async function joinCampaignHome(code){
   if (!/^\d{6}$/.test(code)) return toast('Enter the 6-digit join code.');
   if (cloud.on && cloud.user){
     try {
-      const q = cloud.fb.query(cloud.fb.collection(cloud.db, 'parties'), cloud.fb.where('code', '==', code));
-      const snap = await cloud.fb.getDocs(q);
-      if (snap.empty) return toast('No campaign uses that code.');
-      const partyDoc = snap.docs[0];
-      await cloud.fb.updateDoc(partyDoc.ref, {
+      const codeSnap = await cloud.fb.getDoc(cloud.doc('partyCodes', code));
+      if (!codeSnap.exists()) return toast('No campaign uses that code.');
+      const pid = codeSnap.data().partyId;
+      await cloud.fb.updateDoc(cloud.doc('parties', pid), {
         memberUids:cloud.fb.arrayUnion(cloud.user.uid),
         [`members.${cloud.user.uid}`]:{username:cloud.me.username, role:'Player', charId:'', char:null, updatedAt:Date.now()}
       });
-      await cloud.fb.setDoc(cloud.doc('users', cloud.user.uid), {parties:cloud.fb.arrayUnion(partyDoc.id)}, {merge:true});
-      state.activePartyId = partyDoc.id;
+      await cloud.fb.setDoc(cloud.doc('users', cloud.user.uid), {parties:cloud.fb.arrayUnion(pid)}, {merge:true});
+      state.activePartyId = pid;
       toast('Joined the campaign.');
       renderHomeTab();
     } catch(err){ toast('Could not join: ' + err.message); }
@@ -4747,6 +4793,22 @@ function gmVisibilityMatrixHTML(party){
   </div>`;
 }
 
+/* Only the campaign's original creator sees this — transferring GM duty to
+   someone else never gives that power away, so the creator can always take
+   it back or hand it off again later. */
+function transferGmHTML(party){
+  const candidates = orderedMembers(party).filter(([uid]) => uid !== party.gm);
+  const opts = candidates.map(([uid, m]) => `<option value="${uid}">${esc(m.username || uid)}</option>`).join('');
+  return `<div class="card" style="margin-top:.7rem;background:var(--card-solid)">
+    <h3 style="font-size:1rem">Transfer Game Master</h3><hr class="rule">
+    <p class="hint" style="margin-bottom:.4rem">As the campaign's creator, you can hand GM duties to another player — you'll keep the ability to transfer it again later.</p>
+    ${candidates.length ? `<div class="row" style="grid-template-columns:1fr auto">
+      <select id="transferGmSel">${opts}</select>
+      <button class="btn" data-action="transfer-gm" data-pid="${party.id}">Make GM</button>
+    </div>` : '<p class="empty">No other members to transfer to yet.</p>'}
+  </div>`;
+}
+
 function memberCardHTML(m, uidKey, opts){
   opts = opts || {};
   const ch = m.char || {};
@@ -4781,11 +4843,26 @@ function memberCardHTML(m, uidKey, opts){
       </span>`
     : '';
 
+  /* GM-only tools on someone else's card — a read-only full sheet (notebook
+     included) and the ability to gift an item. Never shown to other players,
+     and never lets one player touch another's inventory. */
+  const gmTools = (isGM && !isSelf && opts.scope === 'party' && opts.party)
+    ? `<div style="display:flex;gap:.4rem;margin-top:.4rem">
+        <button class="btn ghost" style="flex:1" data-action="view-full-sheet" data-uid="${uidKey}" data-pid="${opts.party.id}">View full sheet</button>
+        <button class="btn ghost" style="flex:1" data-action="give-item" data-uid="${uidKey}" data-pid="${opts.party.id}" data-username="${esc(m.username || 'Player')}">Give item</button>
+      </div>
+      <div class="f" style="margin-top:.4rem">
+        <label>GM notes <span class="hint">(only you can see this)</span></label>
+        <textarea data-gmnote="${uidKey}" data-pid="${opts.party.id}" style="min-height:3rem" placeholder="Private notes about this character…">${esc(m.gmNotes || '')}</textarea>
+      </div>`
+    : '';
+
   return `<div class="member">
     <h4>${esc(ch.name || 'No character assigned')}${reorder}</h4>
     <div class="sub">${esc(m.username || '')}${m.role ? ` · <span class="badge">${esc(m.role)}</span>` : ''}
       ${ch.level ? ` · Level ${ch.level} ${esc(ch.paths || '')}` : ''}
       ${ch.name ? ` · <span class="turnspeed-badge turnspeed-${ch.turnSpeed || 'passive'}" title="${TURN_SPEED_LABEL[ch.turnSpeed || 'passive']}">${turnSpeedIconHTML(ch.turnSpeed || 'passive')} ${TURN_SPEED_LABEL[ch.turnSpeed || 'passive']}</span>` : ''}</div>
+    ${gmTools}
     ${ch.name ? `
       ${line('Health', 'health', ch.health.current, ch.health.max)}
       ${line('Focus', 'focus', ch.focus.current, ch.focus.max)}
@@ -4889,6 +4966,7 @@ function onlineSocialHTML(){
   const pid = state.activePartyId && parties.some(p => p.id === state.activePartyId) ? state.activePartyId : (parties[0] && parties[0].id);
   const party = parties.find(p => p.id === pid);
   const isGM = party && party.gm === cloud.user.uid;
+  const isOwner = party && (party.ownerUid || party.gm) === cloud.user.uid;
 
   if (!me.username){
     return `<div class="card">
@@ -4962,6 +5040,7 @@ function onlineSocialHTML(){
     ${isGM ? `<div class="f" style="max-width:16rem;margin-top:.6rem"><label>Next session</label>
       <input type="text" id="partysessiondate" data-pid="${party.id}" value="${esc(party.sessionDate || '')}" placeholder="e.g. Sept 20, 7pm"></div>
       ${gmVisibilityMatrixHTML(party)}` : ''}
+    ${isOwner ? transferGmHTML(party) : ''}
     <div class="party-grid" style="margin-top:.9rem">
       ${orderedMembers(party).map(([mUid, m], idx, arr) =>
         memberCardHTML(m, mUid, {canEdit:isGM || mUid === cloud.user.uid, scope:'party', isGM, viewerUid:cloud.user.uid, party, first:idx === 0, last:idx === arr.length - 1})).join('')}
@@ -5076,6 +5155,40 @@ function handleSocialAction(action, node, c){
     case 'select-party': state.activePartyId = pid; renderSocial(); break;
     case 'party-add': partyAdd(pid, val('partyadd')); break;
     case 'leave-party': leaveParty(pid); break;
+    case 'transfer-gm': {
+      const sel = $('#transferGmSel');
+      const newGmUid = sel ? sel.value : '';
+      if (!newGmUid) { toast('Pick a member to make GM.'); break; }
+      transferGm(pid, newGmUid);
+      break;
+    }
+    case 'view-full-sheet': {
+      const party = cloud.parties.find(p => p.id === node.dataset.pid);
+      const m = party && party.members[node.dataset.uid];
+      if (m) openFullSheetModal(m);
+      break;
+    }
+    case 'give-item': openGiveItemModal(node.dataset.pid, node.dataset.uid, node.dataset.username); break;
+    case 'give-item-submit': {
+      const formPid = node.dataset.pid, formUid = node.dataset.uid;
+      const catItemName = val('giveItemSel');
+      const customName = val('giveCustomName');
+      let gift = null;
+      if (catItemName && GAME_ITEMS_DATABASE.equipment[catItemName]){
+        const item = GAME_ITEMS_DATABASE.equipment[catItemName];
+        gift = {id:uid(), name:catItemName, category:item.category, weight:item.weight, price:item.price, qty:1, desc:item.description};
+      } else if (customName){
+        gift = {
+          id:uid(), name:customName, category:'Custom',
+          weight:parseFloat(val('giveCustomWeight')) || 0, price:parseFloat(val('giveCustomPrice')) || 0,
+          qty:parseInt(val('giveCustomQty'), 10) || 1, desc:val('giveCustomDesc')
+        };
+      }
+      if (!gift){ toast('Pick a catalog item or hand-key a custom one.'); break; }
+      giveItemToPlayer(formPid, formUid, gift);
+      closeModal();
+      break;
+    }
     case 'party-adjust': partyPatch(node, m => {
       const kind = node.dataset.kind, by = parseInt(node.dataset.by, 10);
       m.char[kind].current = clamp(m.char[kind].current + by, 0, m.char[kind].max);
@@ -5109,6 +5222,17 @@ function handleSocialAction(action, node, c){
 
 document.addEventListener('input', e => {
   if (e.target.id === 'vaultsearch'){ vaultFilter = e.target.value; renderHomeTab(); }
+
+  const gmnote = e.target.closest('[data-gmnote]');
+  if (gmnote){
+    const mUid = gmnote.dataset.gmnote, pid = gmnote.dataset.pid, text = gmnote.value;
+    const party = cloud.parties.find(p => p.id === pid);
+    if (party && party.members[mUid]) party.members[mUid].gmNotes = text;
+    clearTimeout(cloud.gmNoteTimers[mUid]);
+    cloud.gmNoteTimers[mUid] = setTimeout(() => {
+      cloud.fb.updateDoc(cloud.doc('parties', pid), {[`members.${mUid}.gmNotes`]:text}).catch(() => {});
+    }, 500);
+  }
 });
 document.addEventListener('change', e => {
   const sel = e.target.closest('[data-change="assign-char"]');
@@ -5202,10 +5326,16 @@ async function createParty(name){
   try {
     const c = activeChar();
     const useChar = c && !c.partyId;
+    const code = genCode();
     const ref = await cloud.fb.addDoc(cloud.fb.collection(cloud.db, 'parties'), {
-      name, gm:cloud.user.uid, code:genCode(), sessionDate:'', visibility:'own', memberUids:[cloud.user.uid],
+      name, gm:cloud.user.uid, ownerUid:cloud.user.uid, code, sessionDate:'', visibility:'own', memberUids:[cloud.user.uid],
       members:{[cloud.user.uid]:{username:cloud.me.username, role:'GM', charId: useChar ? c.id : '', char: useChar ? cloud.snapshot(c) : null, updatedAt:Date.now()}}
     });
+    /* Party docs are only readable by members, so joining-by-code can't query
+       the `parties` collection directly (a query obeys the same read rule as
+       a get, and a not-yet-member can't pass it). This small public lookup
+       doc — code -> partyId only, nothing sensitive — is what join reads instead. */
+    await cloud.fb.setDoc(cloud.doc('partyCodes', code), {partyId:ref.id});
     await cloud.fb.setDoc(cloud.doc('users', cloud.user.uid), {parties:cloud.fb.arrayUnion(ref.id)}, {merge:true});
     if (useChar){ c.partyId = ref.id; save(); }
     state.activePartyId = ref.id;
@@ -5290,6 +5420,95 @@ async function leaveParty(pid){
     renderSocial();
     toast('You left the party.');
   } catch(err){ toast('Could not leave: ' + err.message); }
+}
+
+async function transferGm(pid, newGmUid){
+  const party = cloud.parties.find(p => p.id === pid);
+  if (!party || !party.members[newGmUid]) return;
+  const oldGmUid = party.gm;
+  const newName = party.members[newGmUid].username || 'That player';
+  try {
+    const updates = {gm:newGmUid, [`members.${newGmUid}.role`]:'GM'};
+    if (oldGmUid && party.members[oldGmUid]) updates[`members.${oldGmUid}.role`] = 'Player';
+    await cloud.fb.updateDoc(cloud.doc('parties', pid), updates);
+    party.gm = newGmUid;
+    party.members[newGmUid].role = 'GM';
+    if (oldGmUid && party.members[oldGmUid]) party.members[oldGmUid].role = 'Player';
+    renderSocial();
+    toast(`${newName} is now the game master.`);
+  } catch(err){ toast('Could not transfer: ' + err.message); }
+}
+
+/* GM-only: read-only view of a player's full sheet, including notebook —
+   never editable here, and never shown to other players. */
+function openFullSheetModal(m){
+  const ch = m.char || {};
+  const notes = (ch.notebook || []).map(n => `<div style="padding:.4rem 0;border-bottom:1px solid var(--border-soft)">
+      <b>${esc(n.title || 'Untitled note')}</b>
+      <p style="white-space:pre-wrap;margin:.2rem 0 0;font-size:.85rem">${n.text ? esc(n.text) : '<span class="empty">Empty</span>'}</p>
+    </div>`).join('') || '<p class="empty">No notes.</p>';
+  const weapons = (ch.weapons || []).map(w => `<div class="item-line">${esc(w.name)}${w.damage ? ' — ' + esc(w.damage) : ''}${w.traits ? ' · ' + esc(w.traits) : ''}</div>`).join('') || '<p class="empty">No weapons.</p>';
+  const gear = (ch.gear || []).map(g => `<div class="item-line">${esc(g.name)}${g.qty > 1 ? ` ×${g.qty}` : ''} — ${g.weight} lbs, ${g.price} Marks</div>`).join('') || '<p class="empty">No itemized gear.</p>';
+  const talentList = (ch.talentIds && ch.talentIds.length) ? esc(ch.talentIds.join(', ')) : (ch.talents ? esc(ch.talents) : '—');
+  const expertises = (ch.expertises && ch.expertises.length) ? esc(ch.expertises.join(', ')) : '—';
+  openModal(`
+    <h2>${esc(ch.name || 'Unnamed')} <span class="hint">— read-only</span></h2>
+    <p class="hint">${esc(m.username || '')}${ch.level ? ` · Level ${ch.level} ${esc(ch.paths || '')}` : ''}</p>
+    <hr class="rule">
+    <section><h4>Appearance</h4><p style="white-space:pre-wrap">${esc(ch.appearance) || '—'}</p></section>
+    <section><h4>Purpose</h4><p style="white-space:pre-wrap">${esc(ch.purpose) || '—'}</p></section>
+    <section><h4>Obstacle</h4><p style="white-space:pre-wrap">${esc(ch.obstacle) || '—'}</p></section>
+    <section><h4>Connections</h4><p style="white-space:pre-wrap">${esc(ch.connections) || '—'}</p></section>
+    <section><h4>Talents</h4><p>${talentList}</p></section>
+    <section><h4>Expertises</h4><p>${expertises}</p></section>
+    <section><h4>Weapons</h4>${weapons}</section>
+    <section><h4>Equipment</h4>${gear}</section>
+    <section><h4>Notebook</h4>${notes}</section>
+    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">Close</button></div>
+  `);
+}
+
+/* GM-only: hand a catalog or hand-keyed item to a specific player. It lands
+   in their gmGifts queue and applies on their own device via applyIncomingPatch —
+   we never write into another user's character directly. */
+function openGiveItemModal(pid, uid, username){
+  const catNames = [...new Set(Object.values(GAME_ITEMS_DATABASE.equipment).map(i => i.category))];
+  const catOpts = catNames.map(cat => `<option value="${esc(cat)}">${esc(cat)}</option>`).join('');
+  openModal(`
+    <h2>Give Item — ${esc(username || 'Player')}</h2><hr class="rule">
+    <form data-submit-action="give-item-submit" data-pid="${pid}" data-uid="${uid}">
+      <p class="hint" style="margin-bottom:.4rem">Preset item</p>
+      <div class="grid2">
+        <div class="f"><label>Category</label><select id="giveCatSel"><option value="">— Choose —</option>${catOpts}</select></div>
+        <div class="f"><label>Item</label><select id="giveItemSel" disabled><option value="">— Choose —</option></select></div>
+      </div>
+      <p class="hint" style="margin:.7rem 0 .4rem">Or hand-key a custom item</p>
+      <div class="grid2">
+        <div class="f"><label>Name</label><input type="text" id="giveCustomName"></div>
+        <div class="f"><label>Weight (lbs)</label><input type="number" id="giveCustomWeight" value="0" step="0.1"></div>
+        <div class="f"><label>Price (Marks)</label><input type="number" id="giveCustomPrice" value="0"></div>
+        <div class="f"><label>Quantity</label><input type="number" id="giveCustomQty" value="1" min="1"></div>
+      </div>
+      <div class="f" style="margin-top:.5rem"><label>Description</label><textarea id="giveCustomDesc" style="min-height:3rem"></textarea></div>
+      <div style="display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem">
+        <button type="button" class="btn" data-action="close-modal">Cancel</button>
+        <button type="submit" class="btn primary">Give item</button>
+      </div>
+    </form>
+  `);
+  const catSel = $('#giveCatSel'), itemSel = $('#giveItemSel');
+  if (catSel) catSel.addEventListener('change', () => {
+    const items = Object.keys(GAME_ITEMS_DATABASE.equipment).filter(n => GAME_ITEMS_DATABASE.equipment[n].category === catSel.value);
+    itemSel.innerHTML = '<option value="">— Choose —</option>' + items.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+    itemSel.disabled = !items.length;
+  });
+}
+
+async function giveItemToPlayer(pid, uid, gift){
+  try {
+    await cloud.fb.updateDoc(cloud.doc('parties', pid), {[`members.${uid}.gmGifts`]: cloud.fb.arrayUnion(gift)});
+    toast(`Sent ${gift.name} — it'll land in their gear next time they're online.`);
+  } catch(err){ toast('Could not send the item: ' + err.message); }
 }
 
 async function partyPatch(node, mutate){
