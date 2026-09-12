@@ -1208,7 +1208,7 @@ function newCharacter(name){
     squires:[], fabrials:[], gearWeight:0, gear:[],
     spheres:{chips:0, marks:0, broams:0, notes:''}, purpose:'', obstacle:'',
     goals:[{text:'', ticks:[false,false,false]}],
-    appearance:'', equipment:'', connections:'', notes:'',
+    appearance:'', equipment:'', connections:'', notes:'', notebook:[],
     pinned:false,
     updatedAt: Date.now()
   };
@@ -1250,7 +1250,8 @@ function armorTagsHTML(armor){
    with every new automatic rule below. */
 function hasTalent(c, name){
   if ((c.talentIds || []).includes(name)) return true;
-  const text = (c.talents || '') + ' ' + (c.notes || '');
+  const notebookText = (c.notebook || []).map(n => n.title + ' ' + n.text).join(' ');
+  const text = (c.talents || '') + ' ' + (c.notes || '') + ' ' + notebookText;
   const re = new RegExp('\\b' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
   return re.test(text);
 }
@@ -1405,7 +1406,11 @@ function load(){
 
 function migrate(c){
   const fresh = newCharacter();
+  if (c.notebook === undefined && c.notes){
+    c.notebook = [{id:uid(), title:'Notes', text:c.notes, updatedAt:Date.now()}];
+  }
   for (const k in fresh) if (c[k] === undefined) c[k] = fresh[k];
+  if (!Array.isArray(c.notebook)) c.notebook = [];
   for (const k in fresh.skills) if (!c.skills[k]) c.skills[k] = fresh.skills[k];
   c.goals = c.goals && c.goals.length ? c.goals : [{text:'', ticks:[false,false,false]}];
   if (typeof c.spheres === 'string') c.spheres = {chips:0, marks:0, broams:0, notes:c.spheres};
@@ -2168,6 +2173,49 @@ function openCustomGearModal(){
   if (first) first.focus();
 }
 
+/* transient — which note (by id) is currently in edit mode inside the open modal; never persisted */
+let noteEditing = null;
+
+function notebookHTML(c){
+  const notes = c.notebook || [];
+  const rows = notes.map(n => `<div class="listitem" data-action="open-note" data-id="${n.id}" role="button" tabindex="0" style="cursor:pointer">
+      <span>${esc(n.title || 'Untitled note')}</span>
+      <span class="hint">${new Date(n.updatedAt).toLocaleDateString()}</span>
+    </div>`).join('');
+  return `<div class="card">
+    <h3>Notebook <span class="hint">Click a note to open it</span></h3><hr class="rule">
+    <div class="rows">${rows || '<p class="empty">No notes yet.</p>'}</div>
+    <form data-submit-action="add-note" class="row" style="grid-template-columns:1fr auto;margin-top:.5rem">
+      <input type="text" id="newNoteTitle" placeholder="New note title" aria-label="New note title" required>
+      <button type="submit" class="btn addbtn">Add note</button>
+    </form>
+  </div>`;
+}
+
+function openNoteModal(c, id){
+  const note = (c.notebook || []).find(n => n.id === id);
+  if (!note) return;
+  const editing = noteEditing === id;
+  openModal(`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+      ${editing
+        ? `<input type="text" id="noteTitleInput" value="${esc(note.title)}" placeholder="Note title" style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:600;border:1px solid var(--border);border-radius:8px;padding:.15rem .5rem;flex:1;background:var(--field)">`
+        : `<h2>${esc(note.title || 'Untitled note')}</h2>`}
+      <button class="iconbtn" data-action="toggle-note-edit" data-id="${id}" title="${editing ? 'Save' : 'Edit'}" aria-label="${editing ? 'Save note' : 'Edit note'}" style="font-size:1.1rem">${editing ? '✓' : '✏️'}</button>
+    </div>
+    <hr class="rule">
+    ${editing
+      ? `<textarea id="noteTextInput" style="min-height:14rem;width:100%">${esc(note.text)}</textarea>`
+      : `<p style="white-space:pre-wrap;margin:0">${note.text ? esc(note.text) : '<span class="empty">Empty note — click the pencil to add some words.</span>'}</p>`}
+    <div style="display:flex;justify-content:space-between;margin-top:1rem">
+      <button class="btn danger" data-action="delete-note" data-id="${id}">Delete</button>
+      <button class="btn" data-action="close-modal">Close</button>
+    </div>
+  `);
+  const first = editing ? $('#noteTextInput') : null;
+  if (first && !note.text) first.focus();
+}
+
 function fabrialsHTML(c){
   const rows = c.fabrials.map((f, i) => `<div class="row" style="grid-template-columns:1.4fr 1fr auto auto auto" data-fidx="${i}">
       <input type="text" value="${esc(f.name)}" data-path="fabrials.${i}.name" placeholder="Fabrial name">
@@ -2220,10 +2268,7 @@ function renderBack(){
         <h3>Character appearance</h3><hr class="rule">
         <textarea data-path="appearance" style="min-height:13rem" placeholder="Build, features, bearing, the marks a life on Roshar leaves.">${esc(c.appearance)}</textarea>
       </div>
-      <div class="card">
-        <h3>Talents, continued</h3><hr class="rule">
-        <textarea data-path="notes" style="min-height:11rem" placeholder="Overflow from the front page, plus anything else worth keeping.">${esc(c.notes)}</textarea>
-      </div>
+      ${notebookHTML(c)}
     </div>
 
     <div>
@@ -2838,6 +2883,46 @@ function handleAction(action, node, c){
     case 'add-squire': c.squires.push({name:'', type:'Squire', notes:''}); renderFront(); save(); break;
     case 'del-squire': c.squires.splice(parseInt(node.dataset.i, 10), 1); renderFront(); save(); break;
     case 'add-fabrial': c.fabrials.push({name:'', type:'', maxCharge:10, charge:10, notes:''}); renderBack(); save(); break;
+    case 'add-note': {
+      const titleInput = $('#newNoteTitle');
+      const title = titleInput ? titleInput.value.trim() : '';
+      if (!title) break;
+      const note = {id:uid(), title, text:'', updatedAt:Date.now()};
+      c.notebook = c.notebook || [];
+      c.notebook.unshift(note);
+      noteEditing = note.id;
+      renderBack(); save();
+      openNoteModal(c, note.id);
+      break;
+    }
+    case 'open-note': noteEditing = null; openNoteModal(c, node.dataset.id); break;
+    case 'toggle-note-edit': {
+      const id = node.dataset.id;
+      const note = (c.notebook || []).find(n => n.id === id);
+      if (!note) break;
+      if (noteEditing === id){
+        const titleEl = $('#noteTitleInput'), textEl = $('#noteTextInput');
+        note.title = titleEl && titleEl.value.trim() ? titleEl.value.trim() : note.title;
+        note.text = textEl ? textEl.value : note.text;
+        note.updatedAt = Date.now();
+        noteEditing = null;
+        renderBack(); save();
+      } else {
+        noteEditing = id;
+      }
+      openNoteModal(c, id);
+      break;
+    }
+    case 'delete-note': {
+      const id = node.dataset.id;
+      const note = (c.notebook || []).find(n => n.id === id);
+      confirmDialog(`Delete "${esc(note ? note.title : 'this note')}"? This cannot be undone.`, () => {
+        c.notebook = (c.notebook || []).filter(n => n.id !== id);
+        noteEditing = null;
+        renderBack(); save();
+      }, {okLabel:'Delete note'});
+      break;
+    }
     case 'del-fabrial': c.fabrials.splice(parseInt(node.dataset.i, 10), 1); renderBack(); save(); break;
     case 'add-gear-catalog': {
       const catName = gearPick.category, itemName = gearPick.item;
@@ -3050,7 +3135,7 @@ function openModal(html){
   const first = $('#modal').querySelector('input,button,select');
   if (first) first.focus();
 }
-function closeModal(){ $('#overlay').classList.remove('open'); }
+function closeModal(){ $('#overlay').classList.remove('open'); noteEditing = null; }
 $('#overlay').addEventListener('mousedown', e => { if (e.target.id === 'overlay') closeModal(); });
 
 /* ---------- styled confirm dialog (replaces native confirm()) ---------- */
