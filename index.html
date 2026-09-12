@@ -1690,7 +1690,7 @@ function weaponsHTML(c, d){
       <select data-path="weapons.${i}.skill" aria-label="Skill used">${skillOpts(w)}</select>
       <input type="number" value="${w.bonus}" data-path="weapons.${i}.bonus" title="Extra attack bonus" aria-label="Attack bonus">
       ${isCatalog
-        ? `<input type="text" value="${esc(disp.catalog.damage)}" readonly title="From catalog" aria-label="Damage">`
+        ? `<input type="text" value="${esc(disp.diceExpr)} ${esc(sgn(disp.totalDamageMod))} ${esc(disp.damageType)}" readonly title="Base ${esc(disp.catalog.damage)} + current skill/talent modifier" aria-label="Damage">`
         : `<input type="text" value="${esc(w.damage)}" data-path="weapons.${i}.damage" placeholder="1d6 + STR" aria-label="Damage">`}
       ${isCatalog
         ? `<input type="text" value="${esc(disp.traits)}" readonly title="Auto-computed from catalog and expertise" aria-label="Traits">`
