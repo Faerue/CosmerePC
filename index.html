@@ -18,7 +18,7 @@
 :root{
   --bg:#FAF8F5;
   --bg-2:#F3EEE9;
-  --card:rgba(255,255,255,.62);
+  --card:rgba(255,255,255,.88);
   --card-solid:#FFFDFB;
   --ink:#2D2438;
   --ink-soft:#6B5F76;
@@ -37,7 +37,7 @@
 [data-theme="dark"]{
   --bg:#16151D;
   --bg-2:#1C1A25;
-  --card:rgba(34,31,45,.72);
+  --card:rgba(34,31,45,.92);
   --card-solid:#221F2D;
   --ink:#F0EDF5;
   --ink-soft:#B7AFC4;
@@ -139,12 +139,13 @@ main{padding:.9rem clamp(.6rem,2vw,1.4rem) 5rem;max-width:1500px;margin:0 auto}
 /* ---------- cards ---------- */
 .card{
   background:var(--card);
-  backdrop-filter:blur(10px);
   border:1px solid var(--border-soft);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
   padding:.9rem 1rem 1rem;
   margin-bottom:.9rem;
+  content-visibility:auto;
+  contain-intrinsic-size:auto 420px;
 }
 .card > h3{
   font-size:1.18rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;
@@ -268,6 +269,8 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .chip button{color:var(--ink-faint);font-size:.95rem;line-height:1;padding:0 .15rem}
 .chip button:hover{color:var(--warn)}
 .chip .kind{font-size:.62rem;color:var(--ink-faint);letter-spacing:.06em}
+.chip.temporary{background:color-mix(in srgb,var(--accent-2) 22%,var(--card-solid));border-style:dashed;border-color:var(--accent-2)}
+.chip.temporary .kind{color:var(--accent-2)}
 .combo{position:relative}
 .combo .menu{
   position:absolute;z-index:20;left:0;right:0;top:calc(100% + 4px);max-height:240px;overflow:auto;
@@ -709,87 +712,314 @@ const SURGE_BLURBS = [
 
 /* ---------- talent database (drives the talent picker, tooltips, and prerequisite checker) ---------- */
 const TALENT_DATABASE = {
-  // --- HEROIC PATHS: SCHOLAR ---
-  "Erudition": {category:"Heroic Path", path:"Scholar", specialty:"Key Talent", activation:"★", reqText:"None (Scholar Key)",
-    flavor:"You've conditioned your mind to quickly assimilate, archive, and recall information.",
-    effect:"Gain 1 cultural/utility expertise and 2 cognitive non-surge skill ranks. Reassignable after a long rest with library access."},
-  "Efficient Engineer": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"∞", reqText:"Crafting 1+, Erudition Key",
-    flavor:"Solid work begins with practice and fundamentals like measuring twice before each cut.",
-    effect:"Gain utility expertise in Armor, Equipment, or Weapon Crafting, plus 1 starting fabrial. Crafting Opportunity range expands by 2; raw material cost is halved."},
-  "Prized Acquisition": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"∞", reqText:"Erudition Key",
-    flavor:"Through good fortune or hard work, you've acquired a gemstone of sufficient quality to practice crafting fabrials.",
-    effect:"Gain specialist expertise in Fabrial Crafting and a specially cut gem of your Tier to craft a unique fabrial. You can reuse this gem."},
-  "Deep Study": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"∞", reqText:"Efficient Engineer",
-    flavor:"Driven by academic inquiry, you love nothing more than getting lost in an archive of books and dusty secrets.",
-    effect:"Erudition grants +1 additional expertise and +2 additional cognitive non-surge skill ranks."},
-  "Inventive Design": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"∞", reqText:"Crafting 2+, Prized Acquisition",
-    flavor:"Your custom fabrials integrate novel functionalities thanks to your deep knowledge of stone and gemstones.",
-    effect:"When crafting a fabrial with your Prized Acquisition gem, select an effect 1 tier higher than your current character tier."},
-  "Fine Handiwork": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"∞", reqText:"Efficient Engineer",
-    flavor:"Your dedication to quality ensures that your designs stand out from the crowd.",
-    effect:"When crafting an item or fabrial, spend 1 upgrade to apply an advanced feature instead of 2. (Once per item)."},
-  "Overcharge": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"★", reqText:"Crafting 3+, Prized Acquisition",
-    flavor:"You push fabrials to their limits, overcharging them beyond conventional use or safe practice.",
-    effect:"Once per turn, raise the stakes on a fabrial attack. Spend Opportunity to Strike as a Free Action. GM can spend Complication to add a temporary drawback."},
-  "Experimental Tinkering": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"★", reqText:"Fine Handiwork",
-    flavor:"You've honed your instinct for when to sacrifice one feature to enhance another.",
-    effect:"Opportunity range expands by 1 and crafting time is halved. Reconfigure your Prized Acquisition fabrial during a long rest without new materials."},
-  "Overwhelm With Detail": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"▶", reqText:"Lore 3+, Experimental Tinkering",
-    flavor:"When speaking about a topic you're passionate about, you do so with unsurpassed authority.",
-    effect:"Spend 2 focus to make a cognitive or spiritual test using your Lore modifier instead of the usual skill modifier."},
-  "Field Medicine": {category:"Heroic Path", path:"Scholar", specialty:"Surgeon", activation:"▶", reqText:"Medicine 1+, Erudition Key",
-    flavor:"You treat a minor wound by bandaging a gash, applying salves, or resetting a dislocated joint.",
-    effect:"Spend 1 focus to make a DC 15 Medicine test to treat a conscious ally. On success, target recovers health equal to recovery die roll + Medicine ranks."},
-  "Emotional Intelligence": {category:"Heroic Path", path:"Scholar", specialty:"Surgeon", activation:"∞", reqText:"Erudition Key",
-    flavor:"You hone your intuition, enabling you to spot hidden symptoms and complicated feelings.",
-    effect:"Gain Diagnosis utility expertise. Erudition can now select spiritual skills."},
-  "Anatomical Insight": {category:"Heroic Path", path:"Scholar", specialty:"Surgeon", activation:"★", reqText:"Field Medicine",
-    flavor:"Knowledge of anatomy aids you in striking vital points to incapacitate enemies with minimal permanent harm.",
-    effect:"On an unarmed hit, spend 1 focus or Free Action to apply Exhausted [penalty = half Medicine ranks, rounded up]."},
-  "Swift Healer": {category:"Heroic Path", path:"Scholar", specialty:"Surgeon", activation:"▶", reqText:"Medicine 2+, Field Medicine",
-    flavor:"Your practiced hands quickly dress wounds amid the ebb and flow of battle.",
-    effect:"Use Field Medicine as 1 action (▶). Healing abilities restore additional health equal to Medicine ranks."},
-  // --- HEROIC PATHS: AGENT ---
+  // --- HEROIC PATHS: AGENT (Key: Opportunist) ---
   "Opportunist": {category:"Heroic Path", path:"Agent", specialty:"Key Talent", activation:"★", reqText:"None (Agent Key)",
-    flavor:"You instinctively sense moments of consequence and push your luck.",
-    effect:"Once per round, when you roll a plot die, you can reroll that result."},
-  "Hardy": {category:"Heroic Path", path:"Agent", specialty:"Investigator", activation:"∞", reqText:"Baleful (or Warrior/Hunter equivalent)",
-    flavor:"You've trained your body to endure pain and fatigue, keeping you in the fight.",
-    effect:"Increase maximum and current health by +1 per level (applied retroactively and prospectively)."},
-  // --- HEROIC PATHS: ENVOY ---
+    flavor:"You instinctively sense moments of consequence.", effect:"Once per round, when you roll a plot die, you can reroll that result."},
+  "Watchful Eye": {category:"Heroic Path", path:"Agent", specialty:"Investigator", activation:"↻", reqText:"Deduction 1+, Opportunist",
+    flavor:"You keep an eye on your allies for their protection and yours.", effect:"Use Opportunist on the plot die of a willing ally within 20 feet."},
+  "Get ’Em Talking": {category:"Heroic Path", path:"Agent", specialty:"Investigator", activation:"▶", reqText:"Insight 2+, Opportunist",
+    flavor:"You goad others into revealing their motives.", effect:"Spend 1 focus to test Deduction vs. Spiritual to learn target's motivation. Raise stakes when leveraging this motivation."},
+  "Quick Analysis": {category:"Heroic Path", path:"Agent", specialty:"Investigator", activation:"▷", reqText:"Watchful Eye",
+    flavor:"Your mind quickly files and organizes data under pressure.", effect:"Spend 2 focus to gain a Free Action for cognitive skill tests via Use a Skill, Gain Advantage, or Agent talents."},
+  "Baleful": {category:"Heroic Path", path:"Agent", specialty:"Investigator", activation:"∞", reqText:"Get ’Em Talking",
+    flavor:"With a severe stare, you crack the resolve of adversaries.", effect:"To resist your influence, a character must spend additional focus equal to your tier."},
+  "Gather Evidence": {category:"Heroic Path", path:"Agent", specialty:"Investigator", activation:"∞", reqText:"Insight 2+, Quick Analysis",
+    flavor:"You slowly but surely build a mental model of mysteries.", effect:"Gain Legal Codes utility expertise. Succeeding on a cognitive test against a target makes you Focused."},
+  "Hardy": {category:"Heroic Path", path:"Agent", specialty:"Investigator", activation:"∞", reqText:"Baleful",
+    flavor:"You've trained your body to endure pain and fatigue.", effect:"Increase maximum and current health by +1 per total level (applied retroactively and prospectively)."},
+  "Sleuth’s Instincts": {category:"Heroic Path", path:"Agent", specialty:"Investigator", activation:"∞", reqText:"Deduction 3+, Hardy",
+    flavor:"Once you understand motivations, other details fall into place.", effect:"Gain advantage on cognitive tests against targets whose motivation you know. Automatically detect when they lie."},
+  "Close the Case": {category:"Heroic Path", path:"Agent", specialty:"Investigator", activation:"▶", reqText:"Deduction 3+, Hardy",
+    flavor:"You convince your target to back down.", effect:"Once per scene, spend 3 focus to test Deduction vs. Cognitive. On success, target backs down and stops opposing your aims."},
+  "Plausible Excuse": {category:"Heroic Path", path:"Agent", specialty:"Spy", activation:"↻", reqText:"Deception 1+, Opportunist",
+    flavor:"You concoct a reasonable excuse for incriminating behavior.", effect:"When discovered skulking, spend 2 focus to feign innocence. Gain Sleight of Hand utility expertise."},
+  "Sure Outcome": {category:"Heroic Path", path:"Agent", specialty:"Spy", activation:"★", reqText:"Insight 2+, Opportunist",
+    flavor:"Seemingly random events are part of your plan.", effect:"When using Opportunist, spend 2 focus to set plot die to Opportunity (+4 bonus)."},
+  "Collected": {category:"Heroic Path", path:"Agent", specialty:"Spy", activation:"∞", reqText:"Sure Outcome",
+    flavor:"You remain mindful of your goals amid chaos.", effect:"Increase Cognitive and Spiritual defenses by +2."},
+  "Cover Story": {category:"Heroic Path", path:"Agent", specialty:"Spy", activation:"∞", reqText:"Plausible Excuse",
+    flavor:"You inhabit a crafted false identity.", effect:"Gain a false identity and a relevant cultural expertise."},
+  "High Society Contacts": {category:"Heroic Path", path:"Agent", specialty:"Spy", activation:"★", reqText:"Patron in High Society, Cover Story",
+    flavor:"Your patron's name opens doors.", effect:"Gain High Society expertise. Spend 2 focus to add an Opportunity to high society social tests."},
+  "Subtle Takedown": {category:"Heroic Path", path:"Agent", specialty:"Spy", activation:"▶", reqText:"Insight 3+, Cover Story",
+    flavor:"You swiftly strike vulnerable spots to silence targets.", effect:"Unarmed attack with Insight vs. Cognitive of an unsuspecting target. On hit, target cannot communicate until end of next turn."},
+  "Mercurial Facade": {category:"Heroic Path", path:"Agent", specialty:"Spy", activation:"∞", reqText:"Deception 3+, Subtle Takedown",
+    flavor:"You change personas simply by altering posture.", effect:"Disguise using Deception without physical supplies. First character to see through it is Surprised."},
+  "Mighty": {category:"Heroic Path", path:"Agent", specialty:"Spy", activation:"∞", reqText:"Cover Story",
+    flavor:"You deliver strikes with practiced efficiency.", effect:"When hitting with a weapon/unarmed attack, each action point spent adds 1 + Tier extra damage."},
+  "Cheap Shot": {category:"Heroic Path", path:"Agent", specialty:"Thief", activation:"▶", reqText:"Opportunist Key",
+    flavor:"You strike exactly where it leaves foes reeling.", effect:"Spend 1 focus for an unarmed Thievery attack vs. Cognitive, raising stakes. On hit, target is Stunned."},
+  "Risky Behavior": {category:"Heroic Path", path:"Agent", specialty:"Thief", activation:"★", reqText:"Insight 2+, Opportunist",
+    flavor:"Risk and reward are inseparable companions.", effect:"Spend 1 focus to raise the stakes on your test."},
+  "Double Down": {category:"Heroic Path", path:"Agent", specialty:"Thief", activation:"★", reqText:"Risky Behavior",
+    flavor:"When taking a risk, you commit fully.", effect:"Reroll plot die a second time with Opportunist. If Complication rolled, lose 2 focus."},
+  "Surefooted": {category:"Heroic Path", path:"Agent", specialty:"Thief", activation:"∞", reqText:"Cheap Shot",
+    flavor:"You move through treacherous terrain with speed.", effect:"Movement increases by +10 ft. Reduce falling and terrain damage by 2 × Tier."},
+  "Underworld Contacts": {category:"Heroic Path", path:"Agent", specialty:"Thief", activation:"★", reqText:"Patron/Follower in Underworld, Double Down",
+    flavor:"Your name carries weight in criminal circles.", effect:"Gain Criminal Groups expertise. Spend 2 focus to add Opportunity to criminal social tests."},
+  "Shadow Step": {category:"Heroic Path", path:"Agent", specialty:"Thief", activation:"▶", reqText:"Thievery 3+, Surefooted",
+    flavor:"You slip from sight with ease.", effect:"After Disengage, spend 2 focus to test Thievery vs. enemy Cognitive to hide in cover or darkness."},
+  "Fast Talker": {category:"Heroic Path", path:"Agent", specialty:"Thief", activation:"▷", reqText:"Insight 3+, Double Down",
+    flavor:"Speaking quickly gets you out of trouble.", effect:"Spend 2 focus to gain a Free Action for spiritual skill tests."},
+  "Trickster’s Hand": {category:"Heroic Path", path:"Agent", specialty:"Thief", activation:"▷", reqText:"Thievery 3+, Surefooted",
+    flavor:"Acts of skulduggery done with subtle dexterity.", effect:"Spend 2 focus to gain a Free Action for physical skill tests."},
+
+  // --- HEROIC PATHS: ENVOY (Key: Rousing Presence) ---
   "Rousing Presence": {category:"Heroic Path", path:"Envoy", specialty:"Key Talent", activation:"▶", reqText:"None (Envoy Key)",
-    flavor:"With a gesture or a few words, you inspire others to excel.",
-    effect:"Choose an ally you can influence; they become Determined until they benefit from it or scene ends."},
-  "Composed": {category:"Heroic Path", path:"Envoy", specialty:"Faithful", activation:"∞", reqText:"Galvanize (or Leader/Scholar equivalent)",
-    flavor:"Through practiced composure, you push your limits without becoming distracted.",
-    effect:"Increase maximum and current Focus by a number equal to your Tier of Play."},
-  // --- HEROIC PATHS: WARRIOR ---
+    flavor:"You inspire others to excel.", effect:"Target ally becomes Determined until they benefit from it or scene ends."},
+  "Steadfast Challenge": {category:"Heroic Path", path:"Envoy", specialty:"Diplomat", activation:"▶", reqText:"Discipline 1+, Rousing Presence",
+    flavor:"You stand firm, speaking with unnerving calm.", effect:"Spend 1 focus to test Discipline vs. Spiritual. On success, enemy is Disoriented with disadvantage on tests against you."},
+  "Well Dressed": {category:"Heroic Path", path:"Envoy", specialty:"Diplomat", activation:"∞", reqText:"Steadfast Challenge",
+    flavor:"You match your outfit to the occasion.", effect:"Gain Fashion expertise. Gain advantage on first social test while wearing Presentable clothing."},
+  "Withering Retort": {category:"Heroic Path", path:"Envoy", specialty:"Diplomat", activation:"↻", reqText:"Discipline 2+, Steadfast Challenge",
+    flavor:"You unflinchingly face violent attacks.", effect:"Use Steadfast Challenge as a Reaction before being hit; increase Deflect by Discipline ranks."},
+  "Calm Appeal": {category:"Heroic Path", path:"Envoy", specialty:"Diplomat", activation:"★", reqText:"Discipline 2+, Withering Retort",
+    flavor:"You encourage enemies to reach compromise.", effect:"When Steadfast Challenge makes target Disoriented, spend 1 focus to pacify them until scene ends."},
+  "Peaceful Solution": {category:"Heroic Path", path:"Envoy", specialty:"Diplomat", activation:"★", reqText:"Discipline 3+, Calm Appeal",
+    flavor:"Ending conflict peacefully without fighting.", effect:"If all non-minions are pacified, end combat and convert the scene into a conversation."},
+  "Practiced Oratory": {category:"Heroic Path", path:"Envoy", specialty:"Diplomat", activation:"★", reqText:"Persuasion 3+, High Society Contacts",
+    flavor:"Speeches crafted for widespread appeal.", effect:"Spend focus up to Persuasion ranks to target additional characters with Rousing Presence or Steadfast Challenge."},
+  "Customary Garb": {category:"Heroic Path", path:"Envoy", specialty:"Faithful", activation:"∞", reqText:"Rousing Presence Key",
+    flavor:"Traditional clothing gives deep confidence.", effect:"Physical and Spiritual defenses increase by +2 while wearing Presentable clothing."},
+  "Galvanize": {category:"Heroic Path", path:"Envoy", specialty:"Faithful", activation:"★", reqText:"Rousing Presence Key",
+    flavor:"Renewing focus on shared goals.", effect:"Once per scene, target ally rolls recovery die and recovers that much focus."},
+  "Devoted Presence": {category:"Heroic Path", path:"Envoy", specialty:"Faithful", activation:"★", reqText:"Lore 1+, Customary Garb",
+    flavor:"Words fill allies with clear purpose.", effect:"Spend 1 focus per target when using Rousing Presence to remove Prone, Slowed, Stunned, or Surprised."},
+  "Composed": {category:"Heroic Path", path:"Envoy", specialty:"Faithful", activation:"∞", reqText:"Galvanize",
+    flavor:"Practiced composure expands mental limits.", effect:"Max and current Focus increase by a number equal to your Tier of Play."},
+  "Stalwart Presence": {category:"Heroic Path", path:"Envoy", specialty:"Faithful", activation:"★", reqText:"Discipline 2+, Devoted Presence",
+    flavor:"Bolstering endurance of allies.", effect:"Spend 1 focus when using Rousing Presence to increase one target defense by +2 for 1 round."},
+  "Applied Motivation": {category:"Heroic Path", path:"Envoy", specialty:"Faithful", activation:"∞", reqText:"Discipline 2+, Galvanize",
+    flavor:"Skillfully motivating others with words.", effect:"When causing a character to recover focus, they gain extra focus equal to half Lore ranks."},
+  "Sage Counsel": {category:"Heroic Path", path:"Envoy", specialty:"Faithful", activation:"★", reqText:"Lore 3+, Stalwart Presence",
+    flavor:"Reassuring guidance alongside aid.", effect:"After using Aid reaction on an ally, spend 1 focus to also grant Rousing Presence benefits."},
+  "Inspired Zeal": {category:"Heroic Path", path:"Envoy", specialty:"Faithful", activation:"★", reqText:"Discipline 3+, Applied Motivation",
+    flavor:"Proclamations of success inspire others.", effect:"When an ally uses Determined to add Opportunity, up to Discipline ranks allies recover 1 focus."},
+  "Sound Advice": {category:"Heroic Path", path:"Envoy", specialty:"Mentor", activation:"↻", reqText:"Rousing Presence Key",
+    flavor:"Encouraging allies to grow from setbacks.", effect:"When an ally fails a skill test, spend 1 focus to use Rousing Presence on them as a Reaction."},
+  "Practical Demonstration": {category:"Heroic Path", path:"Envoy", specialty:"Mentor", activation:"▷", reqText:"Leadership 1+, Rousing Presence",
+    flavor:"Direct lessons that set excellent examples.", effect:"After succeeding on an attack or Gain Advantage test, use Rousing Presence as a Free Action."},
+  "Lessons in Patience": {category:"Heroic Path", path:"Envoy", specialty:"Mentor", activation:"∞", reqText:"Discipline 2+, Sound Advice",
+    flavor:"Persistently pursuing goals without burnout.", effect:"Target recovers 1 focus after Rousing Presence. Gain Motivational Speech utility expertise."},
+  "Instill Confidence": {category:"Heroic Path", path:"Envoy", specialty:"Mentor", activation:"★", reqText:"Have Companion, Lessons in Patience",
+    flavor:"Bringing clarity and encouragement.", effect:"Rousing Presence can make a target Focused instead of Determined until end of scene."},
+  "Guiding Oration": {category:"Heroic Path", path:"Envoy", specialty:"Mentor", activation:"★", reqText:"Leadership 2+, Mighty",
+    flavor:"Enabling allies to maximize actions.", effect:"After Gain Advantage success, an ally within 10 ft gains advantage on their next test vs. target."},
+  "Foresight": {category:"Heroic Path", path:"Envoy", specialty:"Mentor", activation:"∞", reqText:"Discipline 3+, Instill Confidence",
+    flavor:"Alert and aware in dangerous situations.", effect:"Gain 1 additional Action at start of combat and start of each turn."},
+  "Rallying Shout": {category:"Heroic Path", path:"Envoy", specialty:"Mentor", activation:"★", reqText:"Leadership 3+, Guiding Oration",
+    flavor:"Words that cut through pain and fatigue.", effect:"Rousing Presence can revive Unconscious allies; at 0 Health, they recover Recovery Die + Leadership ranks."},
+
+  // --- HEROIC PATHS: HUNTER (Key: Seek Quarry) ---
+  "Seek Quarry": {category:"Heroic Path", path:"Hunter", specialty:"Key Talent", activation:"★", reqText:"None (Hunter Key)",
+    flavor:"Unrelentingly pursuing prey across harsh terrain.", effect:"Spend 1 minute to designate a target as your quarry; gain advantage on tests to find, attack, or study them."},
+  "Tagging Shot": {category:"Heroic Path", path:"Hunter", specialty:"Archer", activation:"▶", reqText:"Perception 2+, Seek Quarry",
+    flavor:"Wounding a target so they leave marks of passage.", effect:"Move 5 ft and make a ranged attack. On hit or graze, target becomes your quarry."},
+  "Combat Training": {category:"Heroic Path", path:"Hunter", specialty:"Archer", activation:"∞", reqText:"Seek Quarry Key",
+    flavor:"Trained in weapon basics and battle tactics.", effect:"Gain 1 weapon expertise, 1 armor expertise, and Military Life expertise. Graze 1 missed attack/round free."},
+  "Sharp Eye": {category:"Heroic Path", path:"Hunter", specialty:"Archer", activation:"▶", reqText:"Tagging Shot",
+    flavor:"Discerning weaknesses and vulnerabilities.", effect:"Test Perception vs. Cognitive to learn target's lowest attribute, lowest defense, or if health/focus < 50%."},
+  "Steady Aim": {category:"Heroic Path", path:"Hunter", specialty:"Archer", activation:"▶", reqText:"Agility 1+, Combat Training",
+    flavor:"Shots finding marks across dizzying distances.", effect:"Increase weapon ranges by 50% and deal extra damage equal to Perception ranks."},
+  "Exploit Weakness": {category:"Heroic Path", path:"Hunter", specialty:"Archer", activation:"▷", reqText:"Perception 3+, Sharp Eye",
+    flavor:"Homing in on weaknesses to bring prey down.", effect:"Use Gain Advantage action as a Free Action against your quarry."},
+  "Backstep": {category:"Heroic Path", path:"Hunter", specialty:"Archer", activation:"↻", reqText:"Agility 2+, Steady Aim",
+    flavor:"Fading into battlefields to keep safe distance.", effect:"After ranged attack, spend 2 focus to Disengage as Reaction and Brace if in cover."},
+  "Unrelenting Salvo": {category:"Heroic Path", path:"Hunter", specialty:"Archer", activation:"▶", reqText:"Agility 3+, Hardy",
+    flavor:"Firing bowstrings with impressive speed.", effect:"Strike your quarry more than once per turn with the same ranged weapon."},
+  "Startling Blow": {category:"Heroic Path", path:"Hunter", specialty:"Assassin", activation:"▶", reqText:"Stealth 1+, Seek Quarry",
+    flavor:"Striking weak points to dizzy targets.", effect:"Unarmed/improvised attack vs. Cognitive. On hit/graze, target is Surprised until end of next turn."},
+  "Killing Edge": {category:"Heroic Path", path:"Hunter", specialty:"Assassin", activation:"∞", reqText:"Perception 2+, Seek Quarry",
+    flavor:"Making simple weapons deadly in skilled hands.", effect:"Gain Knives and Slings expertises; they gain Deadly and Quickdraw expert traits."},
+  "Fatal Thrust": {category:"Heroic Path", path:"Hunter", specialty:"Assassin", activation:"▶", reqText:"Perception 3+, Startling Blow",
+    flavor:"Aiming for vitals with callous finesse.", effect:"Attack unsuspecting target with light weapon vs. Cognitive. Add +4d4 damage; max damage rolls reduce injury roll."},
+  "Shadowing": {category:"Heroic Path", path:"Hunter", specialty:"Assassin", activation:"∞", reqText:"Stealth 2+, Killing Edge",
+    flavor:"Skulking toward targets using cover.", effect:"Quarry gets disadvantage to sense you, you get advantage to avoid notice. Spend 3 focus on Spiritual test to set quarry."},
+  "Cold Eyes": {category:"Heroic Path", path:"Hunter", specialty:"Assassin", activation:"★", reqText:"Shadowing",
+    flavor:"Gaze sliding to the next threat.", effect:"After defeating quarry, recover 1 focus and select a new quarry."},
+  "Swift Strikes": {category:"Heroic Path", path:"Hunter", specialty:"Assassin", activation:"▶", reqText:"Cold Eyes",
+    flavor:"Keeping pressure on foes at critical moments.", effect:"Spend 1 focus to make a second Strike with a hand already used this turn."},
+  "Sidestep": {category:"Heroic Path", path:"Hunter", specialty:"Assassin", activation:"∞", reqText:"Stealth 3+, Shadowing",
+    flavor:"Flitting past strikes like a shadow.", effect:"Gain +1 Action at start of turn for Dodge (requires Deflect < 2)."},
+  "Deadly Trap": {category:"Heroic Path", path:"Hunter", specialty:"Tracker", activation:"▶", reqText:"Survival 1+, Seek Quarry",
+    flavor:"Building traps and snares for prey.", effect:"Conceal Entangling (2d4 impact + Immobilized) or Impaling (2d4 keen + Afflicted) trap in a 5-ft circle."},
+  "Experienced Trapper": {category:"Heroic Path", path:"Hunter", specialty:"Tracker", activation:"∞", reqText:"Perception 2+, Deadly Trap",
+    flavor:"Adept at foraging and crafting traps.", effect:"Forage automatically during short rest for Survival ranks people. Traps deal 2d6 damage for 2 rounds."},
+  "Animal Bond": {category:"Heroic Path", path:"Hunter", specialty:"Tracker", activation:"∞", reqText:"Have Animal Companion, Seek Quarry",
+    flavor:"Partnering with animal companions.", effect:"Defenses +1 while companion within 10 ft. Command companion in combat; companion can Track quarry."},
+  "Protective Bond": {category:"Heroic Path", path:"Hunter", specialty:"Tracker", activation:"▶", reqText:"Animal Bond",
+    flavor:"Commanding companion to defend allies.", effect:"Assign companion to protect ally within 30 ft; ally gains Animal Bond defense bonus."},
+  "Feral Connection": {category:"Heroic Path", path:"Hunter", specialty:"Tracker", activation:"∞", reqText:"Survival 2+, Protective Bond",
+    flavor:"Companion growing strong under care.", effect:"Companion Max Health + (5 × Tier), Defenses +2, adds Survival ranks to tests. Gain Animal Care expertise."},
+  "Hunter’s Edge": {category:"Heroic Path", path:"Hunter", specialty:"Tracker", activation:"∞", reqText:"Survival 3+, Experienced Trapper",
+    flavor:"Inflicting devastating wounds with traps.", effect:"Companion gains advantage vs. quarry. Traps deal 2d8 damage for 3 rounds."},
+  "Pack Hunting": {category:"Heroic Path", path:"Hunter", specialty:"Tracker", activation:"↻", reqText:"Perception 3+, Protective Bond",
+    flavor:"Exposing quarry weaknesses for allies.", effect:"When ally attacks quarry, spend 1 focus to add Survival ranks to attack or damage roll."},
+
+  // --- HEROIC PATHS: LEADER (Key: Decisive Command) ---
+  "Decisive Command": {category:"Heroic Path", path:"Leader", specialty:"Key Talent", activation:"▶", reqText:"None (Leader Key)",
+    flavor:"Certainty of steel and tactical acumen.", effect:"Spend 1 focus to grant an ally within 20 ft a d4 Command Die to add to a d20 test."},
+  "Combat Coordination": {category:"Heroic Path", path:"Leader", specialty:"Champion", activation:"▷", reqText:"Leadership 2+, Decisive Command",
+    flavor:"Bolstering allies with momentum of blows.", effect:"After Strike, use Decisive Command as Free Action (free focus if Strike missed)."},
+  "Valiant Intervention": {category:"Heroic Path", path:"Leader", specialty:"Champion", activation:"▶", reqText:"Athletics 1+, Decisive Command",
+    flavor:"Approaching opposition dauntlessly.", effect:"Spend 1 focus to move 10 ft, test Athletics vs. Spiritual to impose disadvantage on attacks against allies."},
+  "Imposing Posture": {category:"Heroic Path", path:"Leader", specialty:"Champion", activation:"∞", reqText:"Athletics 2+, Combat Coordination",
+    flavor:"Powerful physique sending clear messages.", effect:"After enemy resists influence within reach, they become Disoriented for 1 round."},
+  "Resolute Stand": {category:"Heroic Path", path:"Leader", specialty:"Champion", activation:"★", reqText:"Athletics 1+, Hardy",
+    flavor:"Projecting resolve to hold attention.", effect:"Spend focus up to Leadership ranks to target additional characters with Valiant Intervention; targets cannot Reactive Strike."},
+  "Demonstrative Command": {category:"Heroic Path", path:"Leader", specialty:"Champion", activation:"★", reqText:"Leadership 2+, Resolute Stand",
+    flavor:"Setting an example from the front.", effect:"Spend 1 focus to add Command Die to Athletics, Agility, or Leadership test. Command Die grows by 1 size."},
+  "Resilient Hero": {category:"Heroic Path", path:"Leader", specialty:"Champion", activation:"↻", reqText:"Athletics 3+, Resolute Stand",
+    flavor:"Pressing forward despite grievous wounds.", effect:"Once per scene, before Health drops to 0, set Health equal to Athletics modifier."},
+  "Through the Fray": {category:"Heroic Path", path:"Leader", specialty:"Officer", activation:"▶", reqText:"Persuasion 1+, Decisive Command",
+    flavor:"Spotting opportunities to gain upper hand.", effect:"Target ally within 20 ft can Disengage or Gain Advantage as a Free Action."},
+  "Well Supplied": {category:"Heroic Path", path:"Leader", specialty:"Officer", activation:"★", reqText:"Persuasion 2+, Composed",
+    flavor:"Acquiring supplies for units.", effect:"Gain Military Logistics expertise. Spend 2 focus to add Opportunity when requisitioning resources."},
+  "Relentless March": {category:"Heroic Path", path:"Leader", specialty:"Officer", activation:"★", reqText:"Persuasion 3+, Confident Command",
+    flavor:"Invigorating troops through exhaustion.", effect:"Decisive Command target movement +10 ft, ignores Exhausted, Slowed, and Surprised until end of next turn."},
+  "Confident Command": {category:"Heroic Path", path:"Leader", specialty:"Officer", activation:"★", reqText:"Leadership 2+, Customary Garb",
+    flavor:"Delivering words with care and conviction.", effect:"Spend 1 focus to add Command Die to Intimidation, Leadership, or Persuasion. Command Die grows by 1 size."},
+  "Synchronized Assault": {category:"Heroic Path", path:"Leader", specialty:"Officer", activation:"▶", reqText:"Leadership 3+, Authority",
+    flavor:"Directing squad to focus on crucial foe.", effect:"Spend 2 focus to test Leadership vs. Cognitive. On success, allies up to Leadership ranks gain +1 Action for Strike against target."},
+  "Authority": {category:"Heroic Path", path:"Leader", specialty:"Officer", activation:"∞", reqText:"Title over 5+ people, Confident Command",
+    flavor:"Command experience coordinating large groups.", effect:"Double range and target count for Leader talents that affect allies."},
+  "Cutthroat Tactics": {category:"Heroic Path", path:"Leader", specialty:"Politico", activation:"★", reqText:"Deception 1+, Decisive Command",
+    flavor:"Downplaying danger to increase confidence.", effect:"Ally can raise stakes instead of rolling Command Die; if Complication rolled, recover 1 focus."},
+  "Tactical Ploy": {category:"Heroic Path", path:"Leader", specialty:"Politico", activation:"▶", reqText:"Decisive Command Key",
+    flavor:"Undermining enemy confidence.", effect:"Test Deception vs. Cognitive. Target loses 1 Action and gains disadvantage on next cognitive/spiritual test."},
+  "Rumormonger": {category:"Heroic Path", path:"Leader", specialty:"Politico", activation:"★", reqText:"Have Patron, Cutthroat Tactics",
+    flavor:"Spreading rumors in social circles.", effect:"Gain Scandal expertise. Spend 2 focus to add Opportunity when spreading or gathering rumors."},
+  "Set at Odds": {category:"Heroic Path", path:"Leader", specialty:"Politico", activation:"▶", reqText:"Leadership 3+, Baleful",
+    flavor:"Igniting rivalries between factions.", effect:"Spend focus equal to target count, test Leadership vs. highest Spiritual to make targets hostile to each other."},
+  "Shrewd Command": {category:"Heroic Path", path:"Leader", specialty:"Politico", activation:"★", reqText:"Leadership 2+, Rumormonger",
+    flavor:"Cutting to the heart of conversations.", effect:"Spend 1 focus to add Command Die to Deception, Insight, or Leadership. Command Die grows by 1 size."},
+  "Grand Deception": {category:"Heroic Path", path:"Leader", specialty:"Politico", activation:"★", reqText:"Deception 3+, Shrewd Command",
+    flavor:"Revealing a carefully placed ruse.", effect:"Spend 3 focus, test Deception DC 15 to reveal a plausible ruse changing a scene detail."},
+
+  // --- HEROIC PATHS: SCHOLAR (Key: Erudition) ---
+  "Erudition": {category:"Heroic Path", path:"Scholar", specialty:"Key Talent", activation:"★", reqText:"None (Scholar Key)",
+    flavor:"Conditioned mind to assimilate information.", effect:"Gain 1 cultural/utility expertise and 2 cognitive non-surge skill ranks. Reassignable after long rest with library."},
+  "Efficient Engineer": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"∞", reqText:"Crafting 1+, Erudition Key",
+    flavor:"Fundamentals like measuring twice.", effect:"Gain Armor/Equipment/Weapon Crafting expertise + 1 starting fabrial. Crafting Opportunity range +2, raw material cost -50%."},
+  "Prized Acquisition": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"∞", reqText:"Erudition Key",
+    flavor:"Acquired a gemstone to craft fabrials.", effect:"Gain Fabrial Crafting specialist expertise and a cut gem of your Tier to craft a unique fabrial (reusable)."},
+  "Deep Study": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"∞", reqText:"Efficient Engineer",
+    flavor:"Lost in archives of books and secrets.", effect:"Erudition grants +1 additional expertise and +2 additional cognitive non-surge skill ranks."},
+  "Inventive Design": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"∞", reqText:"Crafting 2+, Prized Acquisition",
+    flavor:"Custom fabrials with novel functionalities.", effect:"When crafting with Prized Acquisition gem, select an effect 1 tier higher than current character tier."},
+  "Fine Handiwork": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"∞", reqText:"Efficient Engineer",
+    flavor:"Designs standing out from the crowd.", effect:"When crafting an item/fabrial, spend 1 upgrade for an advanced feature instead of 2."},
+  "Overcharge": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"★", reqText:"Crafting 3+, Prized Acquisition",
+    flavor:"Pushing fabrials beyond safe limits.", effect:"Once per turn, raise stakes on fabrial attack. Spend Opportunity to Strike as Free Action."},
+  "Experimental Tinkering": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"★", reqText:"Fine Handiwork",
+    flavor:"Sacrificing one feature to enhance another.", effect:"Crafting Opportunity range +1, time halved. Reconfigure Prized Acquisition fabrial during long rest without new materials."},
+  "Overwhelm With Detail": {category:"Heroic Path", path:"Scholar", specialty:"Artifabrian", activation:"▶", reqText:"Lore 3+, Experimental Tinkering",
+    flavor:"Speaking with unsurpassed authority.", effect:"Spend 2 focus to make a cognitive or spiritual test using your Lore modifier instead of usual skill modifier."},
+  "Strategize": {category:"Heroic Path", path:"Scholar", specialty:"Strategist", activation:"★", reqText:"Deduction 1+, Erudition",
+    flavor:"Assessing problems from novel angles.", effect:"After Gain Advantage success with Erudition skill, grant advantage to ally. Spend 2 focus to block enemy reactions."},
+  "Mind and Body": {category:"Heroic Path", path:"Scholar", specialty:"Strategist", activation:"∞", reqText:"Erudition Key",
+    flavor:"Martial arts alongside cerebral arts.", effect:"Erudition grants 1 extra skill and can pick physical non-surge skills. Gain 1 weapon expertise."},
+  "Know Your Moment": {category:"Heroic Path", path:"Scholar", specialty:"Strategist", activation:"∞", reqText:"Deduction 2+, Mind and Body",
+    flavor:"Knowledge guiding when to act.", effect:"Defenses increase by +2 from start of round until taking your turn."},
+  "Deep Contemplation": {category:"Heroic Path", path:"Scholar", specialty:"Strategist", activation:"★", reqText:"Lore 2+, Composed",
+    flavor:"Searching mental archives for facts.", effect:"Reassign up to 2 skills and expertises gained from Erudition."},
+  "Keen Insight": {category:"Heroic Path", path:"Scholar", specialty:"Strategist", activation:"★", reqText:"Deep Contemplation",
+    flavor:"Uncovering and exploiting weaknesses.", effect:"After Gain Advantage success, target must resist influence or gain disadvantage on next test."},
+  "Contingency": {category:"Heroic Path", path:"Scholar", specialty:"Strategist", activation:"↻", reqText:"Lore 3+, Composed",
+    flavor:"Preparing for anything that derails plans.", effect:"When ally within 20 ft rolls Complication, spend 2 focus to remove Complication from test."},
+  "Turning Point": {category:"Heroic Path", path:"Scholar", specialty:"Strategist", activation:"★", reqText:"Deduction 3+, Contingency",
+    flavor:"Battles pivoting on a single moment.", effect:"Once per scene, spend 2 focus, test Deduction vs. enemy leader Cognitive. On success, allies gain +1 Action next turn."},
+  "Field Medicine": {category:"Heroic Path", path:"Scholar", specialty:"Surgeon", activation:"▶", reqText:"Medicine 1+, Erudition Key",
+    flavor:"Treating minor wounds by bandaging.", effect:"Spend 1 focus, test Medicine DC 15 to treat conscious ally. On success, recover Recovery Die + Medicine ranks Health."},
+  "Emotional Intelligence": {category:"Heroic Path", path:"Scholar", specialty:"Surgeon", activation:"∞", reqText:"Erudition Key",
+    flavor:"Spotting hidden symptoms and feelings.", effect:"Gain Diagnosis expertise. Erudition can choose spiritual non-surge skills."},
+  "Anatomical Insight": {category:"Heroic Path", path:"Scholar", specialty:"Surgeon", activation:"★", reqText:"Field Medicine",
+    flavor:"Striking vital points to incapacitate.", effect:"On unarmed hit, spend 1 focus or Free Action to apply Exhausted [penalty = half Medicine ranks]."},
+  "Swift Healer": {category:"Heroic Path", path:"Scholar", specialty:"Surgeon", activation:"▶", reqText:"Medicine 2+, Field Medicine",
+    flavor:"Practiced hands quickly dressing wounds.", effect:"Use Field Medicine as 1 Action. Healing restores additional Health equal to Medicine ranks."},
+  "Applied Medicine": {category:"Heroic Path", path:"Scholar", specialty:"Surgeon", activation:"∞", reqText:"Lore 2+, Collected",
+    flavor:"Broad foundation in healing arts.", effect:"When causing a character to recover Health, restore additional Health equal to Lore ranks."},
+  "Ongoing Care": {category:"Heroic Path", path:"Scholar", specialty:"Surgeon", activation:"★", reqText:"Lore 3+, Swift Healer",
+    flavor:"Supporting mental and physical health.", effect:"During rest, test Medicine DC 10 to remove 1 condition caused by injury. Gain Mental Health Care expertise."},
+  "Resuscitation": {category:"Heroic Path", path:"Scholar", specialty:"Surgeon", activation:"▶", reqText:"Medicine 3+, Swift Healer",
+    flavor:"Pulling mortally wounded back from brink.", effect:"Spend 3 focus with Field Medicine to target Unconscious or recently deceased character (within Medicine ranks rounds)."},
+
+  // --- HEROIC PATHS: WARRIOR (Key: Vigilant Stance) ---
   "Vigilant Stance": {category:"Heroic Path", path:"Warrior", specialty:"Key Talent", activation:"▶", reqText:"None (Warrior Key)",
-    flavor:"You study special fighting styles. Vigilant Stance emphasizes alertness and quick responses.",
-    effect:"Enter Vigilant Stance: Reduce focus cost of Dodge and Reactive Strike by 1, and switch stances as a Free Action."},
-  "Bloodstance": {category:"Heroic Path", path:"Warrior", specialty:"Shardbearer", activation:"▶", reqText:"Athletics 2+, Mighty or Shard Training",
-    flavor:"You assume a reckless, violent stance that trades defense for deadly power.",
-    effect:"Opportunity range for attacks and physical tests expands by 2, but Physical, Cognitive, and Spiritual Defenses decrease by 2."},
-  "Shard Training": {category:"Heroic Path", path:"Warrior", specialty:"Shardbearer", activation:"∞", reqText:"Access to Shardblade and Shardplate",
-    flavor:"You've learned to deal blows for maximum effect and absorb strikes efficiently with Shardic relics.",
-    effect:"Gain Shardplate expertise + 1 weapon expertise (Grandbows, Shardblades, Warhammers). Shardplate gains +2 charges. Shardblade Strikes graze extra targets equal to skill ranks."},
+    flavor:"Alertness and quick responses to threats.", effect:"Enter Vigilant Stance: Reduce Dodge and Reactive Strike focus cost by 1, switch stances as Free Action."},
+  "Practiced Kata": {category:"Heroic Path", path:"Warrior", specialty:"Duelist", activation:"∞", reqText:"Vigilant Stance Key",
+    flavor:"Stance in conversation as important as battle.", effect:"Use stances in conversations/endeavors (1 focus cost). Start un-Surprised scenes in Vigilant Stance free."},
+  "Flamestance": {category:"Heroic Path", path:"Warrior", specialty:"Duelist", activation:"▶", reqText:"Intimidation 1+, Vigilant Stance",
+    flavor:"Aggressive stance favoring swift flurries.", effect:"Gain advantage on Intimidation. When 1 enemy in reach and no allies, gain +1 Action for Gain Advantage or attack."},
+  "Ironstance": {category:"Heroic Path", path:"Warrior", specialty:"Duelist", activation:"▶", reqText:"Athletics 2+, Practiced Kata",
+    flavor:"Holding weapon high for crushing blows.", effect:"Gain advantage on Insight. When missed or grazed in reach, make Reactive Strike against attacker."},
+  "Signature Weapon": {category:"Heroic Path", path:"Warrior", specialty:"Duelist", activation:"∞", reqText:"Flamestance",
+    flavor:"Trained extensively with a weapon type.", effect:"Gain 1 weapon expertise. Opportunity range for chosen weapon expands by +1 (or +2 at Tier 3)."},
+  "Feinting Strike": {category:"Heroic Path", path:"Warrior", specialty:"Duelist", activation:"▶", reqText:"Intimidation 2+, Flamestance",
+    flavor:"Intimidatingly pressing enemy defenses.", effect:"Spend 2 focus, melee attack vs. Cognitive. On hit, target loses 1 Action and focus equal to Intimidation ranks."},
+  "Vinestance": {category:"Heroic Path", path:"Warrior", specialty:"Duelist", activation:"▶", reqText:"Athletics 3+, Feinting Strike",
+    flavor:"Flexible stance wearing down foes.", effect:"Physical and Cognitive defenses +1. After hit/graze in melee, spend Reaction, test Athletics vs Cognitive to push target 5ft × Athletics ranks and drain 1d4 focus."},
+  "Wit’s End": {category:"Heroic Path", path:"Warrior", specialty:"Duelist", activation:"▶", reqText:"Intimidation 3+, Feinting Strike",
+    flavor:"Vanquishing foes in a single stroke.", effect:"Spend 1 focus to move half speed and melee attack Cognitive of target at 0 focus. Ignores Deflect, deals +4d6 damage."},
+  "Stonestance": {category:"Heroic Path", path:"Warrior", specialty:"Shardbearer", activation:"▶", reqText:"Vigilant Stance Key",
+    flavor:"Solid stance delivering powerful blows.", effect:"Increase Deflect by +1. Enemies in reach must spend +1 Action to attack allies not in Stonestance."},
+  "Bloodstance": {category:"Heroic Path", path:"Warrior", specialty:"Shardbearer", activation:"▶", reqText:"Athletics 2+, Mighty/Shard Training",
+    flavor:"Reckless stance trading defense for power.", effect:"Opportunity range for attacks expands by +2; Physical, Cognitive, and Spiritual defenses decrease by 2."},
+  "Shard Training": {category:"Heroic Path", path:"Warrior", specialty:"Shardbearer", activation:"∞", reqText:"Access to Shardblade & Shardplate",
+    flavor:"Absorbing strikes with Shardic relics.", effect:"Gain Shardplate expertise + 1 weapon expertise (Grandbows/Shardblades/Warhammers). Shardplate gains +2 charges. Shardblade Strikes graze extra targets."},
+  "Shattering Blow": {category:"Heroic Path", path:"Warrior", specialty:"Shardbearer", activation:"★", reqText:"Perception 2+, Windstance",
+    flavor:"Breaking through weak points with two hands.", effect:"On melee hit with 2H or free hand, spend 2 focus to deplete 1 charge from target armor and push target 5+ ft."},
+  "Precise Parry": {category:"Heroic Path", path:"Warrior", specialty:"Shardbearer", activation:"↻", reqText:"Perception 3+, Shattering Blow",
+    flavor:"Deflecting blows or catching Shardblades.", effect:"Before melee hit, spend 1 focus to test Weaponry/Athletics vs attack result to change hit to graze."},
+  "Meteoric Leap": {category:"Heroic Path", path:"Warrior", specialty:"Shardbearer", activation:"▶", reqText:"Athletics 3+, Bloodstance",
+    flavor:"Vaulting aggressively and slamming down.", effect:"Spend 2 focus to leap 1/4 movement and unarmed attack vs Physical of multiple targets (double damage, knocks Prone)."},
+  "Cautious Advance": {category:"Heroic Path", path:"Warrior", specialty:"Soldier", activation:"▶", reqText:"Discipline 1+, Vigilant Stance",
+    flavor:"Safest path across battlefields.", effect:"Move half speed ignoring difficult terrain, then gain a Free Action for Brace or Gain Advantage."},
+  "Defensive Position": {category:"Heroic Path", path:"Warrior", specialty:"Soldier", activation:"∞", reqText:"Athletics 2+, Cautious Advance",
+    flavor:"Holding positions unflinchingly.", effect:"Brace adds 2 disadvantages to attacks against you. Allies within 5 ft of shield can Brace."},
+  "Formation Drills": {category:"Heroic Path", path:"Warrior", specialty:"Soldier", activation:"∞", reqText:"Discipline 2+, Defensive Position",
+    flavor:"Coordinating allies to march in formation.", effect:"Allies within 10 ft who Brace gain benefits of your Defensive Position."},
+  "Devastating Blow": {category:"Heroic Path", path:"Warrior", specialty:"Soldier", activation:"▶", reqText:"Athletics 3+, Combat Training",
+    flavor:"Striking to kill without hesitation.", effect:"Melee weapon attack vs. Physical dealing extra +2d8 damage."},
+  "Wary": {category:"Heroic Path", path:"Warrior", specialty:"Soldier", activation:"∞", reqText:"Discipline 3+, Defensive Position",
+    flavor:"Staying focused on unexpected hazards.", effect:"Cannot be Surprised while having 1+ focus. Involuntary focus loss reduced by Discipline ranks."},
+
   // --- SINGER ANCESTRY ---
   "Change Form": {category:"Singer Ancestry", path:"Singer", specialty:"Singer Key", activation:"★", reqText:"Singer Ancestry",
-    flavor:"You learn to bond a spren during highstorms and change your form.",
-    effect:"During a highstorm, transform into Dullform, Mateform, or any unlocked form. Gain temporary form stats."},
-  "Forms of Resolve": {category:"Singer Ancestry", path:"Singer", specialty:"Specialty Tree", activation:"∞", reqText:"Change Form Key",
-    flavor:"Gain Warform and Workform.",
-    effect:"Warform: STR +1, Deflect +1, leap full movement. Workform: WIL +1, ignore Exhausted, pass as parshman."},
-  "Forms of Destruction": {category:"Singer Ancestry", path:"Singer", specialty:"Specialty Tree", activation:"∞", reqText:"Ambitious Mind",
-    flavor:"Gain Direform and Stormform.",
-    effect:"Direform: STR +2, Deflect +2, Grapple on Reactive Strike. Stormform: STR +1, SPD +1, Deflect +1, Unleash Lightning (2d8 energy, 60ft)."},
-  // --- RADIANT PATHS ---
-  "First Ideal (Radiant Key)": {category:"Radiant Path", path:"All Orders", specialty:"First Ideal", activation:"★", reqText:"Level 2+",
+    flavor:"Bonding spren during highstorms to change form.", effect:"During a highstorm, transform into Dullform, Mateform, or any unlocked form."},
+  "Forms of Finesse": {category:"Singer Ancestry", path:"Singer", specialty:"Forms of Finesse", activation:"∞", reqText:"Change Form Key",
+    flavor:"Unlocks Artform and Nimbleform.", effect:"Artform: Awareness +1, Painting/Music expertises, advantage on Crafting/Entertaining. Nimbleform: Speed +1, Max/Current Focus +2."},
+  "Forms of Resolve": {category:"Singer Ancestry", path:"Singer", specialty:"Forms of Resolve", activation:"∞", reqText:"Change Form Key",
+    flavor:"Unlocks Warform and Workform.", effect:"Warform: Strength +1, Deflect +1, leap full movement. Workform: Willpower +1, ignore Exhausted, pass as parshman."},
+  "Forms of Wisdom": {category:"Singer Ancestry", path:"Singer", specialty:"Forms of Wisdom", activation:"∞", reqText:"Change Form Key",
+    flavor:"Unlocks Mediationform and Scholarform.", effect:"Mediationform: Presence +1, Aid costs 0 focus. Scholarform: Intellect +1, gain temporary expertise and cognitive skill rank."},
+  "Ambitious Mind": {category:"Singer Ancestry", path:"Singer", specialty:"Forms of Power", activation:"∞", reqText:"Discipline 3+, Forms of Finesse/Resolve/Wisdom",
+    flavor:"Thirst for power opening influence to Odium.", effect:"Cognitive defense +2. Can bond Voidspren (DC 15 Discipline test on Complication to avoid Stunned)."},
+  "Forms of Destruction": {category:"Singer Ancestry", path:"Singer", specialty:"Forms of Destruction", activation:"∞", reqText:"Ambitious Mind",
+    flavor:"Unlocks Direform and Stormform (Regal).", effect:"Direform: Strength +2, Deflect +2, Grapple on Reactive Strike. Stormform: Strength +1, Speed +1, Deflect +1, Unleash Lightning action (2d8 energy)."},
+  "Forms of Expansion": {category:"Singer Ancestry", path:"Singer", specialty:"Forms of Expansion", activation:"∞", reqText:"Ambitious Mind",
+    flavor:"Unlocks Envoyform and Relayform (Regal).", effect:"Envoyform: Intellect +1, Presence +1, understand all languages, advantage on Insight. Relayform: Speed +2, ignore Slowed, spend 1 focus for advantage on Agility/Stealth/Thievery."},
+  "Forms of Mystery": {category:"Singer Ancestry", path:"Singer", specialty:"Forms of Mystery", activation:"∞", reqText:"Ambitious Mind",
+    flavor:"Unlocks Decayform and Nightform (Regal).", effect:"Decayform: Willpower +2, Decaying Touch drains recovery. Nightform: Awareness +1, Intellect +1, Max/Current Focus +2, Intervening Premonitions rerolls."},
+
+  // --- RADIANT PATHS (ALL ORDERS) ---
+  "First Ideal": {category:"Radiant Path", path:"All Orders", specialty:"First Ideal", activation:"★", reqText:"Level 2+",
     flavor:"Life before death. Strength before weakness. Journey before destination.",
-    effect:"Unlock Investiture pool (2 + max(AWA, PRE)) and Stormlight actions (Breathe Stormlight, Enhance, Regenerate). Goal: Speak First Ideal → grants 2 Surge skills."},
-  "Invested": {category:"Radiant Path", path:"All Orders", specialty:"Bond Tree", activation:"∞", reqText:"Order-specific prerequisite",
-    flavor:"You learn to hold and wield greater quantities of Stormlight within yourself.",
-    effect:"Increase maximum and current Investiture by a number equal to your Tier of Play."}
+    effect:"Unlocks Investiture pool (2 + max(AWA, PRE)) and Stormlight actions (Breathe Stormlight, Enhance, Regenerate). Completing goal grants 2 Surge skills."},
+  "Second Ideal": {category:"Radiant Path", path:"All Orders", specialty:"Spren Bond Tree", activation:"★", reqText:"Level 4+, Speak First Ideal",
+    flavor:"Deepening bond with your Radiant spren.", effect:"Empowered until scene end. Enhance costs 0 Investiture as a Free Action while Invested."},
+  "Third Ideal": {category:"Radiant Path", path:"All Orders", specialty:"Spren Bond Tree", activation:"★", reqText:"Level 8+, Speak Second Ideal",
+    flavor:"Advancing bond to manifest Radiant Shardblade.", effect:"Empowered until scene end. Can summon your spren as a Radiant Shardblade (Instant/Malleable Form)."},
+  "Fourth Ideal": {category:"Radiant Path", path:"All Orders", specialty:"Spren Bond Tree", activation:"★", reqText:"Level 13+, Speak Third Ideal",
+    flavor:"Full Knight Radiant summoning Radiant Shardplate.", effect:"Empowered until scene end. Can call a swarm of lesser spren as Radiant Shardplate (Living Armor)."},
+  "Invested": {category:"Radiant Path", path:"All Orders", specialty:"Spren Bond Tree", activation:"∞", reqText:"Order-specific prerequisite",
+    flavor:"Holding and wielding greater Stormlight.", effect:"Increase Max/Current Investiture by a number equal to your Tier of Play."},
+  "Take Squire": {category:"Radiant Path", path:"All Orders", specialty:"Spren Bond Tree", activation:"★", reqText:"Speak Third Ideal",
+    flavor:"Taking others under your wing as squires.", effect:"Designate allies as squires, granting them Investiture (Max 2) and access to 1 or 2 of your surges."},
+  "Deepened Bond": {category:"Radiant Path", path:"All Orders", specialty:"Spren Bond Tree", activation:"∞", reqText:"Speak Third Ideal",
+    flavor:"Spren manifesting more fully in Physical Realm.", effect:"Spren bond range increases to 100 ft; spren tasks cost -1 focus."},
+  "Wound Regeneration": {category:"Radiant Path", path:"All Orders", specialty:"Spren Bond Tree", activation:"▷", reqText:"Invested",
+    flavor:"Rapidly recovering from injuries with Stormlight.", effect:"Spend 2 Investiture on Regenerate to heal temporary injury, or 3 Investiture for permanent injury."}
 };
 
 const ACTIVATION_ICONS = {'▶':'Action', '▷':'Free Action', '↻':'Reaction', '★':'Special', '∞':'Always Active'};
@@ -807,6 +1037,42 @@ const TALENT_TREE = Object.entries(TALENT_DATABASE).reduce((tree, [name, t]) => 
   (tree[t.category][t.path][t.specialty] = tree[t.category][t.path][t.specialty] || []).push(name);
   return tree;
 }, {});
+
+/* Display annotations for the Level 2 (Path) dropdown — cosmetic only.
+   Heroic Path names map 1:1 onto TALENT_TREE path keys. Radiant Path and
+   Singer Ancestry both only have one underlying data bucket ("All Orders"
+   and "Singer" respectively, since the Ideal/Form progression is shared
+   across every order/form-set) — RADIANT_PATH_OPTIONS lets the picker still
+   show all 10 individual orders for flavor, resolved back to "All Orders"
+   when reading TALENT_TREE. See talentDataPathKey(). */
+const HEROIC_PATH_INFO = {
+  Agent:'Key Talent: Opportunist | Starting Skill: Insight',
+  Envoy:'Key Talent: Rousing Presence | Starting Skill: Discipline',
+  Hunter:'Key Talent: Seek Quarry | Starting Skill: Perception',
+  Leader:'Key Talent: Decisive Command | Starting Skill: Leadership',
+  Scholar:'Key Talent: Erudition | Starting Skill: Lore',
+  Warrior:'Key Talent: Vigilant Stance | Starting Skill: Athletics'
+};
+const RADIANT_PATH_OPTIONS = [
+  {name:'Dustbringer', info:'Key Talent: First Ideal | Spren: Ashspren | Surges: Abrasion, Division'},
+  {name:'Edgedancer', info:'Key Talent: First Ideal | Spren: Cultivationspren | Surges: Abrasion, Progression'},
+  {name:'Elsecaller', info:'Key Talent: First Ideal | Spren: Inkspren | Surges: Transformation, Transportation'},
+  {name:'Lightweaver', info:'Key Talent: First Ideal | Spren: Cryptic | Surges: Illumination, Transformation'},
+  {name:'Skybreaker', info:'Key Talent: First Ideal | Spren: Highspren | Surges: Division, Gravitation'},
+  {name:'Stoneward', info:'Key Talent: First Ideal | Spren: Peakspren | Surges: Cohesion, Tension'},
+  {name:'Truthwatcher', info:'Key Talent: First Ideal | Spren: Mistspren | Surges: Illumination, Progression'},
+  {name:'Willshaper', info:'Key Talent: First Ideal | Spren: Lightspren | Surges: Cohesion, Transportation'},
+  {name:'Windrunner', info:'Key Talent: First Ideal | Spren: Honorspren | Surges: Adhesion, Gravitation'},
+  {name:'Bondsmith', info:'Squire / Patron Option'}
+];
+const SINGER_TREE_OPTIONS = [{name:'Singer Talent Tree', info:'Key Talent: Change Form'}];
+
+/* Maps the cosmetic Level-2 selection back to the actual key TALENT_TREE data lives under. */
+function talentDataPathKey(category, path){
+  if (category === 'Radiant Path') return 'All Orders';
+  if (category === 'Singer Ancestry') return 'Singer';
+  return path;
+}
 
 /* ---------- weapons, equipment & fabrial catalog ---------- */
 const GAME_SKILL_KEY = {'Light Weaponry':'lightWeapons', 'Heavy Weaponry':'heavyWeapons', 'Athletics':'athletics'};
@@ -942,7 +1208,7 @@ function newCharacter(name){
     squires:[], fabrials:[], gearWeight:0, gear:[],
     spheres:{chips:0, marks:0, broams:0, notes:''}, purpose:'', obstacle:'',
     goals:[{text:'', ticks:[false,false,false]}],
-    appearance:'', equipment:'', connections:'', notes:'',
+    appearance:'', equipment:'', connections:'', notes:'', notebook:[],
     pinned:false,
     updatedAt: Date.now()
   };
@@ -984,7 +1250,8 @@ function armorTagsHTML(armor){
    with every new automatic rule below. */
 function hasTalent(c, name){
   if ((c.talentIds || []).includes(name)) return true;
-  const text = (c.talents || '') + ' ' + (c.notes || '');
+  const notebookText = (c.notebook || []).map(n => n.title + ' ' + n.text).join(' ');
+  const text = (c.talents || '') + ' ' + (c.notes || '') + ' ' + notebookText;
   const re = new RegExp('\\b' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
   return re.test(text);
 }
@@ -1050,14 +1317,14 @@ function derive(c){
   const nimbleOrNight = c.singer && (c.form === 'Nimbleform' || c.form === 'Nightform');
   d.maxFocus = 2 + a.wil + (c.focus.bonus|0) + (hasTalent(c, 'Composed') ? tier : 0) + (nimbleOrNight ? 2 : 0);
 
-  d.radiantActive = c.radiant || hasTalent(c, 'First Ideal (Radiant Key)');
+  d.radiantActive = c.radiant || hasTalent(c, 'First Ideal');
   d.maxInvestiture = d.radiantActive
     ? 2 + Math.max(a.awa, a.pre) + (c.investiture.bonus|0) + (hasTalent(c, 'Invested') ? tier : 0)
     : 0;
 
   d.armor = armor;
   d.deflect = Math.max(armor.deflect, fb.deflect || 0) + (c.deflectBonus|0);
-  const hasArmorExpertise = c.expertises.includes(armor.name);
+  const hasArmorExpertise = hasExpertiseNamed(c, armor.name);
   const depleted = armor.name === 'Shardplate' && (c.shardplateCharges|0) <= 0;
   const cumbersomeThreshold = depleted ? (armor.cumbersomeDepleted || 0) : (armor.cumbersome || 0);
   d.cumbersomeWarning = (cumbersomeThreshold && !hasArmorExpertise && a.str < cumbersomeThreshold)
@@ -1085,18 +1352,69 @@ function derive(c){
 
 /* Cross-references a weapon against known expertises to compute its effective
    (expert-trait-augmented) traits, unless the row was hand-keyed by the player. */
-function weaponDisplay(c, w){
+/* Unarmed Attack's base damage die scales with Strength score directly (not skill ranks). */
+function unarmedDamageDie(str){
+  if (str <= 2) return '1';
+  if (str <= 4) return '1d4';
+  if (str <= 6) return '1d8';
+  if (str <= 8) return '2d6';
+  return '2d10';
+}
+
+/* Splits a catalog/hand-keyed damage string like "1d4 keen" into {dice:"1d4", type:"keen"}. */
+function splitDamageString(raw){
+  const m = String(raw || '').trim().match(/^(.*?)\s+(\w+)$/);
+  return m ? {dice:m[1], type:m[2]} : {dice:raw || '', type:''};
+}
+
+function weaponDisplay(c, d, w){
   const catalog = !w.handKey && w.catalogName ? GAME_DATABASE.weapons[w.catalogName] : null;
   const expertiseName = catalog ? WEAPON_EXPERTISE_NAME[w.catalogName] : null;
-  const hasExpertise = expertiseName && c.expertises.includes(expertiseName);
+  const hasExpertise = expertiseName && hasExpertiseNamed(c, expertiseName);
   let traits = w.traits || '';
   if (catalog && hasExpertise && catalog.expertTraits){
     traits = traits ? `${traits}, ${catalog.expertTraits} (expert)` : `${catalog.expertTraits} (expert)`;
   }
   const isOffhand = /\boffhand\b/i.test(traits);
   const signatureBonus = hasTalent(c, 'Signature Weapon') ? (hasExpertise ? 2 : 1) : 0;
+
+  const effStr = c.attributes.str + (d.formBonus.str || 0);
+  let diceExpr, damageType;
+  if (w.catalogName === 'Unarmed Attack' && !w.handKey){
+    diceExpr = unarmedDamageDie(effStr);
+    damageType = 'impact';
+  } else {
+    const split = splitDamageString(catalog ? catalog.damage : w.damage);
+    diceExpr = split.dice;
+    damageType = split.type;
+  }
+
+  const skillMod = (d.skills[w.skill] || 0) + (w.bonus | 0);
+  const exhaustedPenalty = c.conditions.Exhausted ? 1 : 0;
+  const attackMod = skillMod - exhaustedPenalty;
+
+  const isRanged = !!(catalog && /ranged/i.test(catalog.range || ''));
+  let talentDamageBonus = 0;
+  const talentNotes = [];
+  if (hasTalent(c, 'Mighty')){
+    const bonus = 1 + d.tier; // assumes a single standard Strike action (1 action point spent)
+    talentDamageBonus += bonus;
+    talentNotes.push(`Mighty +${bonus}`);
+  }
+  if (isRanged && hasTalent(c, 'Steady Aim')){
+    const bonus = c.skills.perception.ranks || 0;
+    if (bonus){ talentDamageBonus += bonus; talentNotes.push(`Steady Aim +${bonus}`); }
+  }
+  const totalDamageMod = skillMod + talentDamageBonus;
+
+  const cumbersomeMatch = traits.match(/Cumbersome\s*\[(\d+)\]/i);
+  const weaponCumbersome = !!(cumbersomeMatch && effStr < parseInt(cumbersomeMatch[1], 10));
+  const disadvantage = weaponCumbersome || !!d.cumbersomeWarning || !!c.conditions.Disoriented;
+
   return {catalog, expertiseName, hasExpertise, traits, isOffhand,
-          offhandFocusCost: isOffhand ? 1 : 2, signatureBonus};
+          offhandFocusCost: isOffhand ? 1 : 2, signatureBonus,
+          diceExpr, damageType, skillMod, exhaustedPenalty, attackMod,
+          talentDamageBonus, talentNotes, totalDamageMod, disadvantage};
 }
 
 /* ---------- app state & persistence ---------- */
@@ -1139,7 +1457,11 @@ function load(){
 
 function migrate(c){
   const fresh = newCharacter();
+  if (c.notebook === undefined && c.notes){
+    c.notebook = [{id:uid(), title:'Notes', text:c.notes, updatedAt:Date.now()}];
+  }
   for (const k in fresh) if (c[k] === undefined) c[k] = fresh[k];
+  if (!Array.isArray(c.notebook)) c.notebook = [];
   for (const k in fresh.skills) if (!c.skills[k]) c.skills[k] = fresh.skills[k];
   c.goals = c.goals && c.goals.length ? c.goals : [{text:'', ticks:[false,false,false]}];
   if (typeof c.spheres === 'string') c.spheres = {chips:0, marks:0, broams:0, notes:c.spheres};
@@ -1149,6 +1471,11 @@ function migrate(c){
   if (!Array.isArray(c.squires)) c.squires = [];
   if (!Array.isArray(c.fabrials)) c.fabrials = [];
   if (!SINGER_FORMS[c.form]) c.form = fresh.form;
+  c.expertises = (c.expertises || []).map(e => typeof e === 'string' ? {name:e, temporary:false} : e);
+}
+
+function hasExpertiseNamed(c, name){
+  return (c.expertises || []).some(e => e.name === name);
 }
 
 let saveTimer = null, saveState = 'saved';
@@ -1350,11 +1677,13 @@ function weaponsHTML(c, d){
     .map(k => `<option value="${k}" ${w.defense === k ? 'selected' : ''}>vs ${k[0].toUpperCase() + k.slice(1)}</option>`).join('');
 
   const rows = c.weapons.map((w, i) => {
-    const disp = weaponDisplay(c, w);
+    const disp = weaponDisplay(c, d, w);
     const isCatalog = !!disp.catalog;
+    const defenseLabel = w.defense.charAt(0).toUpperCase() + w.defense.slice(1);
     const notes = [];
     if (disp.hasExpertise) notes.push(`Expertise match: <b>${esc(disp.expertiseName)}</b> — expert traits applied`);
     if (disp.signatureBonus) notes.push(`Signature Weapon: Opportunity range +${disp.signatureBonus}`);
+    if (disp.talentNotes.length) notes.push(esc(disp.talentNotes.join(', ')));
     notes.push(`Offhand Strike: ${disp.offhandFocusCost} Focus${disp.isOffhand ? ' (has Offhand trait)' : ''}`);
     return `<div class="row wrow" data-widx="${i}">
       <input type="text" value="${esc(w.name)}" data-path="weapons.${i}.name" placeholder="Weapon" aria-label="Weapon name">
@@ -1368,12 +1697,13 @@ function weaponsHTML(c, d){
         : `<input type="text" value="${esc(w.traits)}" data-path="weapons.${i}.traits" placeholder="Traits" aria-label="Traits">`}
       <select data-path="weapons.${i}.defense" aria-label="Target defense">${defOpts(w)}</select>
       <span style="display:flex;gap:.25rem">
-        <button class="iconbtn" data-action="show-weapon-info" data-i="${i}" aria-label="Weapon details" title="View traits and rules">ⓘ</button>
-        ${state.settings.diceMode !== 'disabled' ? `<button class="iconbtn" data-action="roll-weapon" data-i="${i}" title="${state.settings.diceMode === 'info' ? 'Show what to roll' : 'Roll attack and damage'}">${state.settings.diceMode === 'info' ? 'Show roll' : 'Roll'}</button>` : ''}
+        <button class="iconbtn" data-action="show-weapon-info" data-i="${i}" aria-label="Weapon details" title="View traits, rules, and roll actions">ⓘ</button>
+        ${state.settings.diceMode !== 'disabled' ? `<button class="iconbtn" data-action="roll-weapon-hit" data-i="${i}" title="${state.settings.diceMode === 'info' ? 'Show what to roll' : 'Roll a Hit: attack + damage'}">${state.settings.diceMode === 'info' ? 'Show roll' : 'Hit'}</button>` : ''}
         <button class="iconbtn" data-action="del-weapon" data-i="${i}" aria-label="Remove weapon">✕</button>
       </span>
     </div>
-    <p class="hint" style="margin:.1rem 0 .5rem">${notes.join(' · ')}</p>`;
+    <p class="hint" style="margin:.1rem 0 0"><b>Attack ${sgn(disp.attackMod)} vs ${defenseLabel}${disp.disadvantage ? ' <span style="color:var(--warn)">⚠ Disadvantage</span>' : ''}</b> · <b>Damage ${esc(disp.diceExpr)} ${sgn(disp.totalDamageMod)} ${esc(disp.damageType)}</b></p>
+    <p class="hint" style="margin:.05rem 0 .5rem">${notes.join(' · ')}</p>`;
   }).join('');
 
   const catNames = ['Light', 'Heavy', 'Special'];
@@ -1406,9 +1736,11 @@ function bindWeaponPicker(){
 function openWeaponModal(c, i){
   const w = c.weapons[i];
   if (!w) return;
-  const disp = weaponDisplay(c, w);
+  const d = derive(c);
+  const disp = weaponDisplay(c, d, w);
   const cat = disp.catalog;
   const title = w.catalogName || w.name || 'Weapon';
+  const defenseLabel = w.defense.charAt(0).toUpperCase() + w.defense.slice(1);
   const special = w.catalogName === 'Shardblade'
     ? 'Summoning a Shardblade takes 10 heartbeats of concentration; dismissing it is instant. A hit deals Spiritual Injury, which recovery-die healing cannot fix.'
     : w.catalogName === 'Shardblade (Radiant)'
@@ -1420,17 +1752,26 @@ function openWeaponModal(c, i){
     <h2>${esc(title)}</h2>
     ${w.name && w.name !== title ? `<p class="hint">Sheet name: ${esc(w.name)}</p>` : ''}
     <hr class="rule">
+    <section><h4>Attack Modifier</h4><p>${sgn(disp.attackMod)} vs ${defenseLabel}${disp.disadvantage ? ' — <span style="color:var(--warn)">⚠ Disadvantage</span>' : ''}${disp.exhaustedPenalty ? ` (includes −${disp.exhaustedPenalty} Exhausted)` : ''}</p></section>
+    <section><h4>Damage Formula</h4><p>${esc(disp.diceExpr)} ${sgn(disp.totalDamageMod)} ${esc(disp.damageType)} damage${disp.talentNotes.length ? ` (includes ${esc(disp.talentNotes.join(', '))})` : ''}</p></section>
     ${cat ? `
-    <section><h4>Range &amp; Damage</h4><p>${esc(cat.range)} · ${esc(cat.damage)}</p></section>
+    <section><h4>Range &amp; Base Damage</h4><p>${esc(cat.range)} · ${esc(cat.damage)}</p></section>
     <section><h4>Base Traits</h4><p>${esc(cat.traits) || 'None'}</p></section>
     <section><h4>Expert Traits</h4><p>${esc(cat.expertTraits) || 'None'}${disp.hasExpertise ? ' — <b style="color:var(--accent)">active</b> (matching expertise known)' : cat.expertTraits ? ` — requires the ${esc(disp.expertiseName)} expertise` : ''}</p></section>
     <section><h4>Weight / Price</h4><p>${cat.weight} lbs · ${cat.price} Diamond Marks</p></section>
     ` : `
     <section><h4>Traits</h4><p>${esc(w.traits) || 'None'}</p></section>
-    <section><h4>Damage</h4><p>${esc(w.damage) || 'Not set'}</p></section>
     `}
     <section><h4>Offhand Strike</h4><p>${disp.offhandFocusCost} Focus${disp.isOffhand ? ' (this weapon has the Offhand trait)' : ''}</p></section>
     ${special ? `<section><h4>Special Rules</h4><p>${esc(special)}</p></section>` : ''}
+    ${state.settings.diceMode !== 'disabled' ? `
+    <section><h4>Roll</h4>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+        <button class="btn" data-action="roll-weapon-hit" data-i="${i}">Hit</button>
+        <button class="btn" data-action="roll-weapon-graze" data-i="${i}">Graze</button>
+        <button class="btn" data-action="roll-weapon-crit" data-i="${i}">Critical Hit</button>
+      </div>
+    </section>` : ''}
     <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">Close</button></div>
   `);
 }
@@ -1438,7 +1779,7 @@ function openWeaponModal(c, i){
 function openArmorModal(c){
   const d = derive(c);
   const armor = d.armor;
-  const hasExpertise = c.expertises.includes(armor.name);
+  const hasExpertise = hasExpertiseNamed(c, armor.name);
   openModal(`
     <h2>${esc(armor.name)}</h2>
     <p class="hint">Deflect ${armor.deflect}${armor.tags && armor.tags.length ? ' — ' + esc(armor.tags.join(', ')) : ''}</p>
@@ -1451,13 +1792,20 @@ function openArmorModal(c){
   `);
 }
 
+function expertiseKind(name){
+  for (const g in EXPERTISES) if (EXPERTISES[g].includes(name)) return g;
+  return 'Custom';
+}
+
+function expertisePillLabel(e){
+  return ` ${expertiseKind(e.name)}${e.temporary ? ' · Temporary' : ''}`;
+}
+
 function expertisesHTML(c, d){
-  const chips = c.expertises.map((e, i) => {
-    let kind = 'Custom';
-    for (const g in EXPERTISES) if (EXPERTISES[g].includes(e)) kind = g;
-    return `<span class="chip"><span>${esc(e)}<span class="kind"> ${kind}</span></span>
-      <button data-action="del-expertise" data-i="${i}" aria-label="Remove ${esc(e)}">✕</button></span>`;
-  }).join('');
+  const chips = c.expertises.map((e, i) => `<span class="chip${e.temporary ? ' temporary' : ''}" data-action="toggle-expertise-temp" data-i="${i}" role="button" tabindex="0" title="${e.temporary ? 'Temporary — click to make regular' : 'Regular — click to mark temporary'}">
+      <span>${esc(e.name)}<span class="kind">${esc(expertisePillLabel(e))}</span></span>
+      <button data-action="del-expertise" data-i="${i}" aria-label="Remove ${esc(e.name)}">✕</button>
+    </span>`).join('');
   return `<div class="card">
     <h3>Expertises</h3>
     <p class="hint" id="expertiseSummary" style="margin:-.1rem 0 .5rem">${expertiseSummaryText(c, d)}</p>
@@ -1516,14 +1864,27 @@ function talentPickerHTML(c, d){
   const badges = (c.talentIds || []).map((name, i) => talentBadgeHTML(c, name, i)).join('');
   const categories = Object.keys(TALENT_TREE);
   const catOpts = categories.map(cat => `<option value="${esc(cat)}" ${talentPick.category === cat ? 'selected' : ''}>${esc(cat)}</option>`).join('');
-  const paths = talentPick.category && TALENT_TREE[talentPick.category] ? Object.keys(TALENT_TREE[talentPick.category]) : [];
-  const pathOpts = paths.map(p => `<option value="${esc(p)}" ${talentPick.path === p ? 'selected' : ''}>${esc(p)}</option>`).join('');
-  const specs = talentPick.path && TALENT_TREE[talentPick.category] && TALENT_TREE[talentPick.category][talentPick.path]
-    ? Object.keys(TALENT_TREE[talentPick.category][talentPick.path]) : [];
+
+  let pathOpts = '', pathCount = 0;
+  if (talentPick.category === 'Heroic Path'){
+    const paths = Object.keys(TALENT_TREE['Heroic Path'] || {});
+    pathCount = paths.length;
+    pathOpts = paths.map(p => `<option value="${esc(p)}" ${talentPick.path === p ? 'selected' : ''}>${esc(p)}${HEROIC_PATH_INFO[p] ? ' — ' + esc(HEROIC_PATH_INFO[p]) : ''}</option>`).join('');
+  } else if (talentPick.category === 'Radiant Path'){
+    pathCount = RADIANT_PATH_OPTIONS.length;
+    pathOpts = RADIANT_PATH_OPTIONS.map(o => `<option value="${esc(o.name)}" ${talentPick.path === o.name ? 'selected' : ''}>${esc(o.name)} — ${esc(o.info)}</option>`).join('');
+  } else if (talentPick.category === 'Singer Ancestry'){
+    pathCount = SINGER_TREE_OPTIONS.length;
+    pathOpts = SINGER_TREE_OPTIONS.map(o => `<option value="${esc(o.name)}" ${talentPick.path === o.name ? 'selected' : ''}>${esc(o.name)} — ${esc(o.info)}</option>`).join('');
+  }
+
+  const dataPathKey = talentDataPathKey(talentPick.category, talentPick.path);
+  const specs = talentPick.path && TALENT_TREE[talentPick.category] && TALENT_TREE[talentPick.category][dataPathKey]
+    ? Object.keys(TALENT_TREE[talentPick.category][dataPathKey]) : [];
   const specOpts = specs.map(s => `<option value="${esc(s)}" ${talentPick.specialty === s ? 'selected' : ''}>${esc(s)}</option>`).join('');
   const talents = talentPick.specialty && specs.includes(talentPick.specialty)
-    ? TALENT_TREE[talentPick.category][talentPick.path][talentPick.specialty] : [];
-  const talentOpts = talents.map(n => `<option value="${esc(n)}">${esc(n)}${(c.talentIds||[]).includes(n) ? ' (known)' : ''}</option>`).join('');
+    ? TALENT_TREE[talentPick.category][dataPathKey][talentPick.specialty] : [];
+  const talentOpts = talents.map(n => `<option value="${esc(n)}" ${talentPick.talent === n ? 'selected' : ''}>${esc(n)}${(c.talentIds||[]).includes(n) ? ' (known)' : ''}</option>`).join('');
   const preview = talentPick.talent && TALENT_DATABASE[talentPick.talent] ? TALENT_DATABASE[talentPick.talent] : null;
   const previewPrereq = preview ? checkPrereq(c, preview.reqText) : null;
 
@@ -1532,7 +1893,7 @@ function talentPickerHTML(c, d){
     <div class="chips">${badges || '<span class="empty">No talents picked yet.</span>'}</div>
     <div class="row" style="grid-template-columns:repeat(4,1fr);margin-top:.6rem">
       <div class="f"><label>Category</label><select id="talentCatSel"><option value="">— Choose —</option>${catOpts}</select></div>
-      <div class="f"><label>Path</label><select id="talentPathSel" ${paths.length ? '' : 'disabled'}><option value="">— Choose —</option>${pathOpts}</select></div>
+      <div class="f"><label>Path</label><select id="talentPathSel" ${pathCount ? '' : 'disabled'}><option value="">— Choose —</option>${pathOpts}</select></div>
       <div class="f"><label>Sub-Tree / Key</label><select id="talentSpecSel" ${specs.length ? '' : 'disabled'}><option value="">— Choose —</option>${specOpts}</select></div>
       <div class="f"><label>Talent</label><select id="talentPickSel" ${talents.length ? '' : 'disabled'}><option value="">— Choose —</option>${talentOpts}</select></div>
     </div>
@@ -1744,7 +2105,7 @@ function renderFront(){
     </div>` : ''}
     <p class="hint" id="armortags" style="margin:.5rem 0 0;${d.armor.tags && d.armor.tags.length ? '' : 'display:none'}">${armorTagsHTML(d.armor)}</p>
     <p class="hint" id="cumbersomeline" style="margin:.4rem 0 0;color:var(--warn);${d.cumbersomeWarning ? '' : 'display:none'}">${d.cumbersomeWarning}</p>
-    ${c.expertises.includes(d.armor.name) && d.armor.cumbersome ? `<p class="hint" style="margin:.3rem 0 0;color:var(--accent)">Armor expertise (${esc(d.armor.name)}) removes the Cumbersome penalty.</p>` : ''}
+    ${hasExpertiseNamed(c, d.armor.name) && d.armor.cumbersome ? `<p class="hint" style="margin:.3rem 0 0;color:var(--accent)">Armor expertise (${esc(d.armor.name)}) removes the Cumbersome penalty.</p>` : ''}
   </div>
 
   ${stancesHTML(c)}
@@ -1877,6 +2238,49 @@ function openCustomGearModal(){
   if (first) first.focus();
 }
 
+/* transient — which note (by id) is currently in edit mode inside the open modal; never persisted */
+let noteEditing = null;
+
+function notebookHTML(c){
+  const notes = c.notebook || [];
+  const rows = notes.map(n => `<div class="listitem" data-action="open-note" data-id="${n.id}" role="button" tabindex="0" style="cursor:pointer">
+      <span>${esc(n.title || 'Untitled note')}</span>
+      <span class="hint">${new Date(n.updatedAt).toLocaleDateString()}</span>
+    </div>`).join('');
+  return `<div class="card">
+    <h3>Notebook <span class="hint">Click a note to open it</span></h3><hr class="rule">
+    <div class="rows">${rows || '<p class="empty">No notes yet.</p>'}</div>
+    <form data-submit-action="add-note" class="row" style="grid-template-columns:1fr auto;margin-top:.5rem">
+      <input type="text" id="newNoteTitle" placeholder="New note title" aria-label="New note title" required>
+      <button type="submit" class="btn addbtn">Add note</button>
+    </form>
+  </div>`;
+}
+
+function openNoteModal(c, id){
+  const note = (c.notebook || []).find(n => n.id === id);
+  if (!note) return;
+  const editing = noteEditing === id;
+  openModal(`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+      ${editing
+        ? `<input type="text" id="noteTitleInput" value="${esc(note.title)}" placeholder="Note title" style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:600;border:1px solid var(--border);border-radius:8px;padding:.15rem .5rem;flex:1;background:var(--field)">`
+        : `<h2>${esc(note.title || 'Untitled note')}</h2>`}
+      <button class="iconbtn" data-action="toggle-note-edit" data-id="${id}" title="${editing ? 'Save' : 'Edit'}" aria-label="${editing ? 'Save note' : 'Edit note'}" style="font-size:1.1rem">${editing ? '✓' : '✏️'}</button>
+    </div>
+    <hr class="rule">
+    ${editing
+      ? `<textarea id="noteTextInput" style="min-height:14rem;width:100%">${esc(note.text)}</textarea>`
+      : `<p style="white-space:pre-wrap;margin:0">${note.text ? esc(note.text) : '<span class="empty">Empty note — click the pencil to add some words.</span>'}</p>`}
+    <div style="display:flex;justify-content:space-between;margin-top:1rem">
+      <button class="btn danger" data-action="delete-note" data-id="${id}">Delete</button>
+      <button class="btn" data-action="close-modal">Close</button>
+    </div>
+  `);
+  const first = editing ? $('#noteTextInput') : null;
+  if (first && !note.text) first.focus();
+}
+
 function fabrialsHTML(c){
   const rows = c.fabrials.map((f, i) => `<div class="row" style="grid-template-columns:1.4fr 1fr auto auto auto" data-fidx="${i}">
       <input type="text" value="${esc(f.name)}" data-path="fabrials.${i}.name" placeholder="Fabrial name">
@@ -1929,10 +2333,7 @@ function renderBack(){
         <h3>Character appearance</h3><hr class="rule">
         <textarea data-path="appearance" style="min-height:13rem" placeholder="Build, features, bearing, the marks a life on Roshar leaves.">${esc(c.appearance)}</textarea>
       </div>
-      <div class="card">
-        <h3>Talents, continued</h3><hr class="rule">
-        <textarea data-path="notes" style="min-height:11rem" placeholder="Overflow from the front page, plus anything else worth keeping.">${esc(c.notes)}</textarea>
-      </div>
+      ${notebookHTML(c)}
     </div>
 
     <div>
@@ -2081,6 +2482,20 @@ function expandAttrs(expr, c){
   return String(expr).replace(/\b(STR|SPD|INT|WIL|AWA|PRE)\b/gi, m => String(c.attributes[m.toLowerCase()]));
 }
 
+/* Maximum possible value of a dice expression like "2d6+3" — used for Critical Hit. */
+function maxDiceValue(expr){
+  let total = 0;
+  const tokens = String(expr).replace(/\s+/g, '').match(/[+-]?[^+-]+/g) || [];
+  tokens.forEach(tok => {
+    const sign = tok.startsWith('-') ? -1 : 1;
+    const body = tok.replace(/^[+-]/, '');
+    const m = body.match(/^(\d*)d(\d+)$/i);
+    if (m) total += sign * (parseInt(m[1] || '1', 10) * parseInt(m[2], 10));
+    else if (/^\d+$/.test(body)) total += sign * parseInt(body, 10);
+  });
+  return total;
+}
+
 function plotDie(){
   const v = rollDie(6);
   return {value:v, label: v <= 2 ? 'Complication' : v <= 4 ? 'Blank' : 'Opportunity',
@@ -2130,26 +2545,48 @@ function rollTest(label, modifier){
   logRoll(entry);
 }
 
-function rollWeapon(i){
+function rollWeaponAction(i, kind){
   const mode = state.settings.diceMode;
   if (mode === 'disabled') return;
   const c = activeChar(), d = derive(c), w = c.weapons[i];
   if (!w) return;
-  const mod = (d.skills[w.skill] || 0) + (w.bonus | 0);
+  const disp = weaponDisplay(c, d, w);
+  const diceExpr = expandAttrs(disp.diceExpr || '1d6', c);
+  const weaponName = w.name || w.catalogName || 'Weapon';
+  const kindLabel = kind === 'graze' ? 'Graze' : kind === 'crit' ? 'Critical Hit' : 'Hit';
+  const what = `${weaponName} — ${kindLabel}`;
+
+  if (kind === 'graze'){
+    if (mode === 'info'){
+      logRoll({what, total:diceExpr, detail:`Roll ${diceExpr} ${disp.damageType} damage (a graze does not add the skill modifier).`});
+      return;
+    }
+    const dmg = parseDice(diceExpr);
+    logRoll({what, total:`${dmg.total} damage`, detail:`${dmg.detail} ${disp.damageType}`});
+    return;
+  }
+
+  if (kind === 'crit'){
+    const maxDmg = maxDiceValue(diceExpr) + disp.totalDamageMod;
+    logRoll({what, total:`${maxDmg} damage`, detail:`Max ${diceExpr} ${sgn(disp.totalDamageMod)} ${disp.damageType} (critical hits maximize the dice).`});
+    return;
+  }
+
+  // kind === 'hit'
   if (mode === 'info'){
     logRoll({
-      what: `${w.name || 'Weapon'} — attack vs ${w.defense} defense`,
-      total: `1d20 ${sgn(mod)}`,
-      detail: `Roll a d20 and add ${sgn(mod)} to hit. On a hit, roll damage: ${w.damage || '1d6'}.${state.settings.plotDie ? ' Also roll a d6 plot die.' : ''}`
+      what,
+      total: `1d20 ${sgn(disp.attackMod)} to hit`,
+      detail: `Roll 1d20 ${sgn(disp.attackMod)} vs ${w.defense}${disp.disadvantage ? ' with Disadvantage' : ''}. On a hit, roll ${diceExpr} ${sgn(disp.totalDamageMod)} ${disp.damageType} damage.${state.settings.plotDie ? ' Also roll a d6 plot die.' : ''}`
     });
     return;
   }
   const die = rollDie(20);
-  const dmg = parseDice(expandAttrs(w.damage || '1d6', c));
+  const dmg = parseDice(diceExpr);
   const entry = {
-    what: `${w.name || 'Weapon'} — attack vs ${w.defense} defense`,
-    total: `${die + mod} to hit · ${dmg.total} damage`,
-    detail: `d20 [${die}] ${sgn(mod)} · damage ${w.damage || '1d6'} = ${dmg.detail}`
+    what,
+    total: `${die + disp.attackMod} to hit vs ${w.defense} · ${dmg.total + disp.totalDamageMod} damage`,
+    detail: `d20 [${die}] ${sgn(disp.attackMod)}${disp.disadvantage ? ' (Disadvantage)' : ''} · damage ${dmg.detail} ${sgn(disp.totalDamageMod)} ${disp.damageType}`
   };
   if (state.settings.plotDie) entry.plot = plotDie();
   logRoll(entry);
@@ -2203,7 +2640,7 @@ function bindCombo(){
   const open = () => {
     const q = input.value.trim().toLowerCase();
     const c = activeChar();
-    const matches = flat().filter(x => !c.expertises.includes(x.name) && (!q || x.name.toLowerCase().includes(q)));
+    const matches = flat().filter(x => !hasExpertiseNamed(c, x.name) && (!q || x.name.toLowerCase().includes(q)));
     items = matches.slice(0, 40);
     let html = '', lastGroup = '';
     items.forEach((x, i) => {
@@ -2242,8 +2679,8 @@ function addExpertise(name){
   const c = activeChar();
   name = name.trim();
   if (!name) return;
-  if (c.expertises.includes(name)){ toast(`${name} is already on the sheet.`); return; }
-  c.expertises.push(name);
+  if (hasExpertiseNamed(c, name)){ toast(`${name} is already on the sheet.`); return; }
+  c.expertises.push({name, temporary:false});
   save();
   renderFront();
   syncDerived();
@@ -2538,7 +2975,9 @@ function handleAction(action, node, c){
     case 'del-weapon':
       c.weapons.splice(parseInt(node.dataset.i, 10), 1);
       renderFront(); save(); break;
-    case 'roll-weapon': rollWeapon(parseInt(node.dataset.i, 10)); break;
+    case 'roll-weapon-hit': rollWeaponAction(parseInt(node.dataset.i, 10), 'hit'); break;
+    case 'roll-weapon-graze': rollWeaponAction(parseInt(node.dataset.i, 10), 'graze'); break;
+    case 'roll-weapon-crit': rollWeaponAction(parseInt(node.dataset.i, 10), 'crit'); break;
     case 'show-weapon-info': openWeaponModal(c, parseInt(node.dataset.i, 10)); break;
     case 'show-armor-info': openArmorModal(c); break;
     case 'show-cond-info': openConditionModal(node.dataset.condName); break;
@@ -2547,6 +2986,46 @@ function handleAction(action, node, c){
     case 'add-squire': c.squires.push({name:'', type:'Squire', notes:''}); renderFront(); save(); break;
     case 'del-squire': c.squires.splice(parseInt(node.dataset.i, 10), 1); renderFront(); save(); break;
     case 'add-fabrial': c.fabrials.push({name:'', type:'', maxCharge:10, charge:10, notes:''}); renderBack(); save(); break;
+    case 'add-note': {
+      const titleInput = $('#newNoteTitle');
+      const title = titleInput ? titleInput.value.trim() : '';
+      if (!title) break;
+      const note = {id:uid(), title, text:'', updatedAt:Date.now()};
+      c.notebook = c.notebook || [];
+      c.notebook.unshift(note);
+      noteEditing = note.id;
+      renderBack(); save();
+      openNoteModal(c, note.id);
+      break;
+    }
+    case 'open-note': noteEditing = null; openNoteModal(c, node.dataset.id); break;
+    case 'toggle-note-edit': {
+      const id = node.dataset.id;
+      const note = (c.notebook || []).find(n => n.id === id);
+      if (!note) break;
+      if (noteEditing === id){
+        const titleEl = $('#noteTitleInput'), textEl = $('#noteTextInput');
+        note.title = titleEl && titleEl.value.trim() ? titleEl.value.trim() : note.title;
+        note.text = textEl ? textEl.value : note.text;
+        note.updatedAt = Date.now();
+        noteEditing = null;
+        renderBack(); save();
+      } else {
+        noteEditing = id;
+      }
+      openNoteModal(c, id);
+      break;
+    }
+    case 'delete-note': {
+      const id = node.dataset.id;
+      const note = (c.notebook || []).find(n => n.id === id);
+      confirmDialog(`Delete "${esc(note ? note.title : 'this note')}"? This cannot be undone.`, () => {
+        c.notebook = (c.notebook || []).filter(n => n.id !== id);
+        noteEditing = null;
+        renderBack(); save();
+      }, {okLabel:'Delete note'});
+      break;
+    }
     case 'del-fabrial': c.fabrials.splice(parseInt(node.dataset.i, 10), 1); renderBack(); save(); break;
     case 'add-gear-catalog': {
       const catName = gearPick.category, itemName = gearPick.item;
@@ -2576,6 +3055,17 @@ function handleAction(action, node, c){
     case 'del-gear': (c.gear || []).splice(parseInt(node.dataset.i, 10), 1); renderBack(); syncDerived(); save(); break;
     case 'show-gear-info': openGearModal(c, parseInt(node.dataset.i, 10)); break;
     case 'del-expertise': c.expertises.splice(parseInt(node.dataset.i, 10), 1); renderFront(); syncDerived(); save(); break;
+    case 'toggle-expertise-temp': {
+      const e = c.expertises[parseInt(node.dataset.i, 10)];
+      if (!e) break;
+      e.temporary = !e.temporary;
+      node.classList.toggle('temporary', e.temporary);
+      node.title = e.temporary ? 'Temporary — click to make regular' : 'Regular — click to mark temporary';
+      const kindEl = node.querySelector('.kind');
+      if (kindEl) kindEl.textContent = expertisePillLabel(e);
+      save();
+      break;
+    }
     case 'add-talent': {
       if (talentPick.talent && !(c.talentIds || []).includes(talentPick.talent)){
         c.talentIds.push(talentPick.talent);
@@ -2748,7 +3238,7 @@ function openModal(html){
   const first = $('#modal').querySelector('input,button,select');
   if (first) first.focus();
 }
-function closeModal(){ $('#overlay').classList.remove('open'); }
+function closeModal(){ $('#overlay').classList.remove('open'); noteEditing = null; }
 $('#overlay').addEventListener('mousedown', e => { if (e.target.id === 'overlay') closeModal(); });
 
 /* ---------- styled confirm dialog (replaces native confirm()) ---------- */
