@@ -1201,7 +1201,7 @@ function newCharacter(name){
   return {
     id: uid(),
     name: name || 'Unnamed Radiant',
-    playerName:'', level:1, paths:'', ancestry:'', campaign:'Stormlight Archive', turnSpeed:'passive',
+    playerName:'', level:1, paths:'', ancestry:'', campaign:'Stormlight Archive', turnSpeed:'passive', partyId:null,
     singer:false, form:'None (Formless)',
     attributes:{str:0, spd:0, int:0, wil:0, awa:0, pre:0},
     defenseBonus:{physical:0, cognitive:0, spiritual:0},
@@ -3057,7 +3057,7 @@ function handleAction(action, node, c){
       const src = state.characters.find(x => x.id === node.dataset.cid);
       if (src){
         const copy = JSON.parse(JSON.stringify(src));
-        copy.id = uid(); copy.name = src.name + ' (copy)'; copy.updatedAt = Date.now(); copy.pinned = false;
+        copy.id = uid(); copy.name = src.name + ' (copy)'; copy.updatedAt = Date.now(); copy.pinned = false; copy.partyId = null;
         state.characters.push(copy);
         renderHomeTab(); save();
         toast(`Duplicated ${src.name}.`);
@@ -4298,14 +4298,17 @@ function renderHomeTabImpl(){
   chars.sort(sorters[vaultSort] || sorters.recent);
   chars.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
 
+  const allParties = (cloudOn ? cloud.parties.filter(p => p.members) : []).concat(state.localParties);
   const charCards = chars.map(c => {
     const d = derive(c);
+    const inParty = c.partyId ? allParties.find(p => p.id === c.partyId) : null;
     return `<div class="vaultcard" data-action="open-char" data-cid="${c.id}" role="button" tabindex="0" aria-label="Open ${esc(c.name || 'Unnamed')}">
       <button class="pinbtn ${c.pinned ? 'on' : ''}" data-action="toggle-pin" data-cid="${c.id}" aria-label="${c.pinned ? 'Unpin' : 'Pin to top'}" title="${c.pinned ? 'Unpin' : 'Pin to top'}">★</button>
       <h4 style="padding-right:1.3rem">${esc(c.name || 'Unnamed')}</h4>
       <div class="sub">${esc(c.ancestry || 'Ancestry —')} · ${esc(c.paths || 'Path —')}</div>
       <div class="sub">Level ${c.level} · Tier ${d.tier}</div>
       <div class="sub">${esc(c.campaign || 'No campaign set')}</div>
+      ${inParty ? `<div class="sub"><span class="badge">In campaign: ${esc(inParty.name)}</span></div>` : (c.partyId ? '<div class="sub"><span class="badge">In a campaign</span></div>' : '')}
       <div style="display:flex;gap:.4rem;margin-top:.6rem">
         <button class="btn primary" data-action="open-char" data-cid="${c.id}" style="flex:1">Open</button>
         <button class="iconbtn" data-action="duplicate-char-home" data-cid="${c.id}" aria-label="Duplicate ${esc(c.name)}" title="Duplicate">⧉</button>
@@ -4366,11 +4369,21 @@ function renderHomeTabImpl(){
 /* ============================================================
    CAMPAIGN PARTY VIEW
    ============================================================ */
+/* Members render in the party's fixed memberUids order (an array — stable),
+   never by Object.entries() key order on the members map (a Firestore map field,
+   whose key order is not guaranteed and was shuffling the party cards). */
+function orderedMembers(party){
+  const members = party.members || {};
+  const order = (party.memberUids || []).filter(uid => members[uid]);
+  Object.keys(members).forEach(uid => { if (!order.includes(uid)) order.push(uid); });
+  return order.map(uid => [uid, members[uid]]);
+}
+
 function gmVisibilityMatrixHTML(party){
-  const rows = Object.entries(party.members || {}).map(([mUid, m]) => `<div class="row" style="grid-template-columns:1fr auto auto;align-items:center" data-uid="${mUid}">
+  const rows = orderedMembers(party).map(([mUid, m]) => `<div class="row" style="grid-template-columns:1fr auto auto;align-items:center" data-uid="${mUid}">
       <span>${esc(m.username || mUid)}${m.role === 'GM' ? ' <span class="hint">(GM)</span>' : ''}</span>
       <label style="display:flex;gap:.35rem;align-items:center;font-size:.78rem"><input type="checkbox" data-visctl="hidden" data-uid="${mUid}" data-pid="${party.id}" ${m.hidden ? 'checked' : ''}> Hide card</label>
-      <label style="display:flex;gap:.35rem;align-items:center;font-size:.78rem"><input type="checkbox" data-visctl="hideSecrets" data-uid="${mUid}" data-pid="${party.id}" ${m.hideSecrets ? 'checked' : ''}> Hide secrets</label>
+      <label style="display:flex;gap:.35rem;align-items:center;font-size:.78rem"><input type="checkbox" data-visctl="hideGoals" data-uid="${mUid}" data-pid="${party.id}" ${m.hideGoals ? 'checked' : ''}> Hide goals</label>
     </div>`).join('');
   return `<div class="card" style="margin-top:.7rem;background:var(--card-solid)">
     <h3 style="font-size:1rem">GM visibility matrix</h3><hr class="rule">
@@ -4378,7 +4391,7 @@ function gmVisibilityMatrixHTML(party){
       <span>Players can view the whole party's sheets<span class="hint" style="display:block">Off — each player sees only their own character</span></span>
       <button class="switch" data-visglobal="${party.id}" aria-pressed="${party.visibility === 'all'}"></button>
     </div>
-    <p class="hint" style="margin:.5rem 0 .3rem">Per-character overrides — hide a card entirely, or just its secret Radiant order and spren bond.</p>
+    <p class="hint" style="margin:.5rem 0 .3rem">Per-character overrides — hide a card entirely, or just that player's goals from the rest of the table.</p>
     <div class="rows">${rows || '<p class="empty">No members yet.</p>'}</div>
   </div>`;
 }
@@ -4393,7 +4406,7 @@ function memberCardHTML(m, uidKey, opts){
   if (!isGM && !isSelf && m.hidden){
     return `<div class="member"><h4>${esc(m.username || 'Player')}</h4><p class="empty">Hidden by the game master.</p></div>`;
   }
-  const canSeeSecrets = isGM || isSelf || !m.hideSecrets;
+  const canSeeGoals = isGM || isSelf || !m.hideGoals;
   const conds = Object.keys(ch.conditions || {}).filter(k => ch.conditions[k]);
   const bar = (cur, max) => `<div class="bar"><i style="width:${max ? clamp(cur / max * 100, 0, 100) : 0}%"></i></div>`;
   const line = (label, kind, cur, max) => `<div class="track" style="margin-top:.35rem">
@@ -4402,6 +4415,7 @@ function memberCardHTML(m, uidKey, opts){
         <b style="font-family:'Cormorant Garamond',serif;font-size:1.1rem">${cur}</b>
         <span class="of">/ ${max}</span>${bar(cur, max)}</div>
       ${opts.canEdit ? `<button data-action="${opts.scope}-adjust" data-uid="${uidKey}" data-kind="${kind}" data-by="1" aria-label="Raise ${label}">+</button>` : ''}
+      ${opts.canEdit && kind === 'health' ? `<button class="iconbtn" data-action="${opts.scope}-refill-health" data-uid="${uidKey}" title="Refill to max health" aria-label="Refill ${label}">⟳</button>` : ''}
     </div>`;
 
   const goals = (ch.goals || []).filter(g => g.text).map((g, gi) => `<div class="goal" style="padding:.2rem 0">
@@ -4409,8 +4423,15 @@ function memberCardHTML(m, uidKey, opts){
       <span class="ticks">${[0,1,2].map(t => `<i class="${g.ticks[t] ? 'on' : ''}" ${opts.canEdit ? `data-action="${opts.scope}-goal" data-uid="${uidKey}" data-g="${gi}" data-t="${t}" role="button" tabindex="0"` : ''}></i>`).join('')}</span>
     </div>`).join('');
 
+  const reorder = (opts.isGM && (opts.scope === 'party' || opts.scope === 'local'))
+    ? `<span style="display:inline-flex;gap:.15rem;margin-left:.4rem">
+        ${!opts.first ? `<button class="iconbtn" data-action="${opts.scope}-reorder" data-uid="${uidKey}" data-dir="-1" aria-label="Move up">↑</button>` : ''}
+        ${!opts.last ? `<button class="iconbtn" data-action="${opts.scope}-reorder" data-uid="${uidKey}" data-dir="1" aria-label="Move down">↓</button>` : ''}
+      </span>`
+    : '';
+
   return `<div class="member">
-    <h4>${esc(ch.name || 'No character assigned')}</h4>
+    <h4>${esc(ch.name || 'No character assigned')}${reorder}</h4>
     <div class="sub">${esc(m.username || '')}${m.role ? ` · <span class="badge">${esc(m.role)}</span>` : ''}
       ${ch.level ? ` · Level ${ch.level} ${esc(ch.paths || '')}` : ''}</div>
     ${ch.name ? `
@@ -4424,9 +4445,7 @@ function memberCardHTML(m, uidKey, opts){
         <div><div class="v">${ch.deflect}</div><div class="l">Deflect</div></div>
       </div>
       ${ch.surges && ch.surges.trim() ? `<div class="sub">Surges: ${esc(ch.surges)}</div>` : ''}
-      ${ch.spren ? (canSeeSecrets
-        ? `<div class="sub">${esc(ch.spren.order)}${ch.spren.name ? ' · bonded to ' + esc(ch.spren.name) : ''}</div>`
-        : `<div class="sub">Radiant order — <i>kept secret</i></div>`) : ''}
+      ${ch.spren ? `<div class="sub">${esc(ch.spren.order)}${ch.spren.name ? ' · bonded to ' + esc(ch.spren.name) : ''}</div>` : ''}
       <div class="conds" style="margin-top:.3rem">
         ${(opts.canEdit ? CONDITIONS : conds).map(n => `<button class="cond" ${opts.canEdit ? `data-action="${opts.scope}-cond" data-uid="${uidKey}" data-cond="${n}"` : ''} aria-pressed="${conds.includes(n)}">${n}</button>`).join('') || '<span class="empty">No conditions</span>'}
       </div>
@@ -4448,10 +4467,11 @@ function offlineSocialHTML(){
   const party = parties.find(p => p.id === pid);
   const charOpts = state.characters.map(c => `<option value="${c.id}" ${c.id === state.activeId ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
 
-  const cards = party ? party.charIds.map(cid => {
+  const cards = party ? party.charIds.map((cid, idx) => {
     const c = state.characters.find(x => x.id === cid);
     if (!c) return '';
-    return memberCardHTML({username:c.playerName || 'Player', role:'', char:cloud.snapshot(c)}, cid, {canEdit:true, scope:'local'});
+    return memberCardHTML({username:c.playerName || 'Player', role:'', char:cloud.snapshot(c)}, cid,
+      {canEdit:true, scope:'local', isGM:true, isSelf:true, first:idx === 0, last:idx === party.charIds.length - 1});
   }).join('') : '';
 
   return `
@@ -4530,9 +4550,10 @@ function onlineSocialHTML(){
   }
 
   const mine = party && party.members[cloud.user.uid];
-  const myCharSelectedId = (mine && mine.charId) || state.activeId;
-  const myCharOpts = state.characters.map(c =>
-    `<option value="${c.id}" ${c.id === myCharSelectedId ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+  const myCharSelectedId = mine ? mine.charId : state.activeId;
+  const myCharOpts = `<option value="" ${!myCharSelectedId ? 'selected' : ''}>${isGM ? 'No character — running the game' : 'No character'}</option>`
+    + state.characters.map(c =>
+        `<option value="${c.id}" ${c.id === myCharSelectedId ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
 
   return `
   <div class="card">
@@ -4589,8 +4610,8 @@ function onlineSocialHTML(){
       <input type="text" id="partysessiondate" data-pid="${party.id}" value="${esc(party.sessionDate || '')}" placeholder="e.g. Sept 20, 7pm"></div>
       ${gmVisibilityMatrixHTML(party)}` : ''}
     <div class="party-grid" style="margin-top:.9rem">
-      ${Object.entries(party.members || {}).map(([mUid, m]) =>
-        memberCardHTML(m, mUid, {canEdit:isGM || mUid === cloud.user.uid, scope:'party', isGM, viewerUid:cloud.user.uid, party})).join('')}
+      ${orderedMembers(party).map(([mUid, m], idx, arr) =>
+        memberCardHTML(m, mUid, {canEdit:isGM || mUid === cloud.user.uid, scope:'party', isGM, viewerUid:cloud.user.uid, party, first:idx === 0, last:idx === arr.length - 1})).join('')}
     </div>
     <button class="btn danger" style="margin-top:.8rem" data-action="leave-party" data-pid="${party.id}">Leave party</button>
   </div>` : ''}`;
@@ -4614,9 +4635,15 @@ function handleSocialAction(action, node, c){
       break;
     }
     case 'select-local-party': state.activePartyId = pid; renderSocial(); break;
-    case 'del-local-party':
+    case 'del-local-party': {
+      const gone = state.localParties.find(x => x.id === pid);
+      if (gone) gone.charIds.forEach(cid => {
+        const ch = state.characters.find(x => x.id === cid);
+        if (ch && ch.partyId === pid) ch.partyId = null;
+      });
       state.localParties = state.localParties.filter(p => p.id !== pid);
       renderSocial(); save(); break;
+    }
     case 'add-local-char': {
       const p = state.localParties.find(x => x.id === pid);
       const sel = $('#localcharpick');
@@ -4624,7 +4651,13 @@ function handleSocialAction(action, node, c){
       if (!p || !cid){ toast('Pick a character to add.'); break; }
       if (p.charIds.includes(cid)){ toast('That character is already at the table.'); break; }
       const ch = state.characters.find(x => x.id === cid);
+      if (ch && ch.partyId && ch.partyId !== p.id){
+        const other = state.localParties.find(x => x.id === ch.partyId);
+        toast(`${ch.name} is already in ${other ? other.name : 'another campaign'}. Duplicate the character to use it here too.`);
+        break;
+      }
       p.charIds.push(cid);
+      if (ch) ch.partyId = p.id;
       renderSocial(); save();
       toast(`${ch ? ch.name : 'Character'} added to ${p.name}.`);
       break;
@@ -4655,6 +4688,22 @@ function handleSocialAction(action, node, c){
       const t = parseInt(node.dataset.t, 10);
       g.ticks[t] = !g.ticks[t];
       target.updatedAt = Date.now();
+      renderSocial(); save(); break;
+    }
+    case 'local-refill-health': {
+      const target = state.characters.find(x => x.id === node.dataset.uid);
+      if (!target) break;
+      target.health.current = derive(target).maxHealth;
+      target.updatedAt = Date.now();
+      renderSocial(); save(); break;
+    }
+    case 'local-reorder': {
+      const p = state.localParties.find(x => x.charIds.includes(node.dataset.uid));
+      if (!p) break;
+      const i = p.charIds.indexOf(node.dataset.uid);
+      const j = i + parseInt(node.dataset.dir, 10);
+      if (j < 0 || j >= p.charIds.length) break;
+      [p.charIds[i], p.charIds[j]] = [p.charIds[j], p.charIds[i]];
       renderSocial(); save(); break;
     }
 
@@ -4688,6 +4737,20 @@ function handleSocialAction(action, node, c){
       const t = parseInt(node.dataset.t, 10);
       g.ticks[t] = !g.ticks[t];
     }); break;
+    case 'party-refill-health': partyPatch(node, m => { m.char.health.current = m.char.health.max; }); break;
+    case 'party-reorder': {
+      const party = cloud.parties.find(p => p.members && p.members[node.dataset.uid]);
+      if (!party) break;
+      const order = orderedMembers(party).map(([uid]) => uid);
+      const i = order.indexOf(node.dataset.uid);
+      const j = i + parseInt(node.dataset.dir, 10);
+      if (j < 0 || j >= order.length) break;
+      [order[i], order[j]] = [order[j], order[i]];
+      party.memberUids = order;
+      renderSocial();
+      cloud.fb.updateDoc(cloud.doc('parties', party.id), {memberUids:order}).catch(() => {});
+      break;
+    }
   }
 }
 
@@ -4785,11 +4848,13 @@ async function createParty(name){
   if (!name) return toast('Give the party a name.');
   try {
     const c = activeChar();
+    const useChar = c && !c.partyId;
     const ref = await cloud.fb.addDoc(cloud.fb.collection(cloud.db, 'parties'), {
       name, gm:cloud.user.uid, code:genCode(), sessionDate:'', visibility:'own', memberUids:[cloud.user.uid],
-      members:{[cloud.user.uid]:{username:cloud.me.username, role:'GM', charId:c.id, char:cloud.snapshot(c), updatedAt:Date.now()}}
+      members:{[cloud.user.uid]:{username:cloud.me.username, role:'GM', charId: useChar ? c.id : '', char: useChar ? cloud.snapshot(c) : null, updatedAt:Date.now()}}
     });
     await cloud.fb.setDoc(cloud.doc('users', cloud.user.uid), {parties:cloud.fb.arrayUnion(ref.id)}, {merge:true});
+    if (useChar){ c.partyId = ref.id; save(); }
     state.activePartyId = ref.id;
     renderHomeTab(); renderSocial();
     toast('Campaign created. You are the game master.');
@@ -4810,8 +4875,36 @@ async function partyAdd(pid, handle){
 }
 
 async function assignCharacter(pid, charId){
+  const party = cloud.parties.find(p => p.id === pid);
+  const mine = party && party.members[cloud.user.uid];
+  const prevCharId = mine && mine.charId;
+
+  if (!charId){
+    if (prevCharId){
+      const prev = state.characters.find(x => x.id === prevCharId);
+      if (prev && prev.partyId === pid){ prev.partyId = null; save(); }
+    }
+    try {
+      await cloud.fb.updateDoc(cloud.doc('parties', pid), {
+        [`members.${cloud.user.uid}.charId`]:'',
+        [`members.${cloud.user.uid}.char`]:null,
+        [`members.${cloud.user.uid}.patchedBy`]:cloud.user.uid,
+        [`members.${cloud.user.uid}.updatedAt`]:Date.now()
+      });
+      renderSocial();
+      toast('You are no longer playing a character in this party.');
+    } catch(err){ toast('Could not update: ' + err.message); }
+    return;
+  }
+
   const c = state.characters.find(x => x.id === charId);
   if (!c) return;
+  if (c.partyId && c.partyId !== pid){
+    const other = cloud.parties.find(p => p.id === c.partyId) || state.localParties.find(p => p.id === c.partyId);
+    toast(`${c.name} is already in ${other ? other.name : 'another campaign'}. Duplicate the character to use it here too.`);
+    renderSocial();
+    return;
+  }
   try {
     await cloud.fb.updateDoc(cloud.doc('parties', pid), {
       [`members.${cloud.user.uid}.charId`]:charId,
@@ -4819,12 +4912,24 @@ async function assignCharacter(pid, charId){
       [`members.${cloud.user.uid}.patchedBy`]:cloud.user.uid,
       [`members.${cloud.user.uid}.updatedAt`]:Date.now()
     });
+    if (prevCharId && prevCharId !== charId){
+      const prev = state.characters.find(x => x.id === prevCharId);
+      if (prev && prev.partyId === pid) prev.partyId = null;
+    }
+    c.partyId = pid;
+    save();
     toast(`${c.name} is now your character in this party.`);
   } catch(err){ toast('Could not assign: ' + err.message); }
 }
 
 async function leaveParty(pid){
   try {
+    const party = cloud.parties.find(p => p.id === pid);
+    const mine = party && party.members[cloud.user.uid];
+    if (mine && mine.charId){
+      const own = state.characters.find(x => x.id === mine.charId);
+      if (own && own.partyId === pid){ own.partyId = null; save(); }
+    }
     await cloud.fb.updateDoc(cloud.doc('parties', pid), {memberUids:cloud.fb.arrayRemove(cloud.user.uid)});
     await cloud.fb.setDoc(cloud.doc('users', cloud.user.uid), {parties:cloud.fb.arrayRemove(pid)}, {merge:true});
     cloud.parties = cloud.parties.filter(p => p.id !== pid);
