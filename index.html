@@ -102,7 +102,6 @@ select.charpick{
 }
 .pill:hover{border-color:var(--accent)}
 .pill.tier{border-style:dashed;color:var(--ink-soft)}
-.pill.saved{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,transparent)}
 .pill.icon{padding:.36rem .5rem}
 .avatarchip{padding:.22rem}
 .avatar-mini{
@@ -122,9 +121,6 @@ select.charpick{
 .profile-stats div{text-align:center}
 .profile-stats b{display:block;font-family:'Cormorant Garamond',serif;font-size:1.4rem}
 .profile-stats span{font-size:.68rem;color:var(--ink-faint);letter-spacing:.06em}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block}
-.dot.pending{background:var(--accent-2)}
-
 /* ---------- tabs ---------- */
 .tabs{display:flex;gap:.2rem;padding:.5rem clamp(.6rem,2vw,1.4rem) 0;overflow-x:auto;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
@@ -560,7 +556,6 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
   <button class="pill icon" data-action="rules" aria-label="Rules lookup" title="Rules lookup">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5v-17Z"/><path d="M4 19a2.5 2.5 0 0 1 2.5-2.5H20"/></svg>
   </button>
-  <span class="pill saved" id="savepill" title="Save status"><span class="dot"></span><span id="savetext">Saved</span><span id="synctime" class="hint" style="margin-left:.15rem"></span></span>
   <button class="pill icon" data-action="settings" aria-label="Settings" title="Settings">
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
       <circle cx="12" cy="12" r="3.2"/>
@@ -1640,7 +1635,7 @@ function hasExpertiseNamed(c, name){
   return (c.expertises || []).some(e => e.name === name);
 }
 
-let saveTimer = null, saveState = 'saved';
+let saveTimer = null;
 function persistLocal(){
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify({
@@ -1648,16 +1643,16 @@ function persistLocal(){
       profile:state.profile, localParties:state.localParties, rolls:state.rolls.slice(0,30),
       session:state.session, tab:state.tab
     }));
-    setSavePill('saved');
   } catch(err){
-    setSavePill('error');
     toast('Browser storage is full — export a backup file.');
   }
 }
 function save(){
-  setSavePill('saving');
   const ac = activeChar();
-  if (ac) ac.updatedAt = Date.now();
+  if (ac){
+    ac.updatedAt = Date.now();
+    cloud.watchSync(ac.id, ac.updatedAt);
+  }
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     persistLocal();
@@ -1665,29 +1660,6 @@ function save(){
     cloud.syncCharactersUp();
   }, 250);
 }
-function setSavePill(mode){
-  saveState = mode;
-  const pill = document.getElementById('savepill');
-  const text = document.getElementById('savetext');
-  if (!pill) return;
-  pill.classList.toggle('saved', mode === 'saved');
-  pill.querySelector('.dot').classList.toggle('pending', mode !== 'saved');
-  const cloudReady = cloud.on && cloud.user;
-  text.textContent = mode === 'saved' ? (cloudReady ? 'Synced' : (cloud.on ? 'Saved' : 'Saved offline')) : mode === 'saving' ? 'Saving' : 'Not saved';
-  if (mode === 'saved' && cloudReady) markSynced();
-  updateSyncIndicator();
-}
-
-let lastSyncAt = null;
-function markSynced(){ lastSyncAt = Date.now(); }
-function updateSyncIndicator(){
-  const el = document.getElementById('synctime');
-  if (!el) return;
-  if (!(cloud.on && cloud.user) || !lastSyncAt || saveState !== 'saved'){ el.textContent = ''; return; }
-  const secs = Math.round((Date.now() - lastSyncAt) / 1000);
-  el.textContent = '· ' + (secs < 3 ? 'just now' : secs < 60 ? `${secs}s ago` : `${Math.round(secs / 60)}m ago`);
-}
-setInterval(updateSyncIndicator, 5000);
 
 /* ---------- tiny helpers ---------- */
 const $ = sel => document.querySelector(sel);
@@ -4040,7 +4012,25 @@ const cloud = {
   me:{username:'', friends:[], parties:[]}, requests:[], invites:[], friendProfiles:[], parties:[],
   unsubs:[], lastPatchAt:0, pushTimer:null,
   lastPushedAt:{}, knownRemoteIds:new Set(), charPushTimer:null, attempted:false, pendingDeletes:new Set(),
-  appliedGiftIds:new Set(), gmNoteTimers:{},
+  appliedGiftIds:new Set(), gmNoteTimers:{}, syncWatchTimers:{},
+
+  /* Watches one character's most recent edit: if it isn't confirmed pushed
+     to Firestore within 10 seconds, toast a warning. A normal sync (near-
+     instant) clears this before it ever fires, so nothing shows up. */
+  watchSync(id, stamp){
+    if (!this.on || !this.user) return;
+    clearTimeout(this.syncWatchTimers[id]);
+    this.syncWatchTimers[id] = setTimeout(() => {
+      if (this.lastPushedAt[id] !== stamp){
+        const c = state.characters.find(x => x.id === id);
+        toast(`${c && c.name ? c.name : 'Your character'} hasn't synced — check your connection.`, 6000);
+      }
+    }, 10000);
+  },
+  clearSyncWatch(id){
+    clearTimeout(this.syncWatchTimers[id]);
+    delete this.syncWatchTimers[id];
+  },
 
   async connect(){
     const cfg = state.settings.firebase;
@@ -4075,7 +4065,6 @@ const cloud = {
           }
           renderSocial();
           updateAccountChrome();
-          setSavePill('saved');
           if (!settled){ settled = true; resolveFirst(); }
         });
       });
@@ -4159,6 +4148,8 @@ const cloud = {
     this.unsubs.forEach(u => { try{ u(); }catch(e){} });
     this.unsubs = []; this.partyUnsubs = [];
     this.lastPushedAt = {}; this.knownRemoteIds = new Set(); this.lastPushedAvatar = undefined; this.pendingDeletes = new Set();
+    Object.values(this.syncWatchTimers).forEach(clearTimeout);
+    this.syncWatchTimers = {};
   },
 
   listenCharacters(){
@@ -4241,7 +4232,8 @@ const cloud = {
           await this.fb.setDoc(this.doc('users', uidv, 'characters', c.id), c);
           this.lastPushedAt[c.id] = stamp;
           this.knownRemoteIds.add(c.id);
-        } catch(e){ /* offline is fine — retries on next edit */ }
+          this.clearSyncWatch(c.id);
+        } catch(e){ /* offline is fine — retries on next edit, watchSync will warn past 10s */ }
       }
       for (const id of Array.from(this.knownRemoteIds)){
         if (!state.characters.some(c => c.id === id)){
@@ -4249,6 +4241,7 @@ const cloud = {
           this.knownRemoteIds.delete(id);
           delete this.lastPushedAt[id];
           this.pendingDeletes.delete(id);
+          this.clearSyncWatch(id);
         }
       }
     }, 150);
@@ -5635,7 +5628,6 @@ async function partyPatch(node, mutate){
     await cloud.connect();
   }
   switchView(state.session ? 'main' : 'auth');
-  setSavePill('saved');
 })();
 </script>
 </body>
