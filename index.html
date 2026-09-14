@@ -1629,7 +1629,8 @@ const I18N = {
     scope_ui:'Interface only', scope_full:'Interface + game text',
     scope_hint:'Interface only translates menus and labels. Interface + game text also translates section headers, attributes, and condition names — deep rules text (talents, weapon traits, item descriptions) stays in English, since it isn’t practical to translate and verify thousands of rules entries at once.',
     elvish_hint:'Sindarin and Quenya have no attested words for modern interface or game-mechanical terms, so Elvish keeps this vocabulary in English rather than inventing words that don’t come from Tolkien’s own writing — it’s a nod to the setting, styled in an elvish hand, not a functional translation.',
-    btn_done:'Done', btn_close:'Close',
+    btn_done:'Done', btn_close:'Close', btn_cancel:'Cancel', btn_delete:'Delete', btn_add:'Add',
+    btn_undo:'Undo', btn_accept:'Accept', btn_decline:'Decline', btn_areyousure:'Are you sure?',
     attr_str:'Strength', attr_spd:'Speed', attr_int:'Intellect', attr_wil:'Willpower', attr_awa:'Awareness', attr_pre:'Presence',
     res_health:'Health', res_focus:'Focus', res_investiture:'Investiture',
     lbl_deflect:'Deflect', lbl_movement:'Movement', lbl_defense:'Defense',
@@ -1645,6 +1646,7 @@ const I18N = {
     home_mycharacters:'My Characters', home_mycampaigns:'My Campaigns',
     sec_campaignparty:'Campaign party', sec_yourparties:'Your parties', sec_addcharacter:'Add a character',
     sec_friends:'Friends', sec_parties:'Parties',
+    btn_sendrequest:'Send request', sec_requestswaiting:'Requests waiting', sec_yourfriends:'Your friends',
     cond_Afflicted:'Afflicted', cond_Determined:'Determined', cond_Disoriented:'Disoriented',
     cond_Empowered:'Empowered', cond_Enhanced:'Enhanced', cond_Exhausted:'Exhausted', cond_Focused:'Focused',
     cond_Immobilized:'Immobilized', cond_Prone:'Prone', cond_Restrained:'Restrained', cond_Slowed:'Slowed',
@@ -1669,7 +1671,8 @@ const I18N = {
     scope_ui:'인터페이스만', scope_full:'인터페이스 + 게임 용어',
     scope_hint:'인터페이스만 선택하면 메뉴와 레이블만 번역됩니다. 인터페이스 + 게임 용어를 선택하면 항목 제목, 능력치, 상태이상 이름도 함께 번역됩니다 — 특성, 무기 특성, 아이템 설명 등 방대한 규칙 원문은 한 번에 정확히 번역·검증하기 어려워 영어로 남겨둡니다.',
     elvish_hint:'신다린과 퀘냐에는 현대적인 인터페이스나 게임 용어에 해당하는 단어가 존재하지 않으므로, 엘프어는 톨킨의 원문에 없는 단어를 임의로 만들어내는 대신 이러한 용어를 영어로 유지합니다 — 실제 번역이라기보다 세계관에 대한 오마주이며, 엘프풍 서체로 표현됩니다.',
-    btn_done:'완료', btn_close:'닫기',
+    btn_done:'완료', btn_close:'닫기', btn_cancel:'취소', btn_delete:'삭제', btn_add:'추가',
+    btn_undo:'실행 취소', btn_accept:'수락', btn_decline:'거절', btn_areyousure:'정말 진행하시겠습니까?',
     attr_str:'힘', attr_spd:'속도', attr_int:'지능', attr_wil:'의지력', attr_awa:'감지력', attr_pre:'존재감',
     res_health:'체력', res_focus:'집중력', res_investiture:'인베스티처',
     lbl_deflect:'편향', lbl_movement:'이동력', lbl_defense:'방어도',
@@ -1685,6 +1688,7 @@ const I18N = {
     home_mycharacters:'내 캐릭터', home_mycampaigns:'내 캠페인',
     sec_campaignparty:'모험단', sec_yourparties:'내 모험단', sec_addcharacter:'캐릭터 추가',
     sec_friends:'친구', sec_parties:'모험단',
+    btn_sendrequest:'요청 보내기', sec_requestswaiting:'대기 중인 요청', sec_yourfriends:'내 친구',
     cond_Afflicted:'고통받음', cond_Determined:'결의', cond_Disoriented:'방향감각 상실',
     cond_Empowered:'강화됨', cond_Enhanced:'증진됨', cond_Exhausted:'탈진', cond_Focused:'집중됨',
     cond_Immobilized:'움직임 불가', cond_Prone:'엎드림', cond_Restrained:'속박됨', cond_Slowed:'둔화됨',
@@ -1709,7 +1713,8 @@ const I18N = {
     scope_ui:'Interface seule', scope_full:'Interface + textes de jeu',
     scope_hint:'Interface seule ne traduit que les menus et libellés. Interface + textes de jeu traduit aussi les titres de section, les caractéristiques et les noms d’états — le texte de règles approfondi (talents, propriétés d’armes, descriptions d’objets) reste en anglais, car il n’est pas réaliste de traduire et vérifier des milliers d’entrées d’un coup.',
     elvish_hint:'Le sindarin et le quenya ne possèdent aucun mot attesté pour les termes d’interface ou de jeu modernes : plutôt que d’inventer des mots absents des écrits de Tolkien, l’elfique conserve ce vocabulaire en anglais — un clin d’œil à l’univers, présenté dans une graphie elfique, non une traduction fonctionnelle.',
-    btn_done:'Terminé', btn_close:'Fermer',
+    btn_done:'Terminé', btn_close:'Fermer', btn_cancel:'Annuler', btn_delete:'Supprimer', btn_add:'Ajouter',
+    btn_undo:'Annuler l’action', btn_accept:'Accepter', btn_decline:'Refuser', btn_areyousure:'Êtes-vous sûr ?',
     attr_str:'Force', attr_spd:'Vitesse', attr_int:'Intellect', attr_wil:'Volonté', attr_awa:'Vigilance', attr_pre:'Prestance',
     res_health:'Santé', res_focus:'Concentration', res_investiture:'Investiture',
     lbl_deflect:'Déviation', lbl_movement:'Déplacement', lbl_defense:'Défense',
@@ -1725,6 +1730,7 @@ const I18N = {
     home_mycharacters:'Mes personnages', home_mycampaigns:'Mes campagnes',
     sec_campaignparty:'Groupe de campagne', sec_yourparties:'Vos groupes', sec_addcharacter:'Ajouter un personnage',
     sec_friends:'Amis', sec_parties:'Groupes',
+    btn_sendrequest:'Envoyer une demande', sec_requestswaiting:'Demandes en attente', sec_yourfriends:'Vos amis',
     cond_Afflicted:'Affligé', cond_Determined:'Déterminé', cond_Disoriented:'Désorienté',
     cond_Empowered:'Renforcé', cond_Enhanced:'Amélioré', cond_Exhausted:'Épuisé', cond_Focused:'Concentré',
     cond_Immobilized:'Immobilisé', cond_Prone:'À terre', cond_Restrained:'Entravé', cond_Slowed:'Ralenti',
@@ -1910,7 +1916,7 @@ function showUndoToast(msg, onUndo, duration){
   const t = $('#toast');
   const btn = $('#toastaction');
   $('#toasttext').textContent = msg;
-  btn.textContent = 'Undo';
+  btn.textContent = window.t('btn_undo');
   btn.hidden = false;
   btn.onclick = () => { t.classList.remove('show'); clearTimeout(toastTimer); onUndo(); };
   t.classList.add('show');
@@ -2135,7 +2141,7 @@ function openWeaponModal(c, i){
         <button class="btn" data-action="roll-weapon-crit" data-i="${i}">Critical Hit</button>
       </div>
     </section>` : ''}
-    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">Close</button></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">${t('btn_close')}</button></div>
   `);
 }
 
@@ -2151,7 +2157,7 @@ function openArmorModal(c){
     ${armor.cumbersome || armor.cumbersomeDepleted ? `<section><h4>Cumbersome</h4><p>Requires Strength ${armor.cumbersome || armor.cumbersomeDepleted}${armor.cumbersomeDepleted ? ' once Shardplate charges are depleted' : ''} or you are Slowed with Disadvantage on Speed tests.${hasExpertise ? ` You have the ${esc(armor.name)} expertise, which removes this penalty.` : ''}</p></section>` : ''}
     ${armor.name === 'Shardplate' ? `<section><h4>Charges</h4><p>Shardplate has 4 charges. Spending one grants +10 Deflect until the start of your next turn. At 0 charges remaining it becomes Cumbersome ${armor.cumbersomeDepleted} until recharged. Currently: ${c.shardplateCharges|0} of 4.</p></section>` : ''}
     ${armor.name === 'Shardplate (Radiant)' ? `<section><h4>Weightless</h4><p>Worn by a Radiant with an active Stormlight bond — no charges to track, no Cumbersome penalty, and no weight.</p></section>` : ''}
-    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">Close</button></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">${t('btn_close')}</button></div>
   `);
 }
 
@@ -2305,7 +2311,7 @@ function openTalentModal(name){
     <section><h4>Prerequisites</h4><p>${esc(t.reqText)}${!prereq.met ? ` — <span style="color:var(--warn)">⚠️ Warning: Prerequisite Not Met (${esc(prereq.reason)})</span>` : ''}</p></section>
     <section><h4>Narrative</h4><p>${esc(t.flavor)}</p></section>
     <section><h4>Mechanical Effect</h4><p>${esc(t.effect)}</p></section>
-    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">Close</button></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">${t('btn_close')}</button></div>
   `);
 }
 
@@ -2638,7 +2644,7 @@ function openGearModal(c, i){
     <p class="hint">${esc(g.category || 'Custom item')} · ${g.weight} lbs · ${g.price} Diamond Marks${g.qty > 1 ? ` × ${g.qty}` : ''}</p>
     <hr class="rule">
     <section><h4>Description</h4><p>${esc(g.desc || 'No further rules text.')}</p></section>
-    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">Close</button></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">${t('btn_close')}</button></div>
   `);
 }
 
@@ -2663,7 +2669,7 @@ function openCustomGearModal(){
         </div>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem">
-        <button type="button" class="btn" data-action="close-modal">Cancel</button>
+        <button type="button" class="btn" data-action="close-modal">${t('btn_cancel')}</button>
         <button type="submit" class="btn">Add item</button>
       </div>
     </form>
@@ -2707,8 +2713,8 @@ function openNoteModal(c, id){
       ? `<textarea id="noteTextInput" style="min-height:14rem;width:100%">${esc(note.text)}</textarea>`
       : `<p style="white-space:pre-wrap;margin:0">${note.text ? esc(note.text) : '<span class="empty">Empty note — click the pencil to add some words.</span>'}</p>`}
     <div style="display:flex;justify-content:space-between;margin-top:1rem">
-      <button class="btn danger" data-action="delete-note" data-id="${id}">Delete</button>
-      <button class="btn" data-action="close-modal">Close</button>
+      <button class="btn danger" data-action="delete-note" data-id="${id}">${t('btn_delete')}</button>
+      <button class="btn" data-action="close-modal">${t('btn_close')}</button>
     </div>
   `);
   const first = editing ? $('#noteTextInput') : null;
@@ -2762,7 +2768,7 @@ function openFabrialModal(c, i){
     <p class="hint">${esc(f.type || 'Custom fabrial')} · ${f.weight||0} lbs · Charge ${f.charge}/${f.maxCharge}</p>
     <hr class="rule">
     <section><h4>Description</h4><p>${esc(f.notes) || 'No further rules text.'}</p></section>
-    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">Close</button></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">${t('btn_close')}</button></div>
   `);
 }
 
@@ -3940,7 +3946,7 @@ function openExportModal(c){
       </div>
       <button class="btn primary" style="width:100%" data-action="export-both">Both</button>
     </div>
-    <div style="text-align:right;margin-top:1.2rem"><button class="btn ghost" data-action="close-modal">Cancel</button></div>
+    <div style="text-align:right;margin-top:1.2rem"><button class="btn ghost" data-action="close-modal">${t('btn_cancel')}</button></div>
   `);
 }
 function exportAll(){ download('radiant-sheet-all.json', JSON.stringify({type:'radiant-sheet-collection', characters:state.characters, profile:state.profile, localParties:state.localParties}, null, 2)); toast('All characters downloaded.'); }
@@ -4046,11 +4052,11 @@ function confirmDialog(message, onConfirm, opts){
   opts = opts || {};
   pendingConfirm = onConfirm;
   openModal(`
-    <h2>${esc(opts.title || 'Are you sure?')}</h2><hr class="rule">
+    <h2>${esc(opts.title || t('btn_areyousure'))}</h2><hr class="rule">
     <p style="margin:.5rem 0 1.3rem">${message}</p>
     <div style="display:flex;justify-content:flex-end;gap:.5rem">
-      <button class="btn" data-action="confirm-cancel">Cancel</button>
-      <button class="btn danger" data-action="confirm-ok">${esc(opts.okLabel || 'Delete')}</button>
+      <button class="btn" data-action="confirm-cancel">${t('btn_cancel')}</button>
+      <button class="btn danger" data-action="confirm-ok">${esc(opts.okLabel || t('btn_delete'))}</button>
     </div>
   `);
 }
@@ -5241,7 +5247,7 @@ function onlineSocialHTML(){
   return `
   <div class="card">
     <h3>@${esc(me.username)} <span class="hint">Signed in · sheets sync to every device</span></h3><hr class="rule">
-    <button class="btn ghost" data-action="sign-out">Sign out</button>
+    <button class="btn ghost" data-action="sign-out">${t('btn_signout')}</button>
   </div>
 
   <div class="twocol">
@@ -5249,16 +5255,16 @@ function onlineSocialHTML(){
       <h3>${tFull('sec_friends')}</h3><hr class="rule">
       <div class="row" style="grid-template-columns:1fr auto">
         <input type="text" id="friendinput" placeholder="@username">
-        <button class="btn" data-action="send-request">Send request</button>
+        <button class="btn" data-action="send-request">${t('btn_sendrequest')}</button>
       </div>
-      ${cloud.requests.length ? `<h4 style="margin-top:.9rem;font-size:1rem">Requests waiting</h4>
+      ${cloud.requests.length ? `<h4 style="margin-top:.9rem;font-size:1rem">${tFull('sec_requestswaiting')}</h4>
         <div class="rows">${cloud.requests.map(r => `<div class="listitem">
           <span>@${esc(r.username)}</span>
           <span style="display:flex;gap:.3rem">
-            <button class="iconbtn" data-action="accept-request" data-uid="${r.id}">Accept</button>
-            <button class="iconbtn" data-action="decline-request" data-uid="${r.id}">Decline</button>
+            <button class="iconbtn" data-action="accept-request" data-uid="${r.id}">${t('btn_accept')}</button>
+            <button class="iconbtn" data-action="decline-request" data-uid="${r.id}">${t('btn_decline')}</button>
           </span></div>`).join('')}</div>` : ''}
-      <h4 style="margin-top:.9rem;font-size:1rem">Your friends</h4>
+      <h4 style="margin-top:.9rem;font-size:1rem">${tFull('sec_yourfriends')}</h4>
       <div class="rows">${cloud.friendProfiles.map(f => `<div class="listitem"><span>@${esc(f.username)}</span></div>`).join('')
         || '<p class="empty">No friends yet. Send a request with their handle.</p>'}</div>
     </div>
@@ -5268,8 +5274,8 @@ function onlineSocialHTML(){
       ${cloud.invites.length ? `<div class="rows" style="margin-bottom:.7rem">${cloud.invites.map(i => `<div class="listitem">
           <span>${esc(i.partyName || 'A campaign')} <span class="hint">from @${esc(i.invitedByName || '?')}</span></span>
           <span style="display:flex;gap:.3rem">
-            <button class="iconbtn" data-action="accept-party-invite" data-pid="${i.id}">Accept</button>
-            <button class="iconbtn" data-action="decline-party-invite" data-pid="${i.id}">Decline</button>
+            <button class="iconbtn" data-action="accept-party-invite" data-pid="${i.id}">${t('btn_accept')}</button>
+            <button class="iconbtn" data-action="decline-party-invite" data-pid="${i.id}">${t('btn_decline')}</button>
           </span></div>`).join('')}</div>` : ''}
       <div class="rows">
         ${parties.map(p => `<div class="listitem">
@@ -5292,7 +5298,7 @@ function onlineSocialHTML(){
       ${isGM ? `<div class="f"><label>Invite a friend by handle</label>
         <div class="row" style="grid-template-columns:1fr auto">
           <input type="text" id="partyadd" placeholder="@username">
-          <button class="btn" data-action="party-add" data-pid="${party.id}">Add</button>
+          <button class="btn" data-action="party-add" data-pid="${party.id}">${t('btn_add')}</button>
         </div></div>` : `<div class="f"><label>Next session</label><p class="hint" style="margin-top:.3rem">${esc(party.sessionDate || 'Not scheduled')}</p></div>`}
     </div>
     ${isGM ? `<div class="f" style="max-width:16rem;margin-top:.6rem"><label>Next session</label>
@@ -5751,7 +5757,7 @@ function openFullSheetModal(m){
     <section><h4>Weapons</h4>${weapons}</section>
     <section><h4>Equipment</h4>${gear}</section>
     <section><h4>Notebook</h4>${notes}</section>
-    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">Close</button></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">${t('btn_close')}</button></div>
   `);
 }
 
@@ -5778,7 +5784,7 @@ function openGiveItemModal(pid, uid, username){
       </div>
       <div class="f" style="margin-top:.5rem"><label>Description</label><textarea id="giveCustomDesc" style="min-height:3rem"></textarea></div>
       <div style="display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem">
-        <button type="button" class="btn" data-action="close-modal">Cancel</button>
+        <button type="button" class="btn" data-action="close-modal">${t('btn_cancel')}</button>
         <button type="submit" class="btn primary">Give item</button>
       </div>
     </form>
