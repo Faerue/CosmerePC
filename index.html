@@ -54,6 +54,11 @@
 html[data-scale="s"]{--fs:.9rem}
 html[data-scale="m"]{--fs:1rem}
 html[data-scale="l"]{--fs:1.12rem}
+/* Elvish is a flavor option (see the i18n note in the script and the hint in
+   Settings): its vocabulary intentionally matches English, so the "elvish"
+   feel comes from styling — an elegant serif hand — rather than invented
+   words Tolkien never wrote. */
+html[data-lang="elvish"] body{font-family:'Cormorant Garamond',Georgia,serif;letter-spacing:.01em}
 
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
@@ -546,17 +551,17 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
 
   <span class="spacer"></span>
 
-  <button class="pill" data-action="short-rest">Short rest</button>
-  <button class="pill" data-action="long-rest">Long rest</button>
-  <button class="pill" data-action="import" title="Load a character file">Import</button>
-  <button class="pill" data-action="export" title="Save a character file">Export</button>
+  <button class="pill" data-action="short-rest" id="btnShortRest">Short rest</button>
+  <button class="pill" data-action="long-rest" id="btnLongRest">Long rest</button>
+  <button class="pill" data-action="import" title="Load a character file" id="btnImportHeader">Import</button>
+  <button class="pill" data-action="export" title="Save a character file" id="btnExportHeader">Export</button>
   <button class="pill icon" data-action="go-social" aria-label="Notifications and invites" title="Notifications and invites" style="position:relative" id="notifbell">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
   </button>
-  <button class="pill icon" data-action="rules" aria-label="Rules lookup" title="Rules lookup">
+  <button class="pill icon" data-action="rules" aria-label="Rules lookup" title="Rules lookup" id="btnRules">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5v-17Z"/><path d="M4 19a2.5 2.5 0 0 1 2.5-2.5H20"/></svg>
   </button>
-  <button class="pill icon" data-action="settings" aria-label="Settings" title="Settings">
+  <button class="pill icon" data-action="settings" aria-label="Settings" title="Settings" id="btnSettings">
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
       <circle cx="12" cy="12" r="3.2"/>
       <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.9 19.3a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.7 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.7 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.7a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.7a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.3 9v.09A1.7 1.7 0 0 0 20.91 10H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15z"/>
@@ -568,10 +573,10 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
 </header>
 
 <nav class="tabs" role="tablist">
-  <button class="tab" role="tab" data-tab="home" aria-selected="true">Home</button>
-  <button class="tab" role="tab" data-tab="front" aria-selected="false">Combat &amp; stats</button>
-  <button class="tab" role="tab" data-tab="back" aria-selected="false">Narrative &amp; gear</button>
-  <button class="tab" role="tab" data-tab="social" aria-selected="false">Campaign party</button>
+  <button class="tab" role="tab" data-tab="home" aria-selected="true" id="navHome">Home</button>
+  <button class="tab" role="tab" data-tab="front" aria-selected="false" id="navFront">Combat &amp; stats</button>
+  <button class="tab" role="tab" data-tab="back" aria-selected="false" id="navBack">Narrative &amp; gear</button>
+  <button class="tab" role="tab" data-tab="social" aria-selected="false" id="navSocial">Campaign party</button>
 </nav>
 
 <main>
@@ -1578,7 +1583,7 @@ function weaponDisplay(c, d, w){
 const STORE_KEY = 'radiant-sheet-v1';
 const state = {
   characters:[], activeId:null, tab:'home', view:'auth', session:null,
-  settings:{theme:'light', scale:'m', plotDie:true, diceMode:'disabled', firebase:{
+  settings:{theme:'light', scale:'m', plotDie:true, diceMode:'disabled', language:'en', translationScope:'ui', firebase:{
     apiKey:'AIzaSyC6qq3jITUYJmZfbAOouPaTYn02hjrVZvs',
     authDomain:'cosmere-rpg-sheet.firebaseapp.com',
     projectId:'cosmere-rpg-sheet',
@@ -1589,6 +1594,163 @@ const state = {
   rolls:[]
 };
 const genCode = () => String(Math.floor(100000 + Math.random() * 900000));
+
+/* ---------- i18n ----------
+   Two independent settings: `language` picks the dictionary, `translationScope`
+   picks how much of it applies. 'ui' translates the persistent chrome (nav,
+   header, Settings) — always on once a non-English language is picked.
+   'full' additionally translates generic character-sheet vocabulary (section
+   headers, attributes, resource/defense labels, condition names) via tFull().
+   Deliberately NOT translated even in 'full' scope: deep rules text (talent
+   and item descriptions, weapon traits) and Cosmere-specific invented proper
+   nouns (Singer Form names, Radiant Orders, Surges, spren, fabrials) — there's
+   no verifiable official localization for Sanderson's invented terminology to
+   draw from, so guessing at translations for those risks being flatly wrong.
+   Elvish is included as a flavor option: Tolkien's constructed languages have
+   no attested vocabulary for modern interface or game-mechanical terms, so
+   its dictionary intentionally matches English — see the note in Settings. */
+const I18N = {
+  en: {
+    nav_home:'Home', nav_front:'Combat & stats', nav_back:'Narrative & gear', nav_social:'Campaign party',
+    btn_shortrest:'Short rest', btn_longrest:'Long rest', btn_import:'Import', btn_export:'Export',
+    tt_notifications:'Notifications and invites', tt_rules:'Rules lookup', tt_settings:'Settings', tt_profile:'Profile',
+    settings_title:'Settings', settings_account:'Account', settings_signedinas:'Signed in as', btn_signout:'Sign out',
+    settings_theme:'Theme', theme_light:'Light', theme_dark:'Dark',
+    settings_textsize:'Text size', size_s:'Small', size_m:'Medium', size_l:'Large',
+    settings_dice:'Dice rolling',
+    dice_hint:'Disabled — no in-app roller · Enabled — click to roll · D-roll — shows what to roll, you roll physical dice',
+    dice_disabled:'Disabled', dice_enabled:'Enabled', dice_info:'D-roll',
+    settings_plotdie:'Roll a plot die with every d20 test', plotdie_hint:'1–2 complication · 3–4 blank · 5–6 opportunity',
+    settings_thischar:'This character', btn_duplicate:'Duplicate', btn_resetlevel:'Reset to level 1',
+    btn_clearsheet:'Clear sheet', btn_deletechar:'Delete character',
+    settings_backups:'Backups', btn_exportthis:'Export this character', btn_exportall:'Export all characters',
+    btn_importfile:'Import from file',
+    settings_language:'Language', settings_scope:'Translation',
+    scope_ui:'Interface only', scope_full:'Interface + game text',
+    scope_hint:'Interface only translates menus and labels. Interface + game text also translates section headers, attributes, and condition names — deep rules text (talents, weapon traits, item descriptions) stays in English, since it isn’t practical to translate and verify thousands of rules entries at once.',
+    elvish_hint:'Sindarin and Quenya have no attested words for modern interface or game-mechanical terms, so Elvish keeps this vocabulary in English rather than inventing words that don’t come from Tolkien’s own writing — it’s a nod to the setting, styled in an elvish hand, not a functional translation.',
+    btn_done:'Done', btn_close:'Close',
+    attr_str:'Strength', attr_spd:'Speed', attr_int:'Intellect', attr_wil:'Willpower', attr_awa:'Awareness', attr_pre:'Presence',
+    res_health:'Health', res_focus:'Focus', res_investiture:'Investiture',
+    lbl_deflect:'Deflect', lbl_movement:'Movement', lbl_defense:'Defense',
+    realm_physical:'Physical', realm_cognitive:'Cognitive', realm_spiritual:'Spiritual',
+    abbr_phys:'Phys', abbr_cog:'Cog', abbr_spir:'Spir',
+    sec_weapons:'Weapons', sec_expertises:'Expertises', sec_talents:'Talents',
+    sec_ancestryform:'Ancestry & Form', sec_idealsspren:'Radiant Ideals & Spren Bond',
+    sec_squirescompanions:'Squires & Companions', sec_stances:'Combat Stances & Modifiers',
+    sec_conditions:'Conditions & injuries', sec_spheres:'Spheres', sec_equipment:'Equipment',
+    sec_notebook:'Notebook', sec_fabrials:'Fabrials', sec_travel:'Travel & Lodging',
+    sec_startingkit:'Starting Kit', sec_appearance:'Character appearance', sec_othergear:'Other gear notes',
+    sec_connections:'Connections', sec_purpose:'Purpose', sec_obstacle:'Obstacle', sec_goals:'Goals',
+    home_mycharacters:'My Characters', home_mycampaigns:'My Campaigns',
+    sec_campaignparty:'Campaign party', sec_yourparties:'Your parties', sec_addcharacter:'Add a character',
+    sec_friends:'Friends', sec_parties:'Parties',
+    cond_Afflicted:'Afflicted', cond_Determined:'Determined', cond_Disoriented:'Disoriented',
+    cond_Empowered:'Empowered', cond_Enhanced:'Enhanced', cond_Exhausted:'Exhausted', cond_Focused:'Focused',
+    cond_Immobilized:'Immobilized', cond_Prone:'Prone', cond_Restrained:'Restrained', cond_Slowed:'Slowed',
+    cond_Stunned:'Stunned', cond_Surprised:'Surprised', cond_Unconscious:'Unconscious'
+  },
+  ko: {
+    nav_home:'홈', nav_front:'전투 & 능력치', nav_back:'서사 & 장비', nav_social:'모험단',
+    btn_shortrest:'짧은 휴식', btn_longrest:'긴 휴식', btn_import:'가져오기', btn_export:'내보내기',
+    tt_notifications:'알림 및 초대', tt_rules:'규칙 조회', tt_settings:'설정', tt_profile:'프로필',
+    settings_title:'설정', settings_account:'계정', settings_signedinas:'로그인됨', btn_signout:'로그아웃',
+    settings_theme:'테마', theme_light:'라이트', theme_dark:'다크',
+    settings_textsize:'글자 크기', size_s:'작게', size_m:'보통', size_l:'크게',
+    settings_dice:'주사위 굴림',
+    dice_hint:'비활성화 — 앱 내 주사위 없음 · 활성화 — 클릭해서 굴리기 · D-굴림 — 무엇을 굴릴지 표시, 실제 주사위 사용',
+    dice_disabled:'비활성화', dice_enabled:'활성화', dice_info:'D-굴림',
+    settings_plotdie:'모든 d20 판정에 플롯 주사위 굴리기', plotdie_hint:'1–2 문제 발생 · 3–4 없음 · 5–6 기회',
+    settings_thischar:'이 캐릭터', btn_duplicate:'복제', btn_resetlevel:'1레벨로 초기화',
+    btn_clearsheet:'시트 초기화', btn_deletechar:'캐릭터 삭제',
+    settings_backups:'백업', btn_exportthis:'이 캐릭터 내보내기', btn_exportall:'모든 캐릭터 내보내기',
+    btn_importfile:'파일에서 가져오기',
+    settings_language:'언어', settings_scope:'번역 범위',
+    scope_ui:'인터페이스만', scope_full:'인터페이스 + 게임 용어',
+    scope_hint:'인터페이스만 선택하면 메뉴와 레이블만 번역됩니다. 인터페이스 + 게임 용어를 선택하면 항목 제목, 능력치, 상태이상 이름도 함께 번역됩니다 — 특성, 무기 특성, 아이템 설명 등 방대한 규칙 원문은 한 번에 정확히 번역·검증하기 어려워 영어로 남겨둡니다.',
+    elvish_hint:'신다린과 퀘냐에는 현대적인 인터페이스나 게임 용어에 해당하는 단어가 존재하지 않으므로, 엘프어는 톨킨의 원문에 없는 단어를 임의로 만들어내는 대신 이러한 용어를 영어로 유지합니다 — 실제 번역이라기보다 세계관에 대한 오마주이며, 엘프풍 서체로 표현됩니다.',
+    btn_done:'완료', btn_close:'닫기',
+    attr_str:'힘', attr_spd:'속도', attr_int:'지능', attr_wil:'의지력', attr_awa:'감지력', attr_pre:'존재감',
+    res_health:'체력', res_focus:'집중력', res_investiture:'인베스티처',
+    lbl_deflect:'편향', lbl_movement:'이동력', lbl_defense:'방어도',
+    realm_physical:'물리', realm_cognitive:'인지', realm_spiritual:'영혼',
+    abbr_phys:'물리', abbr_cog:'인지', abbr_spir:'영혼',
+    sec_weapons:'무기', sec_expertises:'전문 기술', sec_talents:'특성',
+    sec_ancestryform:'혈통 & 형태', sec_idealsspren:'레이션트 이상 & 스펜의 유대',
+    sec_squirescompanions:'종자 & 동료', sec_stances:'전투 태세 & 수정치',
+    sec_conditions:'상태이상 & 부상', sec_spheres:'스피어(화폐)', sec_equipment:'장비',
+    sec_notebook:'노트', sec_fabrials:'파브리알', sec_travel:'여행 & 숙박',
+    sec_startingkit:'시작 장비 세트', sec_appearance:'캐릭터 외모', sec_othergear:'기타 장비 메모',
+    sec_connections:'인간관계', sec_purpose:'목적', sec_obstacle:'장애물', sec_goals:'목표',
+    home_mycharacters:'내 캐릭터', home_mycampaigns:'내 캠페인',
+    sec_campaignparty:'모험단', sec_yourparties:'내 모험단', sec_addcharacter:'캐릭터 추가',
+    sec_friends:'친구', sec_parties:'모험단',
+    cond_Afflicted:'고통받음', cond_Determined:'결의', cond_Disoriented:'방향감각 상실',
+    cond_Empowered:'강화됨', cond_Enhanced:'증진됨', cond_Exhausted:'탈진', cond_Focused:'집중됨',
+    cond_Immobilized:'움직임 불가', cond_Prone:'엎드림', cond_Restrained:'속박됨', cond_Slowed:'둔화됨',
+    cond_Stunned:'기절', cond_Surprised:'기습당함', cond_Unconscious:'의식불명'
+  },
+  fr: {
+    nav_home:'Accueil', nav_front:'Combat et stats', nav_back:'Récit et équipement', nav_social:'Groupe de campagne',
+    btn_shortrest:'Repos court', btn_longrest:'Repos long', btn_import:'Importer', btn_export:'Exporter',
+    tt_notifications:'Notifications et invitations', tt_rules:'Consulter les règles', tt_settings:'Paramètres', tt_profile:'Profil',
+    settings_title:'Paramètres', settings_account:'Compte', settings_signedinas:'Connecté en tant que', btn_signout:'Se déconnecter',
+    settings_theme:'Thème', theme_light:'Clair', theme_dark:'Sombre',
+    settings_textsize:'Taille du texte', size_s:'Petite', size_m:'Moyenne', size_l:'Grande',
+    settings_dice:'Lancers de dés',
+    dice_hint:'Désactivé — pas de lanceur intégré · Activé — cliquez pour lancer · D-lancer — indique le jet à faire, vous lancez de vrais dés',
+    dice_disabled:'Désactivé', dice_enabled:'Activé', dice_info:'D-lancer',
+    settings_plotdie:'Lancer un dé de scénario à chaque test de d20', plotdie_hint:'1–2 complication · 3–4 neutre · 5–6 opportunité',
+    settings_thischar:'Ce personnage', btn_duplicate:'Dupliquer', btn_resetlevel:'Réinitialiser au niveau 1',
+    btn_clearsheet:'Vider la fiche', btn_deletechar:'Supprimer le personnage',
+    settings_backups:'Sauvegardes', btn_exportthis:'Exporter ce personnage', btn_exportall:'Exporter tous les personnages',
+    btn_importfile:'Importer depuis un fichier',
+    settings_language:'Langue', settings_scope:'Traduction',
+    scope_ui:'Interface seule', scope_full:'Interface + textes de jeu',
+    scope_hint:'Interface seule ne traduit que les menus et libellés. Interface + textes de jeu traduit aussi les titres de section, les caractéristiques et les noms d’états — le texte de règles approfondi (talents, propriétés d’armes, descriptions d’objets) reste en anglais, car il n’est pas réaliste de traduire et vérifier des milliers d’entrées d’un coup.',
+    elvish_hint:'Le sindarin et le quenya ne possèdent aucun mot attesté pour les termes d’interface ou de jeu modernes : plutôt que d’inventer des mots absents des écrits de Tolkien, l’elfique conserve ce vocabulaire en anglais — un clin d’œil à l’univers, présenté dans une graphie elfique, non une traduction fonctionnelle.',
+    btn_done:'Terminé', btn_close:'Fermer',
+    attr_str:'Force', attr_spd:'Vitesse', attr_int:'Intellect', attr_wil:'Volonté', attr_awa:'Vigilance', attr_pre:'Prestance',
+    res_health:'Santé', res_focus:'Concentration', res_investiture:'Investiture',
+    lbl_deflect:'Déviation', lbl_movement:'Déplacement', lbl_defense:'Défense',
+    realm_physical:'Physique', realm_cognitive:'Cognitif', realm_spiritual:'Spirituel',
+    abbr_phys:'Phys', abbr_cog:'Cogn', abbr_spir:'Spir',
+    sec_weapons:'Armes', sec_expertises:'Expertises', sec_talents:'Talents',
+    sec_ancestryform:'Ascendance et forme', sec_idealsspren:'Idéaux radiants et lien de spren',
+    sec_squirescompanions:'Écuyers et compagnons', sec_stances:'Postures de combat et modificateurs',
+    sec_conditions:'États et blessures', sec_spheres:'Sphères', sec_equipment:'Équipement',
+    sec_notebook:'Carnet', sec_fabrials:'Fabriaux', sec_travel:'Voyage et logement',
+    sec_startingkit:'Kit de départ', sec_appearance:'Apparence du personnage', sec_othergear:'Autres notes d’équipement',
+    sec_connections:'Relations', sec_purpose:'But', sec_obstacle:'Obstacle', sec_goals:'Objectifs',
+    home_mycharacters:'Mes personnages', home_mycampaigns:'Mes campagnes',
+    sec_campaignparty:'Groupe de campagne', sec_yourparties:'Vos groupes', sec_addcharacter:'Ajouter un personnage',
+    sec_friends:'Amis', sec_parties:'Groupes',
+    cond_Afflicted:'Affligé', cond_Determined:'Déterminé', cond_Disoriented:'Désorienté',
+    cond_Empowered:'Renforcé', cond_Enhanced:'Amélioré', cond_Exhausted:'Épuisé', cond_Focused:'Concentré',
+    cond_Immobilized:'Immobilisé', cond_Prone:'À terre', cond_Restrained:'Entravé', cond_Slowed:'Ralenti',
+    cond_Stunned:'Étourdi', cond_Surprised:'Surpris', cond_Unconscious:'Inconscient'
+  },
+  /* See the header comment above and elvish_hint below: intentionally
+     identical to English vocabulary-wise (styled in a serif "elvish hand"
+     via CSS instead) rather than inventing unattested words. */
+  elvish: {}
+};
+I18N.elvish = Object.assign({}, I18N.en, {
+  elvish_hint: I18N.en.elvish_hint
+});
+
+function t(key){
+  const lang = (state.settings && state.settings.language) || 'en';
+  const dict = I18N[lang] || I18N.en;
+  return dict[key] !== undefined ? dict[key] : (I18N.en[key] !== undefined ? I18N.en[key] : key);
+}
+/* Like t(), but only actually translates when the "full" scope is on —
+   for generic game-sheet vocabulary rather than persistent UI chrome. */
+function tFull(key){
+  return (state.settings && state.settings.translationScope === 'full') ? t(key) : (I18N.en[key] !== undefined ? I18N.en[key] : key);
+}
+function attrName(key){ return tFull('attr_' + key); }
+function condName(key){ return tFull('cond_' + key); }
 
 function activeChar(){
   return state.characters.find(c => c.id === state.activeId) || state.characters[0] || null;
@@ -1800,9 +1962,9 @@ function customSkillRowHTML(c, d, realm){
 
 function poolHTML(c, d, kind){
   const cfg = {
-    health:{label:'Health', pool:c.health, max:d.maxHealth, note:'10 + STR + tier'},
-    focus:{label:'Focus', pool:c.focus, max:d.maxFocus, note:'2 + WIL'},
-    investiture:{label:'Investiture', pool:c.investiture, max:d.maxInvestiture, note:'2 + higher of AWA / PRE'}
+    health:{label:tFull('res_health'), pool:c.health, max:d.maxHealth, note:'10 + STR + tier'},
+    focus:{label:tFull('res_focus'), pool:c.focus, max:d.maxFocus, note:'2 + WIL'},
+    investiture:{label:tFull('res_investiture'), pool:c.investiture, max:d.maxInvestiture, note:'2 + higher of AWA / PRE'}
   }[kind];
   const pct = cfg.max > 0 ? clamp(cfg.pool.current / cfg.max * 100, 0, 100) : 0;
   return `<div class="pool">
@@ -1822,11 +1984,11 @@ function realmHTML(c, d, realm){
   const [a1, a2] = realm.attrs;
   const defKey = realm.key + 'Defense';
   const attrBox = k => `<div class="attr">
-      <div class="nm">${ATTRS[k].name}</div>
+      <div class="nm">${attrName(k)}</div>
       <div class="stepper">
-        <button data-attr="${k}" data-by="-1" aria-label="Lower ${ATTRS[k].name}">−</button>
+        <button data-attr="${k}" data-by="-1" aria-label="Lower ${attrName(k)}">−</button>
         <span class="val" data-derived="attr.${k}">${c.attributes[k]}</span>
-        <button data-attr="${k}" data-by="1" aria-label="Raise ${ATTRS[k].name}">+</button>
+        <button data-attr="${k}" data-by="1" aria-label="Raise ${attrName(k)}">+</button>
       </div>
     </div>`;
   const pools = realm.key === 'physical' ? poolHTML(c, d, 'health')
@@ -1914,7 +2076,7 @@ function weaponsHTML(c, d){
   const weaponOpts = weaponsInCat.map(n => `<option value="${esc(n)}" ${weaponPick.weapon === n ? 'selected' : ''}>${esc(n)}</option>`).join('');
 
   return `<div class="card">
-    <h3>Weapons <span class="hint">Attack = d20 + skill + bonus</span></h3><hr class="rule">
+    <h3>${tFull('sec_weapons')} <span class="hint">Attack = d20 + skill + bonus</span></h3><hr class="rule">
     <p class="hint">An offhand Strike costs 2 Focus (1 Focus if the weapon has the Offhand trait).</p>
     <div class="row wrow thead"><span>Weapon</span><span>Skill</span><span>Bonus</span><span>Damage</span><span>Traits</span><span>Target</span><span></span></div>
     <div class="rows">${rows || '<p class="empty">No weapons yet. Add one to roll attacks from the sheet.</p>'}</div>
@@ -2008,7 +2170,7 @@ function expertisesHTML(c, d){
       <button data-action="del-expertise" data-i="${i}" aria-label="Remove ${esc(e.name)}">✕</button>
     </span>`).join('');
   return `<div class="card">
-    <h3>Expertises</h3>
+    <h3>${tFull('sec_expertises')}</h3>
     <p class="hint" id="expertiseSummary" style="margin:-.1rem 0 .5rem">${expertiseSummaryText(c, d)}</p>
     <hr class="rule">
     <div class="chips">${chips || '<span class="empty">Two cultural expertises come free, plus one per point of Intellect.</span>'}</div>
@@ -2090,7 +2252,7 @@ function talentPickerHTML(c, d){
   const previewPrereq = preview ? checkPrereq(c, preview.reqText) : null;
 
   return `<div class="card">
-    <h3>Talents <span class="hint">Cascading picker with prerequisite checks</span></h3><hr class="rule">
+    <h3>${tFull('sec_talents')} <span class="hint">Cascading picker with prerequisite checks</span></h3><hr class="rule">
     <div class="chips">${badges || '<span class="empty">No talents picked yet.</span>'}</div>
     <div class="row" style="grid-template-columns:repeat(4,1fr);margin-top:.6rem">
       <div class="f"><label>Category</label><select id="talentCatSel"><option value="">— Choose —</option>${catOpts}</select></div>
@@ -2152,7 +2314,7 @@ function singerFormHTML(c, d){
   const bonusList = Object.entries(d.formBonus || {}).filter(([k, v]) => v && ATTRS[k]).map(([k, v]) => `${ATTRS[k].short} ${sgn(v)}`).join(', ');
   const deflectBonusText = (d.formBonus || {}).deflect ? `Deflect +${d.formBonus.deflect}` : '';
   return `<div class="card">
-    <h3>Ancestry &amp; Form <span class="hint">Forms apply temporary attribute bonuses</span></h3><hr class="rule">
+    <h3>${tFull('sec_ancestryform')} <span class="hint">Forms apply temporary attribute bonuses</span></h3><hr class="rule">
     <div class="switchrow">
       <span>Singer ancestry<span class="hint" style="display:block">Unlocks Form selection and Form-based bonuses</span></span>
       <button class="switch" data-toggle="singer" aria-pressed="${c.singer}" aria-label="Singer ancestry"></button>
@@ -2176,7 +2338,7 @@ function radiantIdealsHTML(c){
       <input type="text" value="${esc(ideal.text)}" data-path="spren.ideals.${i}.text" placeholder="The words of this Ideal, once spoken">
     </div>`).join('');
   return `<div class="card">
-    <h3>Radiant Ideals &amp; Spren Bond</h3><hr class="rule">
+    <h3>${tFull('sec_idealsspren')}</h3><hr class="rule">
     <div class="grid2">
       <div class="f"><label>Spren name</label><input type="text" value="${esc(c.spren.name)}" data-path="spren.name" placeholder="Syl, Pattern, Wyndle…"></div>
       <div class="f"><label>Order</label><select data-path="spren.order"><option value="">— Unbonded —</option>${orderOpts}</select></div>
@@ -2206,7 +2368,7 @@ function squiresHTML(c){
     </div>`).join('');
   const presetOpts = Object.keys(COMPANION_PRESETS).map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
   return `<div class="card">
-    <h3>Squires &amp; Companions</h3><hr class="rule">
+    <h3>${tFull('sec_squirescompanions')}</h3><hr class="rule">
     <div class="row thead" style="grid-template-columns:1fr 1fr 2fr auto"><span>Name</span><span>Type</span><span>Stat block / notes</span><span></span></div>
     <div class="rows">${rows || '<p class="empty">No squires or companions yet.</p>'}</div>
     <div class="row" style="grid-template-columns:1fr auto;margin-top:.5rem">
@@ -2227,7 +2389,7 @@ function stancesHTML(c){
     ['bloodstance', 'Bloodstance', '−2 Physical, −2 Cognitive, −2 Spiritual Defense']
   ];
   return `<div class="card">
-    <h3>Combat Stances &amp; Modifiers <span class="hint">Toggle what's active right now</span></h3><hr class="rule">
+    <h3>${tFull('sec_stances')} <span class="hint">Toggle what's active right now</span></h3><hr class="rule">
     ${items.map(([key, label, desc]) => `<div class="switchrow">
       <span>${esc(label)}<span class="hint" style="display:block">${esc(desc)}</span></span>
       <button class="switch" data-toggle="stances.${key}" aria-pressed="${!!st[key]}" aria-label="${esc(label)}"></button>
@@ -2237,16 +2399,16 @@ function stancesHTML(c){
 
 function openConditionModal(name){
   openModal(`
-    <h2>${esc(name)}</h2><hr class="rule">
+    <h2>${esc(condName(name))}</h2><hr class="rule">
     <p>${esc(CONDITION_BLURBS[name] || 'No description available.')}</p>
-    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">Close</button></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">${t('btn_close')}</button></div>
   `);
 }
 
 function conditionsHTML(c){
   const conds = CONDITIONS.map(n => `<span style="display:inline-flex;align-items:center;gap:.1rem">
-      <button class="cond" data-cond="${n}" aria-pressed="${!!c.conditions[n]}" title="${esc(CONDITION_BLURBS[n] || '')}">${n}</button>
-      <button class="iconbtn" data-action="show-cond-info" data-cond-name="${n}" aria-label="${n} details" title="What does ${n} do?" style="padding:.15rem .35rem;font-size:.68rem">ⓘ</button>
+      <button class="cond" data-cond="${n}" aria-pressed="${!!c.conditions[n]}" title="${esc(CONDITION_BLURBS[n] || '')}">${condName(n)}</button>
+      <button class="iconbtn" data-action="show-cond-info" data-cond-name="${n}" aria-label="${condName(n)} details" title="What does ${condName(n)} do?" style="padding:.15rem .35rem;font-size:.68rem">ⓘ</button>
     </span>`).join('');
   const injuries = c.injuries.map((inj, i) => `<div class="row" style="grid-template-columns:1fr 5.5rem auto" data-iidx="${i}">
       <input type="text" value="${esc(inj.text)}" data-path="injuries.${i}.text" placeholder="Injury" aria-label="Injury">
@@ -2254,7 +2416,7 @@ function conditionsHTML(c){
       <button class="iconbtn" data-action="del-injury" data-i="${i}" aria-label="Remove injury">✕</button>
     </div>`).join('');
   return `<div class="card">
-    <h3>Conditions &amp; injuries</h3><hr class="rule">
+    <h3>${tFull('sec_conditions')}</h3><hr class="rule">
     <div class="conds">${conds}</div>
     <h4 style="margin-top:.9rem;font-size:1rem">Injuries</h4>
     <div class="row thead" style="grid-template-columns:1fr 5.5rem auto"><span>Injury</span><span>Days left</span><span></span></div>
@@ -2292,7 +2454,7 @@ function renderFrontImpl(){
   <div class="card">
     <div class="lookups">
       <div class="lookup"><div class="lbl">Lifting capacity</div><div class="v" data-derived="lifting">${d.lifting}</div></div>
-      <div class="lookup"><div class="lbl">Movement</div><div class="v" data-derived="movement">${d.movement}</div></div>
+      <div class="lookup"><div class="lbl">${tFull('lbl_movement')}</div><div class="v" data-derived="movement">${d.movement}</div></div>
       <div class="lookup"><div class="lbl">Recovery die</div><div class="v" data-derived="recovery" data-test="recovery" role="button" tabindex="0" title="Roll recovery">${d.recovery}</div></div>
       <div class="lookup"><div class="lbl">Senses range</div><div class="v" data-derived="senses">${d.senses}</div></div>
     </div>
@@ -2301,7 +2463,7 @@ function renderFrontImpl(){
       <div class="row" style="grid-template-columns:1fr 1fr;align-items:end">
         <div class="f"><label>Extra deflect</label><input type="number" value="${c.deflectBonus}" data-path="deflectBonus"></div>
         <div class="lookup" data-action="show-armor-info" role="button" tabindex="0" title="View deflect and Cumbersome rules" style="cursor:pointer">
-          <div class="lbl">Deflect ⓘ</div><div class="v" data-derived="deflect">${d.deflect}</div>
+          <div class="lbl">${tFull('lbl_deflect')} ⓘ</div><div class="v" data-derived="deflect">${d.deflect}</div>
         </div>
       </div>
     </div>
@@ -2409,7 +2571,7 @@ function bindCurrencyConverter(){
 function sphereConverterHTML(c){
   const s = c.spheres;
   return `<div class="card">
-    <h3>Spheres <span class="hint">1 mark = ${SPHERE_CHIPS_PER_MARK} chips · 1 broam = ${SPHERE_MARKS_PER_BROAM} marks</span></h3><hr class="rule">
+    <h3>${tFull('sec_spheres')} <span class="hint">1 mark = ${SPHERE_CHIPS_PER_MARK} chips · 1 broam = ${SPHERE_MARKS_PER_BROAM} marks</span></h3><hr class="rule">
     <div class="row" style="grid-template-columns:repeat(3,1fr)">
       <div class="f"><label>Chips</label><input type="number" min="0" value="${s.chips}" data-path="spheres.chips"></div>
       <div class="f"><label>Marks</label><input type="number" min="0" value="${s.marks}" data-path="spheres.marks"></div>
@@ -2450,7 +2612,7 @@ function gearHTML(c, d){
   const itemOpts = itemsInCat.map(n => `<option value="${esc(n)}" ${gearPick.item === n ? 'selected' : ''}>${esc(n)}</option>`).join('');
 
   return `<div class="card">
-    <h3>Equipment <span class="hint">${d.gearListWeight} lbs · ${d.gearListPrice} Marks itemized</span></h3><hr class="rule">
+    <h3>${tFull('sec_equipment')} <span class="hint">${d.gearListWeight} lbs · ${d.gearListPrice} Marks itemized</span></h3><hr class="rule">
     <div class="rows">${rows || '<p class="empty">No itemized gear yet.</p>'}</div>
     <div class="row" style="grid-template-columns:1fr 1fr auto;margin-top:.5rem;align-items:end">
       <div class="f"><label>Category</label><select id="gearCatSel"><option value="">— Choose —</option>${catOpts}</select></div>
@@ -2520,7 +2682,7 @@ function notebookHTML(c){
       <span class="hint">${new Date(n.updatedAt).toLocaleDateString()}</span>
     </div>`).join('');
   return `<div class="card">
-    <h3>Notebook <span class="hint">Click a note to open it</span></h3><hr class="rule">
+    <h3>${tFull('sec_notebook')} <span class="hint">Click a note to open it</span></h3><hr class="rule">
     <div class="rows">${rows || '<p class="empty">No notes yet.</p>'}</div>
     <form data-submit-action="add-note" class="row" style="grid-template-columns:1fr auto;margin-top:.5rem">
       <input type="text" id="newNoteTitle" placeholder="New note title" aria-label="New note title" required>
@@ -2573,7 +2735,7 @@ function fabrialsHTML(c, d){
   const fabItemOpts = fabItemsInCat.map(n => `<option value="${esc(n)}" ${fabrialPick.item === n ? 'selected' : ''}>${esc(n)}</option>`).join('');
 
   return `<div class="card">
-    <h3>Fabrials <span class="hint">${d ? `${d.fabrialsWeight} lbs itemized · ` : ''}Charge / max charge / weight</span></h3><hr class="rule">
+    <h3>${tFull('sec_fabrials')} <span class="hint">${d ? `${d.fabrialsWeight} lbs itemized · ` : ''}Charge / max charge / weight</span></h3><hr class="rule">
     <div class="row thead" style="grid-template-columns:1.2fr .9fr auto auto auto auto"><span>Name</span><span>Type</span><span>Charge</span><span>Max</span><span>Wt</span><span></span></div>
     <div class="rows">${rows || '<p class="empty">No fabrials carried.</p>'}</div>
     <div class="row" style="grid-template-columns:1fr 1fr auto;margin-top:.5rem;align-items:end">
@@ -2616,7 +2778,7 @@ function travelLodgingHTML(){
       <span>${esc(n)}</span><span class="hint">${esc(l.price)}</span>
     </div>`).join('');
   return `<div class="card">
-    <h3>Travel &amp; Lodging <span class="hint">Reference only</span></h3><hr class="rule">
+    <h3>${tFull('sec_travel')} <span class="hint">Reference only</span></h3><hr class="rule">
     <p class="hint" style="margin:.3rem 0"><b>Mounts</b></p>
     <div class="row thead" style="grid-template-columns:1.3fr auto auto auto"><span>Name</span><span>Speed</span><span>Capacity</span><span>Price</span></div>
     <div class="rows">${mountRows}</div>
@@ -2649,7 +2811,7 @@ function startingKitHTML(){
   }
   const ready = kit && (!kit.weaponSlots || (kitPick.weapon1 && (kit.weaponSlots < 2 || kitPick.weapon2)));
   return `<div class="card">
-    <h3>Starting Kit <span class="hint">Quickly fill starting gear, currency, and connections</span></h3><hr class="rule">
+    <h3>${tFull('sec_startingkit')} <span class="hint">Quickly fill starting gear, currency, and connections</span></h3><hr class="rule">
     <div class="f"><label>Kit</label><select id="kitSel"><option value="">— Choose —</option>${kitOpts}</select></div>
     ${weaponSelects}
     <button class="btn addbtn" style="margin-top:.6rem" data-action="load-starting-kit" ${ready ? '' : 'disabled'}>Load Starting Kit</button>
@@ -2703,7 +2865,7 @@ function renderBackImpl(){
   <div class="back-grid">
     <div>
       <div class="card">
-        <h3>Character appearance</h3><hr class="rule">
+        <h3>${tFull('sec_appearance')}</h3><hr class="rule">
         <textarea data-path="appearance" style="min-height:13rem" placeholder="Build, features, bearing, the marks a life on Roshar leaves.">${esc(c.appearance)}</textarea>
       </div>
       ${notebookHTML(c)}
@@ -2714,7 +2876,7 @@ function renderBackImpl(){
       ${gearHTML(c, d)}
       ${fabrialsHTML(c, d)}
       <div class="card">
-        <h3>Other gear notes</h3><hr class="rule">
+        <h3>${tFull('sec_othergear')}</h3><hr class="rule">
         <textarea data-path="equipment" style="min-height:8rem" placeholder="Starting kit, packs, and anything else you are carrying that isn't itemized above.">${esc(c.equipment)}</textarea>
         <div class="f" style="margin-top:.6rem"><label>Extra / misc weight (lbs)</label>
           <input type="number" min="0" value="${c.gearWeight || 0}" data-path="gearWeight"></div>
@@ -2722,22 +2884,22 @@ function renderBackImpl(){
         ${overburdenedBadgeHTML(d)}
       </div>
       <div class="card">
-        <h3>Connections</h3><hr class="rule">
+        <h3>${tFull('sec_connections')}</h3><hr class="rule">
         <textarea data-path="connections" style="min-height:9rem" placeholder="Patrons, allies, squires, and the spren you are bonded to.">${esc(c.connections)}</textarea>
       </div>
     </div>
 
     <div>
       <div class="card">
-        <h3>Purpose</h3><hr class="rule">
+        <h3>${tFull('sec_purpose')}</h3><hr class="rule">
         <textarea data-path="purpose" style="min-height:5rem" placeholder="What drives this character forward.">${esc(c.purpose)}</textarea>
       </div>
       <div class="card">
-        <h3>Obstacle</h3><hr class="rule">
+        <h3>${tFull('sec_obstacle')}</h3><hr class="rule">
         <textarea data-path="obstacle" style="min-height:5rem" placeholder="The flaw or fear that gets in the way.">${esc(c.obstacle)}</textarea>
       </div>
       <div class="card">
-        <h3>Goals <span class="hint">Tick a circle each time you make progress</span></h3><hr class="rule">
+        <h3>${tFull('sec_goals')} <span class="hint">Tick a circle each time you make progress</span></h3><hr class="rule">
         <div class="rows">${goals}</div>
         <button class="btn addbtn" data-action="add-goal">Add goal</button>
       </div>
@@ -3645,11 +3807,11 @@ function printAttrGroupHTML(c, d, realm){
   const [a1, a2] = realm.attrs;
   const defKey = {physical:'physicalDefense', cognitive:'cognitiveDefense', spiritual:'spiritualDefense'}[realm.key];
   return `<div class="attrgroup">
-    <div class="glabel">${esc(realm.name)}</div>
+    <div class="glabel">${tFull('realm_' + realm.key)}</div>
     <div class="three">
-      <div class="abox"><span class="lbl">${ATTRS[a1].name}</span><span class="val">${c.attributes[a1]}</span></div>
-      <div class="pshield"><span class="lbl">Defense</span><span class="val">${d[defKey]}</span></div>
-      <div class="abox"><span class="lbl">${ATTRS[a2].name}</span><span class="val">${c.attributes[a2]}</span></div>
+      <div class="abox"><span class="lbl">${attrName(a1)}</span><span class="val">${c.attributes[a1]}</span></div>
+      <div class="pshield"><span class="lbl">${tFull('lbl_defense')}</span><span class="val">${d[defKey]}</span></div>
+      <div class="abox"><span class="lbl">${attrName(a2)}</span><span class="val">${c.attributes[a2]}</span></div>
     </div>
   </div>`;
 }
@@ -3917,65 +4079,82 @@ function removeCharacter(id){
 
 function openSettings(){
   const s = state.settings;
+  const LANGS = [['en','English'], ['ko','한국어 (Korean)'], ['fr','Français (French)'], ['elvish','Elvish']];
   openModal(`
-    <h2>Settings</h2><hr class="rule">
+    <h2>${t('settings_title')}</h2><hr class="rule">
 
     <section>
-      <div class="switchrow"><span>Account<span class="hint" style="display:block">Signed in as ${esc(accountHandle())}</span></span>
-        <button class="btn danger" data-action="sign-out-session">Sign out</button>
+      <div class="switchrow"><span>${t('settings_account')}<span class="hint" style="display:block">${t('settings_signedinas')} ${esc(accountHandle())}</span></span>
+        <button class="btn danger" data-action="sign-out-session">${t('btn_signout')}</button>
       </div>
     </section>
 
     <section>
-      <div class="switchrow"><span>Theme</span>
+      <div class="switchrow"><span>${t('settings_theme')}</span>
         <span class="seg">
-          <button data-set="theme" data-val="light" aria-pressed="${s.theme === 'light'}">Light</button>
-          <button data-set="theme" data-val="dark" aria-pressed="${s.theme === 'dark'}">Dark</button>
+          <button data-set="theme" data-val="light" aria-pressed="${s.theme === 'light'}">${t('theme_light')}</button>
+          <button data-set="theme" data-val="dark" aria-pressed="${s.theme === 'dark'}">${t('theme_dark')}</button>
         </span>
       </div>
-      <div class="switchrow"><span>Text size</span>
+      <div class="switchrow"><span>${t('settings_textsize')}</span>
         <span class="seg">
-          <button data-set="scale" data-val="s" aria-pressed="${s.scale === 's'}">Small</button>
-          <button data-set="scale" data-val="m" aria-pressed="${s.scale === 'm'}">Medium</button>
-          <button data-set="scale" data-val="l" aria-pressed="${s.scale === 'l'}">Large</button>
+          <button data-set="scale" data-val="s" aria-pressed="${s.scale === 's'}">${t('size_s')}</button>
+          <button data-set="scale" data-val="m" aria-pressed="${s.scale === 'm'}">${t('size_m')}</button>
+          <button data-set="scale" data-val="l" aria-pressed="${s.scale === 'l'}">${t('size_l')}</button>
         </span>
       </div>
       <div style="padding:.35rem 0">
-        <span>Dice rolling</span>
-        <span class="hint" style="display:block;margin-bottom:.5rem">Disabled — no in-app roller · Enabled — click to roll · D-roll — shows what to roll, you roll physical dice</span>
+        <span>${t('settings_dice')}</span>
+        <span class="hint" style="display:block;margin-bottom:.5rem">${t('dice_hint')}</span>
         <span class="seg" style="display:flex;width:100%">
-          <button style="flex:1" data-set="diceMode" data-val="disabled" aria-pressed="${s.diceMode === 'disabled'}">Disabled</button>
-          <button style="flex:1" data-set="diceMode" data-val="enabled" aria-pressed="${s.diceMode === 'enabled'}">Enabled</button>
-          <button style="flex:1" data-set="diceMode" data-val="info" aria-pressed="${s.diceMode === 'info'}">D-roll</button>
+          <button style="flex:1" data-set="diceMode" data-val="disabled" aria-pressed="${s.diceMode === 'disabled'}">${t('dice_disabled')}</button>
+          <button style="flex:1" data-set="diceMode" data-val="enabled" aria-pressed="${s.diceMode === 'enabled'}">${t('dice_enabled')}</button>
+          <button style="flex:1" data-set="diceMode" data-val="info" aria-pressed="${s.diceMode === 'info'}">${t('dice_info')}</button>
         </span>
       </div>
       ${s.diceMode !== 'disabled' ? `<div class="switchrow">
-        <span>Roll a plot die with every d20 test
-          <span class="hint" style="display:block">1–2 complication · 3–4 blank · 5–6 opportunity</span></span>
+        <span>${t('settings_plotdie')}
+          <span class="hint" style="display:block">${t('plotdie_hint')}</span></span>
         <button class="switch" data-setbool="plotDie" aria-pressed="${s.plotDie}" aria-label="Plot die"></button>
       </div>` : ''}
     </section>
 
+    <section>
+      <div class="switchrow"><span>${t('settings_language')}</span>
+        <span class="seg" style="flex-wrap:wrap">
+          ${LANGS.map(([code, label]) => `<button data-set="language" data-val="${code}" aria-pressed="${s.language === code}">${label}</button>`).join('')}
+        </span>
+      </div>
+      <div class="switchrow"><span>${t('settings_scope')}</span>
+        <span class="seg">
+          <button data-set="translationScope" data-val="ui" aria-pressed="${s.translationScope === 'ui'}">${t('scope_ui')}</button>
+          <button data-set="translationScope" data-val="full" aria-pressed="${s.translationScope === 'full'}">${t('scope_full')}</button>
+        </span>
+      </div>
+      <p class="hint" style="margin-top:.4rem">${t('scope_hint')}</p>
+      ${s.language === 'elvish' ? `<p class="hint" style="margin-top:.4rem;font-style:italic">${t('elvish_hint')}</p>` : ''}
+    </section>
+
     ${activeChar() ? `<section>
-      <h4>This character</h4>
+      <h4>${t('settings_thischar')}</h4>
       <div style="display:flex;flex-wrap:wrap;gap:.4rem">
-        <button class="btn" data-action="duplicate-char">Duplicate</button>
-        <button class="btn" data-action="reset-level">Reset to level 1</button>
-        <button class="btn danger" data-action="clear-sheet">Clear sheet</button>
-        <button class="btn danger" data-action="delete-char">Delete character</button>
+        <button class="btn" data-action="duplicate-char">${t('btn_duplicate')}</button>
+        <button class="btn" data-action="reset-level">${t('btn_resetlevel')}</button>
+        <button class="btn danger" data-action="clear-sheet">${t('btn_clearsheet')}</button>
+        <button class="btn danger" data-action="delete-char">${t('btn_deletechar')}</button>
       </div>
     </section>` : ''}
 
     <section>
-      <h4>Backups</h4>
+      <h4>${t('settings_backups')}</h4>
       <div style="display:flex;flex-wrap:wrap;gap:.4rem">
-        ${activeChar() ? '<button class="btn" data-action="export">Export this character</button>' : ''}
-        <button class="btn" data-action="export-all">Export all characters</button>
-        <button class="btn" data-action="import">Import from file</button>
+        ${activeChar() ? `<button class="btn" data-action="export">${t('btn_exportthis')}</button>` : ''}
+        <button class="btn" data-action="export-all">${t('btn_exportall')}</button>
+        <button class="btn" data-action="import">${t('btn_importfile')}</button>
       </div>
     </section>
 
-    <div style="text-align:right;margin-top:1.2rem"><button class="btn" data-action="close-modal">Done</button></div>
+    <div style="text-align:right;margin-top:1.2rem"><button class="btn" data-action="close-modal">${t('btn_done')}</button></div>
   `);
 }
 
@@ -4001,7 +4180,35 @@ function applySettings(){
   document.documentElement.dataset.dice = state.settings.diceMode;
   const tray = $('#tray');
   if (tray) tray.hidden = state.settings.diceMode === 'disabled';
+  applyLanguage();
   if (state.view === 'main') render();
+}
+
+/* Patches the persistent header/nav chrome (outside the JS-templated views,
+   so it isn't recreated by render()) to the current language. Everything
+   inside the templated views picks up t()/tFull() the next time it renders. */
+function applyLanguage(){
+  const lang = state.settings.language || 'en';
+  document.documentElement.lang = (lang === 'ko' || lang === 'fr') ? lang : 'en';
+  document.documentElement.dataset.lang = lang;
+  const setText = (id, key) => { const el = document.getElementById(id); if (el) el.textContent = t(key); };
+  const setAttrs = (id, key) => {
+    const el = document.getElementById(id); if (!el) return;
+    el.title = t(key);
+    if (el.hasAttribute('aria-label')) el.setAttribute('aria-label', t(key));
+  };
+  setText('navHome', 'nav_home');
+  setText('navFront', 'nav_front');
+  setText('navBack', 'nav_back');
+  setText('navSocial', 'nav_social');
+  setText('btnShortRest', 'btn_shortrest');
+  setText('btnLongRest', 'btn_longrest');
+  setText('btnImportHeader', 'btn_import');
+  setText('btnExportHeader', 'btn_export');
+  setAttrs('notifbell', 'tt_notifications');
+  setAttrs('btnRules', 'tt_rules');
+  setAttrs('btnSettings', 'tt_settings');
+  setAttrs('profileBtn', 'tt_profile');
 }
 
 /* ============================================================
@@ -4775,7 +4982,7 @@ function renderHomeTabImpl(){
 
   el.innerHTML = `
     <div class="card">
-      <h3>My Characters <span class="hint">Your vault</span></h3><hr class="rule">
+      <h3>${tFull('home_mycharacters')} <span class="hint">Your vault</span></h3><hr class="rule">
       ${state.characters.length > 3 ? `<div class="row" style="grid-template-columns:1fr auto;margin-bottom:.7rem">
         <input type="text" id="vaultsearch" placeholder="Search your characters…" value="${esc(vaultFilter)}">
         <select id="vaultsortsel">
@@ -4792,7 +4999,7 @@ function renderHomeTabImpl(){
     </div>
 
     <div class="card">
-      <h3>My Campaigns</h3><hr class="rule">
+      <h3>${tFull('home_mycampaigns')}</h3><hr class="rule">
       <div class="vault-grid">${campaignCards || '<p class="empty">No campaigns yet — create one below.</p>'}</div>
       <div class="twocol" style="margin-top:.9rem">
         <div class="row" style="grid-template-columns:1fr auto">
@@ -4909,19 +5116,19 @@ function memberCardHTML(m, uidKey, opts){
       ${ch.name ? ` · <span class="turnspeed-badge turnspeed-${ch.turnSpeed || 'passive'}" title="${TURN_SPEED_LABEL[ch.turnSpeed || 'passive']}">${turnSpeedIconHTML(ch.turnSpeed || 'passive')} ${TURN_SPEED_LABEL[ch.turnSpeed || 'passive']}</span>` : ''}</div>
     ${gmTools}
     ${ch.name ? `
-      ${line('Health', 'health', ch.health.current, ch.health.max)}
-      ${line('Focus', 'focus', ch.focus.current, ch.focus.max)}
-      ${ch.investiture && ch.investiture.radiant ? line('Investiture', 'investiture', ch.investiture.current, ch.investiture.max) : ''}
+      ${line(tFull('res_health'), 'health', ch.health.current, ch.health.max)}
+      ${line(tFull('res_focus'), 'focus', ch.focus.current, ch.focus.max)}
+      ${ch.investiture && ch.investiture.radiant ? line(tFull('res_investiture'), 'investiture', ch.investiture.current, ch.investiture.max) : ''}
       <div class="defs">
-        <div><div class="v">${ch.defenses.physical}</div><div class="l">Phys</div></div>
-        <div><div class="v">${ch.defenses.cognitive}</div><div class="l">Cog</div></div>
-        <div><div class="v">${ch.defenses.spiritual}</div><div class="l">Spir</div></div>
-        <div><div class="v">${ch.deflect}</div><div class="l">Deflect</div></div>
+        <div><div class="v">${ch.defenses.physical}</div><div class="l">${tFull('abbr_phys')}</div></div>
+        <div><div class="v">${ch.defenses.cognitive}</div><div class="l">${tFull('abbr_cog')}</div></div>
+        <div><div class="v">${ch.defenses.spiritual}</div><div class="l">${tFull('abbr_spir')}</div></div>
+        <div><div class="v">${ch.deflect}</div><div class="l">${tFull('lbl_deflect')}</div></div>
       </div>
       ${ch.surges && ch.surges.trim() ? `<div class="sub">Surges: ${esc(ch.surges)}</div>` : ''}
       ${ch.spren ? `<div class="sub">${esc(ch.spren.order)}${ch.spren.name ? ' · bonded to ' + esc(ch.spren.name) : ''}</div>` : ''}
       <div class="conds" style="margin-top:.3rem">
-        ${(opts.canEdit ? CONDITIONS : conds).map(n => `<button class="cond" ${opts.canEdit ? `data-action="${opts.scope}-cond" data-uid="${uidKey}" data-cond="${n}"` : ''} aria-pressed="${conds.includes(n)}">${n}</button>`).join('') || '<span class="empty">No conditions</span>'}
+        ${(opts.canEdit ? CONDITIONS : conds).map(n => `<button class="cond" ${opts.canEdit ? `data-action="${opts.scope}-cond" data-uid="${uidKey}" data-cond="${n}"` : ''} aria-pressed="${conds.includes(n)}">${condName(n)}</button>`).join('') || '<span class="empty">No conditions</span>'}
       </div>
       ${goals && canSeeGoals ? `<hr class="rule" style="margin:.6rem 0 .3rem">${goals}` : ''}
       ${goals && !canSeeGoals ? `<hr class="rule" style="margin:.6rem 0 .3rem"><p class="empty" style="margin:0">Goals hidden by the game master.</p>` : ''}
@@ -4951,7 +5158,7 @@ function offlineSocialHTML(){
 
   return `
   <div class="card">
-    <h3>Campaign party</h3><hr class="rule">
+    <h3>${tFull('sec_campaignparty')}</h3><hr class="rule">
     <p class="hint">This table runs on your own device. Every character saved here can be dropped into a party and tracked live during a session — health, focus, defenses, conditions, and goal progress all in one view.</p>
     <p class="hint" style="margin-top:.4rem">${cloud.on
       ? 'Sign in with email below to play with friends across devices.'
@@ -4961,7 +5168,7 @@ function offlineSocialHTML(){
 
   <div class="twocol">
     <div class="card">
-      <h3>Your parties</h3><hr class="rule">
+      <h3>${tFull('sec_yourparties')}</h3><hr class="rule">
       <div class="rows">
         ${parties.map(p => `<div class="listitem">
             <button class="btn ghost" data-action="select-local-party" data-pid="${p.id}" style="${p.id === pid ? 'border-color:var(--accent);color:var(--accent)' : ''}">${esc(p.name)}</button>
@@ -4976,7 +5183,7 @@ function offlineSocialHTML(){
     </div>
 
     <div class="card">
-      <h3>Add a character</h3><hr class="rule">
+      <h3>${tFull('sec_addcharacter')}</h3><hr class="rule">
       ${party ? `<div class="row" style="grid-template-columns:1fr auto">
         <select id="localcharpick">${charOpts}</select>
         <button class="btn" data-action="add-local-char" data-pid="${party.id}">Add to ${esc(party.name)}</button>
@@ -5039,7 +5246,7 @@ function onlineSocialHTML(){
 
   <div class="twocol">
     <div class="card">
-      <h3>Friends</h3><hr class="rule">
+      <h3>${tFull('sec_friends')}</h3><hr class="rule">
       <div class="row" style="grid-template-columns:1fr auto">
         <input type="text" id="friendinput" placeholder="@username">
         <button class="btn" data-action="send-request">Send request</button>
@@ -5057,7 +5264,7 @@ function onlineSocialHTML(){
     </div>
 
     <div class="card">
-      <h3>Parties</h3><hr class="rule">
+      <h3>${tFull('sec_parties')}</h3><hr class="rule">
       ${cloud.invites.length ? `<div class="rows" style="margin-bottom:.7rem">${cloud.invites.map(i => `<div class="listitem">
           <span>${esc(i.partyName || 'A campaign')} <span class="hint">from @${esc(i.invitedByName || '?')}</span></span>
           <span style="display:flex;gap:.3rem">
