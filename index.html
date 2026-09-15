@@ -1886,7 +1886,10 @@ const I18N = {
     tt_skillused:'Skill used', tt_attackbonustitle:'Extra attack bonus', tt_attackbonusaria:'Attack bonus',
     tt_targetdefense:'Target defense', tt_singerancestry:'Singer ancestry',
     tt_spendcharge:'Spend a charge', tt_restorecharge:'Restore a charge',
-    tt_showpassword:'Show password', tt_moveup:'Move up', tt_movedown:'Move down', tt_deleteparty:'Delete party'
+    tt_showpassword:'Show password', tt_moveup:'Move up', tt_movedown:'Move down', tt_deleteparty:'Delete party',
+    fld_customarmorname:'Custom armor name', fld_cumbersomestr:'Cumbersome (STR needed)',
+    fld_shardplatecharges:'Shardplate charges', tt_viewdeflectrules:'View deflect and Cumbersome rules',
+    home_nocharsyet:'No characters yet'
   },
   ko: {
     nav_home:'홈', nav_front:'전투 & 능력치', nav_back:'서사 & 장비', nav_social:'모험단',
@@ -2164,7 +2167,10 @@ const I18N = {
     tt_skillused:'사용 기술', tt_attackbonustitle:'추가 공격 보너스', tt_attackbonusaria:'공격 보너스',
     tt_targetdefense:'대상 방어도', tt_singerancestry:'가수 혈통',
     tt_spendcharge:'충전 사용', tt_restorecharge:'충전 복구',
-    tt_showpassword:'비밀번호 표시', tt_moveup:'위로 이동', tt_movedown:'아래로 이동', tt_deleteparty:'파티 삭제'
+    tt_showpassword:'비밀번호 표시', tt_moveup:'위로 이동', tt_movedown:'아래로 이동', tt_deleteparty:'파티 삭제',
+    fld_customarmorname:'사용자 지정 방어구 이름', fld_cumbersomestr:'무거움 (필요 힘)',
+    fld_shardplatecharges:'Shardplate 충전량', tt_viewdeflectrules:'편향 및 무거움 규칙 보기',
+    home_nocharsyet:'아직 캐릭터가 없습니다'
   },
   fr: {
     nav_home:'Accueil', nav_front:'Combat et stats', nav_back:'Récit et équipement', nav_social:'Groupe de campagne',
@@ -2441,7 +2447,10 @@ const I18N = {
     tt_skillused:'Compétence utilisée', tt_attackbonustitle:'Bonus d’attaque supplémentaire', tt_attackbonusaria:'Bonus d’attaque',
     tt_targetdefense:'Défense ciblée', tt_singerancestry:'Ascendance Chanteur',
     tt_spendcharge:'Dépenser une charge', tt_restorecharge:'Restaurer une charge',
-    tt_showpassword:'Afficher le mot de passe', tt_moveup:'Monter', tt_movedown:'Descendre', tt_deleteparty:'Supprimer le groupe'
+    tt_showpassword:'Afficher le mot de passe', tt_moveup:'Monter', tt_movedown:'Descendre', tt_deleteparty:'Supprimer le groupe',
+    fld_customarmorname:'Nom de l’armure personnalisée', fld_cumbersomestr:'Encombrant (FOR requise)',
+    fld_shardplatecharges:'Charges de Shardplate', tt_viewdeflectrules:'Voir les règles de déviation et d’encombrement',
+    home_nocharsyet:'Aucun personnage pour l’instant'
   },
   /* See the header comment above and elvish_hint below: intentionally
      identical to English vocabulary-wise (styled in a serif "elvish hand"
@@ -3176,22 +3185,22 @@ function renderFrontImpl(){
       <div class="f"><label>${t('fld_wornarmor')}</label><select data-path="armor">${armorOpts}</select></div>
       <div class="row" style="grid-template-columns:1fr 1fr;align-items:end">
         <div class="f"><label>${t('fld_extradeflect')}</label><input type="number" value="${c.deflectBonus}" data-path="deflectBonus"></div>
-        <div class="lookup" data-action="show-armor-info" role="button" tabindex="0" title="View deflect and Cumbersome rules" style="cursor:pointer">
+        <div class="lookup" data-action="show-armor-info" role="button" tabindex="0" title="${t('tt_viewdeflectrules')}" style="cursor:pointer">
           <div class="lbl">${tFull('lbl_deflect')} ⓘ</div><div class="v" data-derived="deflect">${d.deflect}</div>
         </div>
       </div>
     </div>
     ${c.armor === 'Custom / Hand-Key' ? `
     <div class="row" style="grid-template-columns:repeat(3,1fr);margin-top:.5rem">
-      <div class="f"><label>Custom armor name</label><input type="text" value="${esc((c.armorHandKey||{}).name||'')}" data-path="armorHandKey.name" placeholder="Name"></div>
-      <div class="f"><label>Deflect</label><input type="number" value="${(c.armorHandKey||{}).deflect||0}" data-path="armorHandKey.deflect"></div>
-      <div class="f"><label>Cumbersome (STR needed)</label><input type="number" value="${(c.armorHandKey||{}).cumbersome||0}" data-path="armorHandKey.cumbersome"></div>
-      <div class="f"><label>Weight (lbs)</label><input type="number" value="${(c.armorHandKey||{}).weight||0}" data-path="armorHandKey.weight"></div>
-      <div class="f"><label>Price (Marks)</label><input type="number" value="${(c.armorHandKey||{}).price||0}" data-path="armorHandKey.price"></div>
-      <div class="f"><label>Traits</label><input type="text" value="${esc((c.armorHandKey||{}).traits||'')}" data-path="armorHandKey.traits" placeholder="e.g. Presentable"></div>
+      <div class="f"><label>${t('fld_customarmorname')}</label><input type="text" value="${esc((c.armorHandKey||{}).name||'')}" data-path="armorHandKey.name" placeholder="${t('gear_name')}"></div>
+      <div class="f"><label>${t('am_deflect')}</label><input type="number" value="${(c.armorHandKey||{}).deflect||0}" data-path="armorHandKey.deflect"></div>
+      <div class="f"><label>${t('fld_cumbersomestr')}</label><input type="number" value="${(c.armorHandKey||{}).cumbersome||0}" data-path="armorHandKey.cumbersome"></div>
+      <div class="f"><label>${t('gear_weightlbs')}</label><input type="number" value="${(c.armorHandKey||{}).weight||0}" data-path="armorHandKey.weight"></div>
+      <div class="f"><label>${t('gear_pricemarks')}</label><input type="number" value="${(c.armorHandKey||{}).price||0}" data-path="armorHandKey.price"></div>
+      <div class="f"><label>${t('wm_traits')}</label><input type="text" value="${esc((c.armorHandKey||{}).traits||'')}" data-path="armorHandKey.traits" placeholder="e.g. Presentable"></div>
     </div>` : ''}
     ${c.armor === 'Shardplate' ? `
-    <div class="f" style="margin-top:.5rem;max-width:14rem"><label>Shardplate charges</label>
+    <div class="f" style="margin-top:.5rem;max-width:14rem"><label>${t('fld_shardplatecharges')}</label>
       <div class="stepper">
         <button data-adjust="shardplateCharges" data-by="-1" aria-label="${t('tt_spendcharge')}">−</button>
         <span class="val" data-derived="shardplateCharges">${c.shardplateCharges}</span>
@@ -3666,7 +3675,7 @@ function syncDerived(){
 function renderCharPicker(){
   const sel = $('#charpick');
   if (!state.characters.length){
-    sel.innerHTML = `<option value="">No characters yet</option>`;
+    sel.innerHTML = `<option value="">${t('home_nocharsyet')}</option>`;
     return;
   }
   sel.innerHTML = state.characters.map(c =>
