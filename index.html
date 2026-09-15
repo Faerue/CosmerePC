@@ -1894,7 +1894,15 @@ const I18N = {
     tt_loadcharfile:'Load a character file', tt_savecharfile:'Save a character file',
     local_sessiondateexample:'e.g. Sept 20, 7pm', social_leaveparty:'Leave party',
     turnspeed_passive:'Passive Turn', turnspeed_fast:'Fast Turn', turnspeed_slow:'Slow Turn',
-    tt_turnspeed:'Turn speed:', tt_clicktocycle:'— click to cycle'
+    tt_turnspeed:'Turn speed:', tt_clicktocycle:'— click to cycle',
+    cond_nodescription:'No description available.',
+    auth_err_invalidemail:'That email address is not valid.',
+    auth_err_missingpassword:'Enter a password.',
+    auth_err_weakpassword:'Use at least six characters for the password.',
+    auth_err_emailinuse:'That email already has an account — sign in instead.',
+    auth_err_invalidcredential:'Email or password did not match.',
+    auth_err_notallowed:'Turn on email sign-in in your Firebase console.',
+    auth_err_somethingwrong:'Something went wrong.'
   },
   ko: {
     nav_home:'홈', nav_front:'전투 & 능력치', nav_back:'서사 & 장비', nav_social:'모험단',
@@ -2179,7 +2187,15 @@ const I18N = {
     tt_loadcharfile:'캐릭터 파일 불러오기', tt_savecharfile:'캐릭터 파일 저장',
     local_sessiondateexample:'예: 9월 20일 오후 7시', social_leaveparty:'파티 나가기',
     turnspeed_passive:'수동 턴', turnspeed_fast:'빠른 턴', turnspeed_slow:'느린 턴',
-    tt_turnspeed:'턴 속도:', tt_clicktocycle:'— 클릭하여 전환'
+    tt_turnspeed:'턴 속도:', tt_clicktocycle:'— 클릭하여 전환',
+    cond_nodescription:'설명이 없습니다.',
+    auth_err_invalidemail:'유효한 이메일 주소가 아닙니다.',
+    auth_err_missingpassword:'비밀번호를 입력하세요.',
+    auth_err_weakpassword:'비밀번호는 6자 이상이어야 합니다.',
+    auth_err_emailinuse:'이미 해당 이메일로 등록된 계정이 있습니다 — 로그인해 주세요.',
+    auth_err_invalidcredential:'이메일 또는 비밀번호가 일치하지 않습니다.',
+    auth_err_notallowed:'Firebase 콘솔에서 이메일 로그인을 활성화하세요.',
+    auth_err_somethingwrong:'문제가 발생했습니다.'
   },
   fr: {
     nav_home:'Accueil', nav_front:'Combat et stats', nav_back:'Récit et équipement', nav_social:'Groupe de campagne',
@@ -2463,7 +2479,15 @@ const I18N = {
     tt_loadcharfile:'Charger un fichier de personnage', tt_savecharfile:'Enregistrer un fichier de personnage',
     local_sessiondateexample:'ex. 20 sept., 19h', social_leaveparty:'Quitter le groupe',
     turnspeed_passive:'Tour passif', turnspeed_fast:'Tour rapide', turnspeed_slow:'Tour lent',
-    tt_turnspeed:'Vitesse de tour :', tt_clicktocycle:'— cliquez pour changer'
+    tt_turnspeed:'Vitesse de tour :', tt_clicktocycle:'— cliquez pour changer',
+    cond_nodescription:'Aucune description disponible.',
+    auth_err_invalidemail:'Cette adresse e-mail n’est pas valide.',
+    auth_err_missingpassword:'Saisissez un mot de passe.',
+    auth_err_weakpassword:'Utilisez au moins six caractères pour le mot de passe.',
+    auth_err_emailinuse:'Un compte existe déjà avec cet e-mail — connectez-vous plutôt.',
+    auth_err_invalidcredential:'L’e-mail ou le mot de passe ne correspond pas.',
+    auth_err_notallowed:'Activez la connexion par e-mail dans votre console Firebase.',
+    auth_err_somethingwrong:'Une erreur s’est produite.'
   },
   /* See the header comment above and elvish_hint below: intentionally
      identical to English vocabulary-wise (styled in a serif "elvish hand"
@@ -3136,7 +3160,7 @@ function stancesHTML(c){
 function openConditionModal(name){
   openModal(`
     <h2>${esc(condName(name))}</h2><hr class="rule">
-    <p>${esc(CONDITION_BLURBS[name] || 'No description available.')}</p>
+    <p>${esc(CONDITION_BLURBS[name] || t('cond_nodescription'))}</p>
     <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">${t('btn_close')}</button></div>
   `);
 }
@@ -4454,7 +4478,7 @@ function handleAction(action, node, c){
       if (!e) break;
       e.temporary = !e.temporary;
       node.classList.toggle('temporary', e.temporary);
-      node.title = e.temporary ? 'Temporary — click to make regular' : 'Regular — click to mark temporary';
+      node.title = e.temporary ? t('exp_clicktoregular') : t('exp_clicktotemp');
       const kindEl = node.querySelector('.kind');
       if (kindEl) kindEl.textContent = expertisePillLabel(e);
       save();
@@ -5063,13 +5087,13 @@ const cloud = {
   readable(err){
     const code = (err && err.code || '').replace('auth/', '');
     return {
-      'invalid-email':'That email address is not valid.',
-      'missing-password':'Enter a password.',
-      'weak-password':'Use at least six characters for the password.',
-      'email-already-in-use':'That email already has an account — sign in instead.',
-      'invalid-credential':'Email or password did not match.',
-      'operation-not-allowed':'Turn on email sign-in in your Firebase console.'
-    }[code] || (err && err.message) || 'Something went wrong.';
+      'invalid-email':t('auth_err_invalidemail'),
+      'missing-password':t('auth_err_missingpassword'),
+      'weak-password':t('auth_err_weakpassword'),
+      'email-already-in-use':t('auth_err_emailinuse'),
+      'invalid-credential':t('auth_err_invalidcredential'),
+      'operation-not-allowed':t('auth_err_notallowed')
+    }[code] || (err && err.message) || t('auth_err_somethingwrong');
   },
 
   doc(...p){ return this.fb.doc(this.db, ...p); },
