@@ -1906,7 +1906,10 @@ const I18N = {
     form_bonushint:'Forms apply temporary attribute bonuses',
     tt_customskillname:'Custom skill name', tt_manualdefensebonus:'Manual defense bonus',
     tt_defensebonussuffix:'defense bonus', tt_trackthrown:'Track whether this thrown weapon has left your hand',
-    tt_newnotetitle:'New note title', prof_chooseusername:'Choose a username'
+    tt_newnotetitle:'New note title', prof_chooseusername:'Choose a username',
+    fld_customskillfallback:'Custom skill', tt_hidepassword:'Hide password',
+    btn_deletenote:'Delete note', social_charimported:'Character imported.', social_charsimported:'{n} characters imported.',
+    social_signedin_fallback:'Signed in', social_thatplayer:'That player'
   },
   ko: {
     nav_home:'홈', nav_front:'전투 & 능력치', nav_back:'서사 & 장비', nav_social:'모험단',
@@ -2203,7 +2206,10 @@ const I18N = {
     form_bonushint:'형태는 일시적인 속성 보너스를 부여합니다',
     tt_customskillname:'사용자 지정 기술 이름', tt_manualdefensebonus:'수동 방어도 보너스',
     tt_defensebonussuffix:'방어도 보너스', tt_trackthrown:'이 투척 무기가 손을 떠났는지 추적',
-    tt_newnotetitle:'새 노트 제목', prof_chooseusername:'사용자 이름 선택'
+    tt_newnotetitle:'새 노트 제목', prof_chooseusername:'사용자 이름 선택',
+    fld_customskillfallback:'사용자 지정 기술', tt_hidepassword:'비밀번호 숨기기',
+    btn_deletenote:'노트 삭제', social_charimported:'캐릭터를 가져왔습니다.', social_charsimported:'캐릭터 {n}개를 가져왔습니다.',
+    social_signedin_fallback:'로그인됨', social_thatplayer:'해당 플레이어'
   },
   fr: {
     nav_home:'Accueil', nav_front:'Combat et stats', nav_back:'Récit et équipement', nav_social:'Groupe de campagne',
@@ -2499,7 +2505,10 @@ const I18N = {
     form_bonushint:'Les formes accordent des bonus d’attribut temporaires',
     tt_customskillname:'Nom de la compétence personnalisée', tt_manualdefensebonus:'Bonus de défense manuel',
     tt_defensebonussuffix:'bonus de défense', tt_trackthrown:'Suivre si cette arme de jet a quitté votre main',
-    tt_newnotetitle:'Titre de la nouvelle note', prof_chooseusername:'Choisissez un nom d’utilisateur'
+    tt_newnotetitle:'Titre de la nouvelle note', prof_chooseusername:'Choisissez un nom d’utilisateur',
+    fld_customskillfallback:'Compétence personnalisée', tt_hidepassword:'Masquer le mot de passe',
+    btn_deletenote:'Supprimer la note', social_charimported:'Personnage importé.', social_charsimported:'{n} personnages importés.',
+    social_signedin_fallback:'Connecté', social_thatplayer:'Ce joueur'
   },
   /* See the header comment above and elvish_hint below: intentionally
      identical to English vocabulary-wise (styled in a serif "elvish hand"
@@ -3690,7 +3699,7 @@ function renderBackImpl(){
 function syncDerived(){
   const c = activeChar();
   const badge = $('#tierbadge');
-  if (!c){ if (badge) badge.textContent = 'No character'; return; }
+  if (!c){ if (badge) badge.textContent = t('social_nocharacter'); return; }
   const d = derive(c);
   const set = (key, val) => $$(`[data-derived="${key}"]`).forEach(n => { if (n.textContent !== String(val)) n.textContent = val; });
 
@@ -4155,11 +4164,11 @@ document.addEventListener('click', e => {
       }
       const die = parseInt(d.recovery.slice(1), 10);
       const r = rollDie(die);
-      logRoll({what:`${c.name} — recovery die`, total:String(r + c.attributes.wil), detail:`${d.recovery} [${r}] + WIL ${sgn(c.attributes.wil)}`});
+      logRoll({what:`${c.name} — ${t('fld_recoverydie').toLowerCase()}`, total:String(r + c.attributes.wil), detail:`${d.recovery} [${r}] + WIL ${sgn(c.attributes.wil)}`});
     } else {
       const d = derive(c);
       const sk = ALL_SKILLS.find(s => s.key === key);
-      const label = sk ? sk.name : (c.skills[key].name || 'Custom skill');
+      const label = sk ? skillName(sk.key) : (c.skills[key].name || t('fld_customskillfallback'));
       rollTest(`${c.name} — ${label}`, d.skills[key]);
     }
     return;
@@ -4196,7 +4205,7 @@ document.addEventListener('keydown', e => {
 function handleAction(action, node, c){
   switch (action){
     case 'new-char': {
-      const nc = newCharacter('New character');
+      const nc = newCharacter(t('tt_newchar'));
       state.characters.push(nc);
       state.activeId = nc.id;
       render(); save();
@@ -4225,14 +4234,14 @@ function handleAction(action, node, c){
         const showing = input.type === 'text';
         input.type = showing ? 'password' : 'text';
         node.classList.toggle('on', !showing);
-        node.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+        node.setAttribute('aria-label', showing ? t('tt_showpassword') : t('tt_hidepassword'));
       }
       break;
     }
     case 'sign-out-session': signOutSession(); break;
     case 'open-char': state.activeId = node.dataset.cid; switchTab('front'); break;
     case 'new-char-home': {
-      const nc = newCharacter('New character');
+      const nc = newCharacter(t('tt_newchar'));
       state.characters.push(nc);
       state.activeId = nc.id;
       switchTab('front');
@@ -4302,7 +4311,7 @@ function handleAction(action, node, c){
       if (!w) break;
       w.thrownUsed = !w.thrownUsed;
       node.setAttribute('aria-pressed', String(!!w.thrownUsed));
-      node.textContent = `Thrown: ${w.thrownUsed ? 'Used' : 'In hand'}`;
+      node.textContent = `${t('wpn_thrown')}: ${w.thrownUsed ? t('wpn_used') : t('wpn_inhand')}`;
       save();
       break;
     }
@@ -4398,7 +4407,7 @@ function handleAction(action, node, c){
         c.notebook = (c.notebook || []).filter(n => n.id !== id);
         noteEditing = null;
         renderBack(); save();
-      }, {okLabel:'Delete note'});
+      }, {okLabel:t('btn_deletenote')});
       break;
     }
     case 'del-fabrial': c.fabrials.splice(parseInt(node.dataset.i, 10), 1); renderBack(); save(); break;
@@ -4524,7 +4533,7 @@ function handleAction(action, node, c){
         state.characters = state.characters.map(x => x.id === keep ? fresh : x);
         render(); save();
         toast(t('msg_sheetcleared'));
-      }, {okLabel:'Clear sheet'});
+      }, {okLabel:t('btn_clearsheet')});
       break;
     }
     case 'reset-level': {
@@ -4740,7 +4749,7 @@ $('#filein').addEventListener('change', async e => {
     if (added){
       state.activeId = state.characters[state.characters.length - 1].id;
       render(); save();
-      toast(added === 1 ? 'Character imported.' : `${added} characters imported.`);
+      toast(added === 1 ? t('social_charimported') : t('social_charsimported').replace('{n}', added));
     } else toast(t('msg_nocharacterdata'));
   } catch(err){
     toast(t('msg_couldnotreadfile'));
@@ -5396,9 +5405,9 @@ function switchView(view){
 
 function accountHandle(){
   const cloudOn = cloud.on && cloud.user;
-  if (cloudOn) return cloud.me.username ? '@' + cloud.me.username : 'Signed in';
+  if (cloudOn) return cloud.me.username ? '@' + cloud.me.username : t('social_signedin_fallback');
   if (state.session && state.session.mode === 'local') return '@' + state.session.username;
-  return 'Guest';
+  return t('prof_guest');
 }
 
 function applyAvatar(el){
@@ -6513,7 +6522,7 @@ async function transferGm(pid, newGmUid){
   const party = cloud.parties.find(p => p.id === pid);
   if (!party || !party.members[newGmUid]) return;
   const oldGmUid = party.gm;
-  const newName = party.members[newGmUid].username || 'That player';
+  const newName = party.members[newGmUid].username || t('social_thatplayer');
   try {
     const updates = {gm:newGmUid, [`members.${newGmUid}.role`]:'GM'};
     if (oldGmUid && party.members[oldGmUid]) updates[`members.${oldGmUid}.role`] = 'Player';
