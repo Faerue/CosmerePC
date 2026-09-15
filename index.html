@@ -1765,7 +1765,15 @@ const I18N = {
     gear_description:'Description', gear_norulestext:'No further rules text.', gear_quantity:'Quantity',
     gear_handkeytitle:'Hand-Key Custom Item', gear_name:'Name', gear_weightlbs:'Weight (lbs)', gear_pricemarks:'Price (Marks)',
     gear_descrules:'Description / rules', gear_advancedfeatures:'Advanced features',
-    gear_advancedfeatureshint:'(crafting a high-quality item — 2 upgrades each)'
+    gear_advancedfeatureshint:'(crafting a high-quality item — 2 upgrades each)',
+    note_untitled:'Untitled note', note_clicktoopen:'Click a note to open it', note_noneyet:'No notes yet.',
+    note_newtitle:'New note title', note_addnote:'Add note', note_save:'Save', note_edit:'Edit',
+    note_savenote:'Save note', note_editnote:'Edit note', note_emptyclickpencil:'Empty note — click the pencil to add some words.',
+    fab_hint:'Charge / max charge / weight', fab_name:'Name', fab_type:'Type', fab_charge:'Charge', fab_max:'Max', fab_wt:'Wt',
+    fab_nonecarried:'No fabrials carried.', fab_catalog:'Catalog', fab_fabrial:'Fabrial', fab_addfabrial:'Add fabrial',
+    fab_addcustom:'Hand-Key custom fabrial', fab_typeplaceholder:'Type — e.g. Stormlight lamp',
+    fab_currentcharge:'Current charge', fab_maxcharge:'Max charge', fab_weightlbs:'Weight (lbs)',
+    fab_unnamed:'Unnamed', fab_unnamedfabrial:'Unnamed fabrial', fab_customfabrial:'Custom fabrial'
   },
   ko: {
     nav_home:'홈', nav_front:'전투 & 능력치', nav_back:'서사 & 장비', nav_social:'모험단',
@@ -1922,7 +1930,15 @@ const I18N = {
     gear_description:'설명', gear_norulestext:'추가 규칙 텍스트 없음.', gear_quantity:'수량',
     gear_handkeytitle:'핸드키 사용자 지정 아이템', gear_name:'이름', gear_weightlbs:'무게 (lbs)', gear_pricemarks:'가격 (마크)',
     gear_descrules:'설명 / 규칙', gear_advancedfeatures:'고급 특징',
-    gear_advancedfeatureshint:'(고품질 아이템 제작 — 각 2개 업그레이드)'
+    gear_advancedfeatureshint:'(고품질 아이템 제작 — 각 2개 업그레이드)',
+    note_untitled:'제목 없는 메모', note_clicktoopen:'메모를 클릭하면 열립니다', note_noneyet:'아직 메모가 없습니다.',
+    note_newtitle:'새 메모 제목', note_addnote:'메모 추가', note_save:'저장', note_edit:'편집',
+    note_savenote:'메모 저장', note_editnote:'메모 편집', note_emptyclickpencil:'빈 메모 — 연필을 클릭해 내용을 추가하세요.',
+    fab_hint:'충전 / 최대 충전 / 무게', fab_name:'이름', fab_type:'유형', fab_charge:'충전', fab_max:'최대', fab_wt:'무게',
+    fab_nonecarried:'소지한 파브리알이 없습니다.', fab_catalog:'카탈로그', fab_fabrial:'파브리알', fab_addfabrial:'파브리알 추가',
+    fab_addcustom:'핸드키 사용자 지정 파브리알', fab_typeplaceholder:'유형 — 예: 스톰라이트 램프',
+    fab_currentcharge:'현재 충전량', fab_maxcharge:'최대 충전량', fab_weightlbs:'무게 (lbs)',
+    fab_unnamed:'이름 없음', fab_unnamedfabrial:'이름 없는 파브리알', fab_customfabrial:'사용자 지정 파브리알'
   },
   fr: {
     nav_home:'Accueil', nav_front:'Combat et stats', nav_back:'Récit et équipement', nav_social:'Groupe de campagne',
@@ -2079,7 +2095,15 @@ const I18N = {
     gear_description:'Description', gear_norulestext:'Aucun texte de règles supplémentaire.', gear_quantity:'Quantité',
     gear_handkeytitle:'Objet personnalisé', gear_name:'Nom', gear_weightlbs:'Poids (lb)', gear_pricemarks:'Prix (Marks)',
     gear_descrules:'Description / règles', gear_advancedfeatures:'Caractéristiques avancées',
-    gear_advancedfeatureshint:'(fabriquer un objet de haute qualité — 2 améliorations chacune)'
+    gear_advancedfeatureshint:'(fabriquer un objet de haute qualité — 2 améliorations chacune)',
+    note_untitled:'Note sans titre', note_clicktoopen:'Cliquez sur une note pour l’ouvrir', note_noneyet:'Aucune note pour l’instant.',
+    note_newtitle:'Titre de la nouvelle note', note_addnote:'Ajouter une note', note_save:'Enregistrer', note_edit:'Modifier',
+    note_savenote:'Enregistrer la note', note_editnote:'Modifier la note', note_emptyclickpencil:'Note vide — cliquez sur le crayon pour y écrire.',
+    fab_hint:'Charge / charge max / poids', fab_name:'Nom', fab_type:'Type', fab_charge:'Charge', fab_max:'Max', fab_wt:'Poids',
+    fab_nonecarried:'Aucun fabrial transporté.', fab_catalog:'Catalogue', fab_fabrial:'Fabrial', fab_addfabrial:'Ajouter un fabrial',
+    fab_addcustom:'Fabrial personnalisé', fab_typeplaceholder:'Type — ex. Lampe de tempête',
+    fab_currentcharge:'Charge actuelle', fab_maxcharge:'Charge maximale', fab_weightlbs:'Poids (lb)',
+    fab_unnamed:'Sans nom', fab_unnamedfabrial:'Fabrial sans nom', fab_customfabrial:'Fabrial personnalisé'
   },
   /* See the header comment above and elvish_hint below: intentionally
      identical to English vocabulary-wise (styled in a serif "elvish hand"
@@ -3030,15 +3054,15 @@ let noteEditing = null;
 function notebookHTML(c){
   const notes = c.notebook || [];
   const rows = notes.map(n => `<div class="listitem" data-action="open-note" data-id="${n.id}" role="button" tabindex="0" style="cursor:pointer">
-      <span>${esc(n.title || 'Untitled note')}</span>
+      <span>${esc(n.title || t('note_untitled'))}</span>
       <span class="hint">${new Date(n.updatedAt).toLocaleDateString()}</span>
     </div>`).join('');
   return `<div class="card">
-    <h3>${tFull('sec_notebook')} <span class="hint">Click a note to open it</span></h3><hr class="rule">
-    <div class="rows">${rows || '<p class="empty">No notes yet.</p>'}</div>
+    <h3>${tFull('sec_notebook')} <span class="hint">${t('note_clicktoopen')}</span></h3><hr class="rule">
+    <div class="rows">${rows || `<p class="empty">${t('note_noneyet')}</p>`}</div>
     <form data-submit-action="add-note" class="row" style="grid-template-columns:1fr auto;margin-top:.5rem">
-      <input type="text" id="newNoteTitle" placeholder="New note title" aria-label="New note title" required>
-      <button type="submit" class="btn addbtn">Add note</button>
+      <input type="text" id="newNoteTitle" placeholder="${t('note_newtitle')}" aria-label="New note title" required>
+      <button type="submit" class="btn addbtn">${t('note_addnote')}</button>
     </form>
   </div>`;
 }
@@ -3051,13 +3075,13 @@ function openNoteModal(c, id){
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
       ${editing
         ? `<input type="text" id="noteTitleInput" value="${esc(note.title)}" placeholder="Note title" style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:600;border:1px solid var(--border);border-radius:8px;padding:.15rem .5rem;flex:1;background:var(--field)">`
-        : `<h2>${esc(note.title || 'Untitled note')}</h2>`}
-      <button class="iconbtn" data-action="toggle-note-edit" data-id="${id}" title="${editing ? 'Save' : 'Edit'}" aria-label="${editing ? 'Save note' : 'Edit note'}" style="font-size:1.1rem">${editing ? '✓' : '✏️'}</button>
+        : `<h2>${esc(note.title || t('note_untitled'))}</h2>`}
+      <button class="iconbtn" data-action="toggle-note-edit" data-id="${id}" title="${editing ? t('note_save') : t('note_edit')}" aria-label="${editing ? t('note_savenote') : t('note_editnote')}" style="font-size:1.1rem">${editing ? '✓' : '✏️'}</button>
     </div>
     <hr class="rule">
     ${editing
       ? `<textarea id="noteTextInput" style="min-height:14rem;width:100%">${esc(note.text)}</textarea>`
-      : `<p style="white-space:pre-wrap;margin:0">${note.text ? esc(note.text) : '<span class="empty">Empty note — click the pencil to add some words.</span>'}</p>`}
+      : `<p style="white-space:pre-wrap;margin:0">${note.text ? esc(note.text) : `<span class="empty">${t('note_emptyclickpencil')}</span>`}</p>`}
     <div style="display:flex;justify-content:space-between;margin-top:1rem">
       <button class="btn danger" data-action="delete-note" data-id="${id}">${t('btn_delete')}</button>
       <button class="btn" data-action="close-modal">${t('btn_close')}</button>
@@ -3071,12 +3095,12 @@ let fabrialPick = {category:'', item:''};
 
 function fabrialsHTML(c, d){
   const rows = c.fabrials.map((f, i) => `<div class="row" style="grid-template-columns:1.2fr .9fr auto auto auto auto" data-fidx="${i}">
-      <span data-action="show-fabrial-info" data-i="${i}" role="button" tabindex="0" style="cursor:pointer;display:flex;align-items:center">${esc(f.name) || '<span class="empty">Unnamed</span>'}</span>
-      <input type="text" value="${esc(f.type)}" data-path="fabrials.${i}.type" placeholder="Type — e.g. Stormlight lamp">
-      <input type="number" value="${f.charge}" min="0" data-path="fabrials.${i}.charge" title="Current charge" aria-label="Current charge">
-      <input type="number" value="${f.maxCharge}" min="0" data-path="fabrials.${i}.maxCharge" title="Max charge" aria-label="Max charge">
-      <input type="number" value="${f.weight||0}" min="0" step="0.5" data-path="fabrials.${i}.weight" title="Weight (lbs)" aria-label="Weight (lbs)" style="width:4rem">
-      <button class="iconbtn" data-action="del-fabrial" data-i="${i}" aria-label="Remove">✕</button>
+      <span data-action="show-fabrial-info" data-i="${i}" role="button" tabindex="0" style="cursor:pointer;display:flex;align-items:center">${esc(f.name) || `<span class="empty">${t('fab_unnamed')}</span>`}</span>
+      <input type="text" value="${esc(f.type)}" data-path="fabrials.${i}.type" placeholder="${t('fab_typeplaceholder')}">
+      <input type="number" value="${f.charge}" min="0" data-path="fabrials.${i}.charge" title="${t('fab_currentcharge')}" aria-label="${t('fab_currentcharge')}">
+      <input type="number" value="${f.maxCharge}" min="0" data-path="fabrials.${i}.maxCharge" title="${t('fab_maxcharge')}" aria-label="${t('fab_maxcharge')}">
+      <input type="number" value="${f.weight||0}" min="0" step="0.5" data-path="fabrials.${i}.weight" title="${t('fab_weightlbs')}" aria-label="${t('fab_weightlbs')}" style="width:4rem">
+      <button class="iconbtn" data-action="del-fabrial" data-i="${i}" aria-label="${t('btn_remove')}">✕</button>
     </div>`).join('');
 
   const fabCatNames = ['Standard', 'Unique / Crafted'];
@@ -3087,15 +3111,15 @@ function fabrialsHTML(c, d){
   const fabItemOpts = fabItemsInCat.map(n => `<option value="${esc(n)}" ${fabrialPick.item === n ? 'selected' : ''}>${esc(n)}</option>`).join('');
 
   return `<div class="card">
-    <h3>${tFull('sec_fabrials')} <span class="hint">${d ? `${d.fabrialsWeight} lbs itemized · ` : ''}Charge / max charge / weight</span></h3><hr class="rule">
-    <div class="row thead" style="grid-template-columns:1.2fr .9fr auto auto auto auto"><span>Name</span><span>Type</span><span>Charge</span><span>Max</span><span>Wt</span><span></span></div>
-    <div class="rows">${rows || '<p class="empty">No fabrials carried.</p>'}</div>
+    <h3>${tFull('sec_fabrials')} <span class="hint">${d ? `${d.fabrialsWeight} lbs itemized · ` : ''}${t('fab_hint')}</span></h3><hr class="rule">
+    <div class="row thead" style="grid-template-columns:1.2fr .9fr auto auto auto auto"><span>${t('fab_name')}</span><span>${t('fab_type')}</span><span>${t('fab_charge')}</span><span>${t('fab_max')}</span><span>${t('fab_wt')}</span><span></span></div>
+    <div class="rows">${rows || `<p class="empty">${t('fab_nonecarried')}</p>`}</div>
     <div class="row" style="grid-template-columns:1fr 1fr auto;margin-top:.5rem;align-items:end">
-      <div class="f"><label>Catalog</label><select id="fabCatSel"><option value="">— Choose —</option>${fabCatOpts}</select></div>
-      <div class="f"><label>Fabrial</label><select id="fabItemSel" ${fabItemsInCat.length ? '' : 'disabled'}><option value="">— Choose —</option>${fabItemOpts}</select></div>
-      <button class="btn addbtn" data-action="add-fabrial-catalog" ${fabrialPick.item ? '' : 'disabled'}>Add fabrial</button>
+      <div class="f"><label>${t('fab_catalog')}</label><select id="fabCatSel"><option value="">${t('ui_choose')}</option>${fabCatOpts}</select></div>
+      <div class="f"><label>${t('fab_fabrial')}</label><select id="fabItemSel" ${fabItemsInCat.length ? '' : 'disabled'}><option value="">${t('ui_choose')}</option>${fabItemOpts}</select></div>
+      <button class="btn addbtn" data-action="add-fabrial-catalog" ${fabrialPick.item ? '' : 'disabled'}>${t('fab_addfabrial')}</button>
     </div>
-    <button class="btn addbtn" data-action="add-fabrial" style="margin-top:.4rem">Hand-Key custom fabrial</button>
+    <button class="btn addbtn" data-action="add-fabrial" style="margin-top:.4rem">${t('fab_addcustom')}</button>
   </div>`;
 }
 
@@ -3110,10 +3134,10 @@ function openFabrialModal(c, i){
   const f = (c.fabrials || [])[i];
   if (!f) return;
   openModal(`
-    <h2>${esc(f.name) || 'Unnamed fabrial'}</h2>
-    <p class="hint">${esc(f.type || 'Custom fabrial')} · ${f.weight||0} lbs · Charge ${f.charge}/${f.maxCharge}</p>
+    <h2>${esc(f.name) || t('fab_unnamedfabrial')}</h2>
+    <p class="hint">${esc(f.type) || t('fab_customfabrial')} · ${f.weight||0} lbs · ${t('fab_charge')} ${f.charge}/${f.maxCharge}</p>
     <hr class="rule">
-    <section><h4>Description</h4><p>${esc(f.notes) || 'No further rules text.'}</p></section>
+    <section><h4>${t('gear_description')}</h4><p>${esc(f.notes) || t('gear_norulestext')}</p></section>
     <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">${t('btn_close')}</button></div>
   `);
 }
