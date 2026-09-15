@@ -1380,6 +1380,7 @@ function armorTagsHTML(armor){
 /* ---------- turn speed indicator (Passive / Fast Turn / Slow Turn) ---------- */
 const TURN_SPEED_ORDER = ['passive', 'fast', 'slow'];
 const TURN_SPEED_LABEL = {passive:'Passive Turn', fast:'Fast Turn', slow:'Slow Turn'};
+function turnSpeedLabel(mode){ return tFull('turnspeed_' + mode); }
 function turnSpeedIconHTML(mode){
   const n = mode === 'fast' ? 2 : mode === 'slow' ? 3 : 1;
   const step = 7, triW = 13, triH = 16;
@@ -1394,7 +1395,7 @@ function turnSpeedIconHTML(mode){
 function turnSpeedButtonHTML(c){
   const mode = c.turnSpeed || 'passive';
   return `<button type="button" class="turnspeed turnspeed-${mode}" data-action="cycle-turn-speed"
-    aria-label="Turn speed: ${TURN_SPEED_LABEL[mode]}" title="${TURN_SPEED_LABEL[mode]} — click to cycle">${turnSpeedIconHTML(mode)}</button>`;
+    aria-label="${t('tt_turnspeed')} ${turnSpeedLabel(mode)}" title="${turnSpeedLabel(mode)} ${t('tt_clicktocycle')}">${turnSpeedIconHTML(mode)}</button>`;
 }
 
 /* A talent counts as "known" if picked in the structured talent picker, or typed
@@ -1890,7 +1891,10 @@ const I18N = {
     fld_customarmorname:'Custom armor name', fld_cumbersomestr:'Cumbersome (STR needed)',
     fld_shardplatecharges:'Shardplate charges', tt_viewdeflectrules:'View deflect and Cumbersome rules',
     home_nocharsyet:'No characters yet',
-    tt_loadcharfile:'Load a character file', tt_savecharfile:'Save a character file'
+    tt_loadcharfile:'Load a character file', tt_savecharfile:'Save a character file',
+    local_sessiondateexample:'e.g. Sept 20, 7pm', social_leaveparty:'Leave party',
+    turnspeed_passive:'Passive Turn', turnspeed_fast:'Fast Turn', turnspeed_slow:'Slow Turn',
+    tt_turnspeed:'Turn speed:', tt_clicktocycle:'— click to cycle'
   },
   ko: {
     nav_home:'홈', nav_front:'전투 & 능력치', nav_back:'서사 & 장비', nav_social:'모험단',
@@ -2172,7 +2176,10 @@ const I18N = {
     fld_customarmorname:'사용자 지정 방어구 이름', fld_cumbersomestr:'무거움 (필요 힘)',
     fld_shardplatecharges:'Shardplate 충전량', tt_viewdeflectrules:'편향 및 무거움 규칙 보기',
     home_nocharsyet:'아직 캐릭터가 없습니다',
-    tt_loadcharfile:'캐릭터 파일 불러오기', tt_savecharfile:'캐릭터 파일 저장'
+    tt_loadcharfile:'캐릭터 파일 불러오기', tt_savecharfile:'캐릭터 파일 저장',
+    local_sessiondateexample:'예: 9월 20일 오후 7시', social_leaveparty:'파티 나가기',
+    turnspeed_passive:'수동 턴', turnspeed_fast:'빠른 턴', turnspeed_slow:'느린 턴',
+    tt_turnspeed:'턴 속도:', tt_clicktocycle:'— 클릭하여 전환'
   },
   fr: {
     nav_home:'Accueil', nav_front:'Combat et stats', nav_back:'Récit et équipement', nav_social:'Groupe de campagne',
@@ -2453,7 +2460,10 @@ const I18N = {
     fld_customarmorname:'Nom de l’armure personnalisée', fld_cumbersomestr:'Encombrant (FOR requise)',
     fld_shardplatecharges:'Charges de Shardplate', tt_viewdeflectrules:'Voir les règles de déviation et d’encombrement',
     home_nocharsyet:'Aucun personnage pour l’instant',
-    tt_loadcharfile:'Charger un fichier de personnage', tt_savecharfile:'Enregistrer un fichier de personnage'
+    tt_loadcharfile:'Charger un fichier de personnage', tt_savecharfile:'Enregistrer un fichier de personnage',
+    local_sessiondateexample:'ex. 20 sept., 19h', social_leaveparty:'Quitter le groupe',
+    turnspeed_passive:'Tour passif', turnspeed_fast:'Tour rapide', turnspeed_slow:'Tour lent',
+    tt_turnspeed:'Vitesse de tour :', tt_clicktocycle:'— cliquez pour changer'
   },
   /* See the header comment above and elvish_hint below: intentionally
      identical to English vocabulary-wise (styled in a serif "elvish hand"
@@ -4273,8 +4283,8 @@ function handleAction(action, node, c){
       $$('[data-action="cycle-turn-speed"]').forEach(btn => {
         btn.className = `turnspeed turnspeed-${mode}`;
         btn.innerHTML = turnSpeedIconHTML(mode);
-        btn.title = `${TURN_SPEED_LABEL[mode]} — click to cycle`;
-        btn.setAttribute('aria-label', `Turn speed: ${TURN_SPEED_LABEL[mode]}`);
+        btn.title = `${turnSpeedLabel(mode)} ${t('tt_clicktocycle')}`;
+        btn.setAttribute('aria-label', `${t('tt_turnspeed')} ${turnSpeedLabel(mode)}`);
       });
       save();
       break;
@@ -5867,7 +5877,7 @@ function memberCardHTML(m, uidKey, opts){
     <h4>${esc(ch.name || t('mc_nocharassigned'))}${reorder}</h4>
     <div class="sub">${esc(m.username || '')}${m.role ? ` · <span class="badge">${esc(m.role)}</span>` : ''}
       ${ch.level ? ` · ${t('mc_level')} ${ch.level} ${esc(ch.paths || '')}` : ''}
-      ${ch.name ? ` · <span class="turnspeed-badge turnspeed-${ch.turnSpeed || 'passive'}" title="${TURN_SPEED_LABEL[ch.turnSpeed || 'passive']}">${turnSpeedIconHTML(ch.turnSpeed || 'passive')} ${TURN_SPEED_LABEL[ch.turnSpeed || 'passive']}</span>` : ''}</div>
+      ${ch.name ? ` · <span class="turnspeed-badge turnspeed-${ch.turnSpeed || 'passive'}" title="${turnSpeedLabel(ch.turnSpeed || 'passive')}">${turnSpeedIconHTML(ch.turnSpeed || 'passive')} ${turnSpeedLabel(ch.turnSpeed || 'passive')}</span>` : ''}</div>
     ${gmTools}
     ${ch.name ? `
       ${line(tFull('res_health'), 'health', ch.health.current, ch.health.max)}
@@ -5950,7 +5960,7 @@ function offlineSocialHTML(){
   ${party ? `<div class="card">
     <h3>${esc(party.name)} <span class="hint">${t('local_livetableview')} · ${t('local_joincode')} ${esc(party.code || '')}</span></h3><hr class="rule">
     <div class="f" style="max-width:16rem;margin-bottom:.7rem"><label>${t('local_nextsession')}</label>
-      <input type="text" id="localsessiondate" data-pid="${party.id}" value="${esc(party.sessionDate || '')}" placeholder="e.g. Sept 20, 7pm"></div>
+      <input type="text" id="localsessiondate" data-pid="${party.id}" value="${esc(party.sessionDate || '')}" placeholder="${t('local_sessiondateexample')}"></div>
     <div class="party-grid">${cards || `<p class="empty">${t('local_nocharsyet')}</p>`}</div>
   </div>` : ''}`;
 }
@@ -6050,14 +6060,14 @@ function onlineSocialHTML(){
         </div></div>` : `<div class="f"><label>${t('social_nextsession')}</label><p class="hint" style="margin-top:.3rem">${esc(party.sessionDate) || t('social_notscheduled')}</p></div>`}
     </div>
     ${isGM ? `<div class="f" style="max-width:16rem;margin-top:.6rem"><label>${t('social_nextsession')}</label>
-      <input type="text" id="partysessiondate" data-pid="${party.id}" value="${esc(party.sessionDate || '')}" placeholder="e.g. Sept 20, 7pm"></div>
+      <input type="text" id="partysessiondate" data-pid="${party.id}" value="${esc(party.sessionDate || '')}" placeholder="${t('local_sessiondateexample')}"></div>
       ${gmVisibilityMatrixHTML(party)}` : ''}
     ${isOwner ? transferGmHTML(party) : ''}
     <div class="party-grid" style="margin-top:.9rem">
       ${orderedMembers(party).map(([mUid, m], idx, arr) =>
         memberCardHTML(m, mUid, {canEdit:isGM || mUid === cloud.user.uid, scope:'party', isGM, viewerUid:cloud.user.uid, party, first:idx === 0, last:idx === arr.length - 1})).join('')}
     </div>
-    <button class="btn danger" style="margin-top:.8rem" data-action="leave-party" data-pid="${party.id}">Leave party</button>
+    <button class="btn danger" style="margin-top:.8rem" data-action="leave-party" data-pid="${party.id}">${t('social_leaveparty')}</button>
   </div>` : ''}`;
 }
 
