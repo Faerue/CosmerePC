@@ -1741,7 +1741,9 @@ const I18N = {
     tal_known:'(known)', tal_addtalent:'Add talent', tal_otherhomebrew:'Other talents & homebrew notes',
     tal_homebrewplaceholder:'Anything not covered by the picker above — homebrew talents, GM rulings, path talents from other sourcebooks.',
     tal_prereqwarning:'Warning: Prerequisite Not Met', tal_gmmayallow:'(GM may allow anyway.)',
-    tal_viewdetails:'View talent details'
+    tal_viewdetails:'View talent details', tal_prerequisites:'Prerequisites', tal_narrative:'Narrative', tal_mechanicaleffect:'Mechanical Effect',
+    travel_referenceonly:'Reference only', travel_mounts:'Mounts', travel_vehicles:'Vehicles', travel_lodging:'Lodging',
+    travel_name:'Name', travel_speed:'Speed', travel_capacity:'Capacity', travel_price:'Price', travel_rent:'Rent', travel_purchase:'Purchase'
   },
   ko: {
     nav_home:'홈', nav_front:'전투 & 능력치', nav_back:'서사 & 장비', nav_social:'모험단',
@@ -1874,7 +1876,9 @@ const I18N = {
     tal_known:'(습득함)', tal_addtalent:'특성 추가', tal_otherhomebrew:'기타 특성 및 하우스룰 메모',
     tal_homebrewplaceholder:'위 선택기에서 다루지 않는 항목 — 하우스룰 특성, GM 재정, 다른 자료집의 경로 특성.',
     tal_prereqwarning:'경고: 전제 조건 미충족', tal_gmmayallow:'(GM이 허용할 수도 있습니다.)',
-    tal_viewdetails:'특성 세부 정보 보기'
+    tal_viewdetails:'특성 세부 정보 보기', tal_prerequisites:'전제 조건', tal_narrative:'서사', tal_mechanicaleffect:'메커니즘 효과',
+    travel_referenceonly:'참고용', travel_mounts:'탈것', travel_vehicles:'차량', travel_lodging:'숙박',
+    travel_name:'이름', travel_speed:'속도', travel_capacity:'수용 인원', travel_price:'가격', travel_rent:'대여료', travel_purchase:'구매가'
   },
   fr: {
     nav_home:'Accueil', nav_front:'Combat et stats', nav_back:'Récit et équipement', nav_social:'Groupe de campagne',
@@ -2007,7 +2011,9 @@ const I18N = {
     tal_known:'(connu)', tal_addtalent:'Ajouter le talent', tal_otherhomebrew:'Autres talents et notes maison',
     tal_homebrewplaceholder:'Tout ce qui n’est pas couvert par le sélecteur ci-dessus — talents maison, décisions du MJ, talents de voie d’autres suppléments.',
     tal_prereqwarning:'Attention : prérequis non rempli', tal_gmmayallow:'(Le MJ peut l’autoriser quand même.)',
-    tal_viewdetails:'Voir les détails du talent'
+    tal_viewdetails:'Voir les détails du talent', tal_prerequisites:'Prérequis', tal_narrative:'Récit', tal_mechanicaleffect:'Effet mécanique',
+    travel_referenceonly:'Référence uniquement', travel_mounts:'Montures', travel_vehicles:'Véhicules', travel_lodging:'Logement',
+    travel_name:'Nom', travel_speed:'Vitesse', travel_capacity:'Capacité', travel_price:'Prix', travel_rent:'Location', travel_purchase:'Achat'
   },
   /* See the header comment above and elvish_hint below: intentionally
      identical to English vocabulary-wise (styled in a serif "elvish hand"
@@ -2575,16 +2581,16 @@ function bindTalentPicker(){
 }
 
 function openTalentModal(name){
-  const t = TALENT_DATABASE[name];
-  if (!t) return;
-  const prereq = checkPrereq(activeChar(), t.reqText);
+  const tal = TALENT_DATABASE[name];
+  if (!tal) return;
+  const prereq = checkPrereq(activeChar(), tal.reqText);
   openModal(`
-    <h2>${t.activation} ${esc(name)}</h2>
-    <p class="hint">${esc(t.path)} — ${esc(t.specialty)} · ${esc(ACTIVATION_ICONS[t.activation] || '')}</p>
+    <h2>${tal.activation} ${esc(name)}</h2>
+    <p class="hint">${esc(tal.path)} — ${esc(tal.specialty)} · ${esc(ACTIVATION_ICONS[tal.activation] || '')}</p>
     <hr class="rule">
-    <section><h4>Prerequisites</h4><p>${esc(t.reqText)}${!prereq.met ? ` — <span style="color:var(--warn)">⚠️ Warning: Prerequisite Not Met (${esc(prereq.reason)})</span>` : ''}</p></section>
-    <section><h4>Narrative</h4><p>${esc(t.flavor)}</p></section>
-    <section><h4>Mechanical Effect</h4><p>${esc(t.effect)}</p></section>
+    <section><h4>${t('tal_prerequisites')}</h4><p>${esc(tal.reqText)}${!prereq.met ? ` — <span style="color:var(--warn)">⚠️ ${t('tal_prereqwarning')} (${esc(prereq.reason)})</span>` : ''}</p></section>
+    <section><h4>${t('tal_narrative')}</h4><p>${esc(tal.flavor)}</p></section>
+    <section><h4>${t('tal_mechanicaleffect')}</h4><p>${esc(tal.effect)}</p></section>
     <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button class="btn" data-action="close-modal">${t('btn_close')}</button></div>
   `);
 }
@@ -3047,26 +3053,26 @@ function openFabrialModal(c, i){
 }
 
 function travelLodgingHTML(){
-  const t = GAME_ITEMS_DATABASE.travelAndLodging;
-  const mountRows = Object.entries(t.mounts).map(([n, m]) => `<div class="row" style="grid-template-columns:1.3fr auto auto auto">
+  const td = GAME_ITEMS_DATABASE.travelAndLodging;
+  const mountRows = Object.entries(td.mounts).map(([n, m]) => `<div class="row" style="grid-template-columns:1.3fr auto auto auto">
       <span>${esc(n)}</span><span class="hint">${esc(m.speed)}</span><span class="hint">${esc(m.capacity)}</span><span class="hint">${esc(m.price)}</span>
     </div>`).join('');
-  const vehicleRows = Object.entries(t.vehicles).map(([n, v]) => `<div class="row" style="grid-template-columns:1.3fr auto auto auto">
+  const vehicleRows = Object.entries(td.vehicles).map(([n, v]) => `<div class="row" style="grid-template-columns:1.3fr auto auto auto">
       <span>${esc(n)}</span><span class="hint">${esc(v.speed)}</span><span class="hint">${esc(v.rent)}</span><span class="hint">${esc(v.purchase)}</span>
     </div>`).join('');
-  const lodgingRows = Object.entries(t.lodging).map(([n, l]) => `<div class="row" style="grid-template-columns:1.3fr auto">
+  const lodgingRows = Object.entries(td.lodging).map(([n, l]) => `<div class="row" style="grid-template-columns:1.3fr auto">
       <span>${esc(n)}</span><span class="hint">${esc(l.price)}</span>
     </div>`).join('');
   return `<div class="card">
-    <h3>${tFull('sec_travel')} <span class="hint">Reference only</span></h3><hr class="rule">
-    <p class="hint" style="margin:.3rem 0"><b>Mounts</b></p>
-    <div class="row thead" style="grid-template-columns:1.3fr auto auto auto"><span>Name</span><span>Speed</span><span>Capacity</span><span>Price</span></div>
+    <h3>${tFull('sec_travel')} <span class="hint">${t('travel_referenceonly')}</span></h3><hr class="rule">
+    <p class="hint" style="margin:.3rem 0"><b>${t('travel_mounts')}</b></p>
+    <div class="row thead" style="grid-template-columns:1.3fr auto auto auto"><span>${t('travel_name')}</span><span>${t('travel_speed')}</span><span>${t('travel_capacity')}</span><span>${t('travel_price')}</span></div>
     <div class="rows">${mountRows}</div>
-    <p class="hint" style="margin:.6rem 0 .3rem"><b>Vehicles</b></p>
-    <div class="row thead" style="grid-template-columns:1.3fr auto auto auto"><span>Name</span><span>Speed</span><span>Rent</span><span>Purchase</span></div>
+    <p class="hint" style="margin:.6rem 0 .3rem"><b>${t('travel_vehicles')}</b></p>
+    <div class="row thead" style="grid-template-columns:1.3fr auto auto auto"><span>${t('travel_name')}</span><span>${t('travel_speed')}</span><span>${t('travel_rent')}</span><span>${t('travel_purchase')}</span></div>
     <div class="rows">${vehicleRows}</div>
-    <p class="hint" style="margin:.6rem 0 .3rem"><b>Lodging</b></p>
-    <div class="row thead" style="grid-template-columns:1.3fr auto"><span>Name</span><span>Price</span></div>
+    <p class="hint" style="margin:.6rem 0 .3rem"><b>${t('travel_lodging')}</b></p>
+    <div class="row thead" style="grid-template-columns:1.3fr auto"><span>${t('travel_name')}</span><span>${t('travel_price')}</span></div>
     <div class="rows">${lodgingRows}</div>
   </div>`;
 }
