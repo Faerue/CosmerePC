@@ -534,7 +534,7 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
 <div id="app-auth" hidden></div>
 <div id="app-main" hidden>
 <header class="topbar">
-  <button class="brand" data-action="go-home" title="Home" aria-label="Home">
+  <button class="brand" data-action="go-home" title="Home" aria-label="Home" id="btnGoHome">
     <svg class="glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M12 1.5 15 9l7.5 3-7.5 3-3 7.5-3-7.5L1.5 12 9 9z" fill="url(#g)"/>
       <circle cx="12" cy="12" r="10.2" stroke="currentColor" stroke-opacity=".35"/>
@@ -546,7 +546,7 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
   </button>
 
   <select class="charpick" id="charpick" aria-label="Active character"></select>
-  <button class="pill icon" data-action="new-char" title="New character">＋</button>
+  <button class="pill icon" data-action="new-char" title="New character" id="btnNewChar">＋</button>
   <span class="pill tier" id="tierbadge">Level 1 · Tier 1</span>
 
   <span class="spacer"></span>
@@ -588,9 +588,9 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
 
 <aside class="tray collapsed" id="tray">
   <header>
-    <h4>Dice</h4>
+    <h4 id="diceTitle">Dice</h4>
     <div style="display:flex;gap:.3rem">
-      <button class="iconbtn" data-action="clear-log" title="Clear log">Clear</button>
+      <button class="iconbtn" data-action="clear-log" title="Clear log" id="btnClearLog">Clear</button>
       <button class="iconbtn" data-action="toggle-tray" id="traytoggle">Show</button>
     </div>
   </header>
@@ -602,9 +602,9 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
     <button data-roll="1d10">d10</button>
     <button data-roll="1d12">d12</button>
     <button data-roll="2d6">2d6</button>
-    <button data-action="plot-only">Plot die</button>
+    <button data-action="plot-only" id="btnPlotOnly">Plot die</button>
   </div>
-  <div class="log" id="rolllog"><p class="empty">Rolls appear here. Tap any skill modifier to test it.</p></div>
+  <div class="log" id="rolllog"><p class="empty" id="rolllogEmpty">Rolls appear here. Tap any skill modifier to test it.</p></div>
 </aside>
 </div>
 
@@ -1809,7 +1809,17 @@ const I18N = {
     stances_hint:'Toggle what’s active right now',
     print_armorequipment:'Armor & equipment', print_talentscontinued:'Talents, continued',
     print_none:'None', print_campaignsetting:'Campaign Setting',
-    print_attack:'Attack', print_damage:'Damage', print_temp:'(temp)', print_charge:'Charge'
+    print_attack:'Attack', print_damage:'Damage', print_temp:'(temp)', print_charge:'Charge',
+    tt_home:'Home', tt_newchar:'New character',
+    dice_title:'Dice', dice_clearlog:'Clear log', dice_clear:'Clear', dice_show:'Show', dice_hide:'Hide',
+    dice_plotdie:'Plot die', dice_rollsappear:'Rolls appear here. Tap any skill modifier to test it.',
+    plot_complication:'Complication', plot_blank:'Blank', plot_opportunity:'Opportunity',
+    roll_d20add:'Roll a d20 and add {mod}.', roll_alsoplotdie:' Also roll a d6 plot die.',
+    roll_natural20:' — natural 20', roll_natural1:' — natural 1',
+    roll_tohit:'to hit', roll_damage:'damage',
+    roll_grazeinfo:'Roll {dice} {type} damage (a graze does not add the skill modifier).',
+    roll_critinfo:'Max {dice} {mod} {type} (critical hits maximize the dice).',
+    roll_hitinfo:'Roll 1d20 {mod} vs {defense}{disadv}. On a hit, roll {dice} {dmgmod} {type} damage.'
   },
   ko: {
     nav_home:'홈', nav_front:'전투 & 능력치', nav_back:'서사 & 장비', nav_social:'모험단',
@@ -2010,7 +2020,17 @@ const I18N = {
     stances_hint:'현재 활성화된 항목을 전환하세요',
     print_armorequipment:'방어구 & 장비', print_talentscontinued:'특성 (계속)',
     print_none:'없음', print_campaignsetting:'캠페인 설정',
-    print_attack:'공격', print_damage:'피해', print_temp:'(임시)', print_charge:'충전량'
+    print_attack:'공격', print_damage:'피해', print_temp:'(임시)', print_charge:'충전량',
+    tt_home:'홈', tt_newchar:'새 캐릭터',
+    dice_title:'주사위', dice_clearlog:'기록 지우기', dice_clear:'지우기', dice_show:'표시', dice_hide:'숨기기',
+    dice_plotdie:'플롯 주사위', dice_rollsappear:'굴림 결과가 여기에 표시됩니다. 기술 수정치를 탭하여 테스트하세요.',
+    plot_complication:'문제 발생', plot_blank:'무효', plot_opportunity:'기회',
+    roll_d20add:'1d20을 굴리고 {mod}를 더하세요.', roll_alsoplotdie:' 또한 1d6 플롯 주사위를 굴리세요.',
+    roll_natural20:' — 내추럴 20', roll_natural1:' — 내추럴 1',
+    roll_tohit:'명중 판정', roll_damage:'피해',
+    roll_grazeinfo:'{dice} {type} 피해를 굴리세요 (그레이즈는 기술 수정치를 더하지 않습니다).',
+    roll_critinfo:'{dice} {mod} {type} 최대치 (치명타는 주사위 값을 최대로 만듭니다).',
+    roll_hitinfo:'1d20 {mod}을 {defense}에 굴리세요{disadv}. 명중 시 {dice} {dmgmod} {type} 피해를 굴리세요.'
   },
   fr: {
     nav_home:'Accueil', nav_front:'Combat et stats', nav_back:'Récit et équipement', nav_social:'Groupe de campagne',
@@ -2211,7 +2231,17 @@ const I18N = {
     stances_hint:'Activez ou désactivez ce qui est en vigueur',
     print_armorequipment:'Armure et équipement', print_talentscontinued:'Talents (suite)',
     print_none:'Aucun', print_campaignsetting:'Cadre de campagne',
-    print_attack:'Attaque', print_damage:'Dégâts', print_temp:'(temp.)', print_charge:'Charge'
+    print_attack:'Attaque', print_damage:'Dégâts', print_temp:'(temp.)', print_charge:'Charge',
+    tt_home:'Accueil', tt_newchar:'Nouveau personnage',
+    dice_title:'Dés', dice_clearlog:'Effacer le journal', dice_clear:'Effacer', dice_show:'Afficher', dice_hide:'Masquer',
+    dice_plotdie:'Dé d’intrigue', dice_rollsappear:'Les jets apparaissent ici. Touchez un modificateur de compétence pour le tester.',
+    plot_complication:'Complication', plot_blank:'Neutre', plot_opportunity:'Opportunité',
+    roll_d20add:'Lancez 1d20 et ajoutez {mod}.', roll_alsoplotdie:' Lancez également un dé d’intrigue (d6).',
+    roll_natural20:' — 20 naturel', roll_natural1:' — 1 naturel',
+    roll_tohit:'pour toucher', roll_damage:'dégâts',
+    roll_grazeinfo:'Lancez {dice} points de dégâts {type} (un effleurement n’ajoute pas le modificateur de compétence).',
+    roll_critinfo:'Maximum {dice} {mod} {type} (les coups critiques maximisent les dés).',
+    roll_hitinfo:'Lancez 1d20 {mod} contre {defense}{disadv}. En cas de réussite, lancez {dice} {dmgmod} {type} points de dégâts.'
   },
   /* See the header comment above and elvish_hint below: intentionally
      identical to English vocabulary-wise (styled in a serif "elvish hand"
@@ -3522,7 +3552,7 @@ function maxDiceValue(expr){
 
 function plotDie(){
   const v = rollDie(6);
-  return {value:v, label: v <= 2 ? 'Complication' : v <= 4 ? 'Blank' : 'Opportunity',
+  return {value:v, label: v <= 2 ? t('plot_complication') : v <= 4 ? t('plot_blank') : t('plot_opportunity'),
           cls: v <= 2 ? 'comp' : v <= 4 ? '' : 'opp'};
 }
 
@@ -3531,7 +3561,7 @@ function logRoll(entry){
   state.rolls.unshift(entry);
   state.rolls = state.rolls.slice(0, 30);
   $('#tray').classList.remove('collapsed');
-  $('#traytoggle').textContent = 'Hide';
+  $('#traytoggle').textContent = t('dice_hide');
   renderRolls();
   save();
 }
@@ -3539,12 +3569,12 @@ function logRoll(entry){
 function renderRolls(){
   const log = $('#rolllog');
   if (!log) return;
-  if (!state.rolls.length){ log.innerHTML = '<p class="empty">Rolls appear here. Tap any skill modifier to test it.</p>'; return; }
+  if (!state.rolls.length){ log.innerHTML = `<p class="empty" id="rolllogEmpty">${t('dice_rollsappear')}</p>`; return; }
   log.innerHTML = state.rolls.map(r => `<div class="roll">
     <div class="what"><span>${esc(r.what)}</span><span>${new Date(r.at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span></div>
     <div class="total">${esc(r.total)}</div>
     <div class="parts">${esc(r.detail)}</div>
-    ${r.plot ? `<div class="plot ${r.plot.cls}">Plot die ${r.plot.value} — ${r.plot.label}</div>` : ''}
+    ${r.plot ? `<div class="plot ${r.plot.cls}">${t('dice_plotdie')} ${r.plot.value} — ${r.plot.label}</div>` : ''}
   </div>`).join('');
 }
 
@@ -3555,7 +3585,7 @@ function rollTest(label, modifier){
     logRoll({
       what: label,
       total: `1d20 ${sgn(modifier)}`,
-      detail: `Roll a d20 and add ${sgn(modifier)}.${state.settings.plotDie ? ' Also roll a d6 plot die.' : ''}`
+      detail: t('roll_d20add').replace('{mod}', sgn(modifier)) + (state.settings.plotDie ? t('roll_alsoplotdie') : '')
     });
     return;
   }
@@ -3563,7 +3593,7 @@ function rollTest(label, modifier){
   const entry = {
     what: label,
     total: String(die + modifier),
-    detail: `d20 [${die}] ${sgn(modifier)}${die === 20 ? ' — natural 20' : die === 1 ? ' — natural 1' : ''}`
+    detail: `d20 [${die}] ${sgn(modifier)}${die === 20 ? t('roll_natural20') : die === 1 ? t('roll_natural1') : ''}`
   };
   if (state.settings.plotDie) entry.plot = plotDie();
   logRoll(entry);
@@ -3576,23 +3606,24 @@ function rollWeaponAction(i, kind){
   if (!w) return;
   const disp = weaponDisplay(c, d, w);
   const diceExpr = expandAttrs(disp.diceExpr || '1d6', c);
-  const weaponName = w.name || w.catalogName || 'Weapon';
-  const kindLabel = kind === 'graze' ? 'Graze' : kind === 'crit' ? 'Critical Hit' : 'Hit';
+  const weaponName = w.name || w.catalogName || t('wm_weapon');
+  const kindLabel = kind === 'graze' ? t('wm_graze') : kind === 'crit' ? t('wm_criticalhit') : t('wpn_hit');
   const what = `${weaponName} — ${kindLabel}`;
+  const defenseLabel = tFull('realm_' + w.defense);
 
   if (kind === 'graze'){
     if (mode === 'info'){
-      logRoll({what, total:diceExpr, detail:`Roll ${diceExpr} ${disp.damageType} damage (a graze does not add the skill modifier).`});
+      logRoll({what, total:diceExpr, detail:t('roll_grazeinfo').replace('{dice}', diceExpr).replace('{type}', disp.damageType)});
       return;
     }
     const dmg = parseDice(diceExpr);
-    logRoll({what, total:`${dmg.total} damage`, detail:`${dmg.detail} ${disp.damageType}`});
+    logRoll({what, total:`${dmg.total} ${t('roll_damage')}`, detail:`${dmg.detail} ${disp.damageType}`});
     return;
   }
 
   if (kind === 'crit'){
     const maxDmg = maxDiceValue(diceExpr) + disp.totalDamageMod;
-    logRoll({what, total:`${maxDmg} damage`, detail:`Max ${diceExpr} ${sgn(disp.totalDamageMod)} ${disp.damageType} (critical hits maximize the dice).`});
+    logRoll({what, total:`${maxDmg} ${t('roll_damage')}`, detail:t('roll_critinfo').replace('{dice}', diceExpr).replace('{mod}', sgn(disp.totalDamageMod)).replace('{type}', disp.damageType)});
     return;
   }
 
@@ -3600,8 +3631,12 @@ function rollWeaponAction(i, kind){
   if (mode === 'info'){
     logRoll({
       what,
-      total: `1d20 ${sgn(disp.attackMod)} to hit`,
-      detail: `Roll 1d20 ${sgn(disp.attackMod)} vs ${w.defense}${disp.disadvantage ? ' with Disadvantage' : ''}. On a hit, roll ${diceExpr} ${sgn(disp.totalDamageMod)} ${disp.damageType} damage.${state.settings.plotDie ? ' Also roll a d6 plot die.' : ''}`
+      total: `1d20 ${sgn(disp.attackMod)} ${t('roll_tohit')}`,
+      detail: t('roll_hitinfo')
+        .replace('{mod}', sgn(disp.attackMod)).replace('{defense}', defenseLabel)
+        .replace('{disadv}', disp.disadvantage ? ' with Disadvantage' : '')
+        .replace('{dice}', diceExpr).replace('{dmgmod}', sgn(disp.totalDamageMod)).replace('{type}', disp.damageType)
+        + (state.settings.plotDie ? t('roll_alsoplotdie') : '')
     });
     return;
   }
@@ -3609,8 +3644,8 @@ function rollWeaponAction(i, kind){
   const dmg = parseDice(diceExpr);
   const entry = {
     what,
-    total: `${die + disp.attackMod} to hit vs ${w.defense} · ${dmg.total + disp.totalDamageMod} damage`,
-    detail: `d20 [${die}] ${sgn(disp.attackMod)}${disp.disadvantage ? ' (Disadvantage)' : ''} · damage ${dmg.detail} ${sgn(disp.totalDamageMod)} ${disp.damageType}`
+    total: `${die + disp.attackMod} ${t('roll_tohit')} ${t('wpn_vs')} ${defenseLabel} · ${dmg.total + disp.totalDamageMod} ${t('roll_damage')}`,
+    detail: `d20 [${die}] ${sgn(disp.attackMod)}${disp.disadvantage ? ' (Disadvantage)' : ''} · ${t('roll_damage')} ${dmg.detail} ${sgn(disp.totalDamageMod)} ${disp.damageType}`
   };
   if (state.settings.plotDie) entry.plot = plotDie();
   logRoll(entry);
@@ -4218,11 +4253,11 @@ function handleAction(action, node, c){
     case 'toggle-tray': {
       const tray = $('#tray');
       tray.classList.toggle('collapsed');
-      $('#traytoggle').textContent = tray.classList.contains('collapsed') ? 'Show' : 'Hide';
+      $('#traytoggle').textContent = tray.classList.contains('collapsed') ? t('dice_show') : t('dice_hide');
       break;
     }
     case 'clear-log': state.rolls = []; renderRolls(); save(); break;
-    case 'plot-only': { if (state.settings.diceMode !== 'enabled') break; const p = plotDie(); logRoll({what:'Plot die', total:String(p.value), detail:p.label, plot:p}); break; }
+    case 'plot-only': { if (state.settings.diceMode !== 'enabled') break; const p = plotDie(); logRoll({what:t('dice_plotdie'), total:String(p.value), detail:p.label, plot:p}); break; }
     case 'clear-sheet': {
       confirmDialog('Clear every field on this character? This cannot be undone.', () => {
         const keep = c.id;
@@ -4701,6 +4736,17 @@ function applyLanguage(){
     rulesSearch.placeholder = t('rules_searchplaceholder');
     rulesSearch.setAttribute('aria-label', t('rules_searcharia'));
   }
+  setAttrs('btnGoHome', 'tt_home');
+  setAttrs('btnNewChar', 'tt_newchar');
+  setText('diceTitle', 'dice_title');
+  setAttrs('btnClearLog', 'dice_clearlog');
+  const btnClearLog = document.getElementById('btnClearLog');
+  if (btnClearLog) btnClearLog.textContent = t('dice_clear');
+  const traytoggle = document.getElementById('traytoggle');
+  if (traytoggle) traytoggle.textContent = $('#tray').classList.contains('collapsed') ? t('dice_show') : t('dice_hide');
+  setText('btnPlotOnly', 'dice_plotdie');
+  const rolllogEmpty = document.getElementById('rolllogEmpty');
+  if (rolllogEmpty) rolllogEmpty.textContent = t('dice_rollsappear');
 }
 
 /* ============================================================
