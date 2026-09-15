@@ -1806,7 +1806,10 @@ const I18N = {
     rules_sec_skills:'Skills', rules_sec_actions:'Combat actions', rules_sec_conditions:'Conditions',
     rules_sec_advitem:'Advanced Item Features (crafting)', rules_sec_advfabrial:'Advanced Fabrial Features (crafting)',
     rules_nomatches:'No matches for that search.',
-    stances_hint:'Toggle what’s active right now'
+    stances_hint:'Toggle what’s active right now',
+    print_armorequipment:'Armor & equipment', print_talentscontinued:'Talents, continued',
+    print_none:'None', print_campaignsetting:'Campaign Setting',
+    print_attack:'Attack', print_damage:'Damage', print_temp:'(temp)', print_charge:'Charge'
   },
   ko: {
     nav_home:'홈', nav_front:'전투 & 능력치', nav_back:'서사 & 장비', nav_social:'모험단',
@@ -2004,7 +2007,10 @@ const I18N = {
     rules_sec_skills:'기술', rules_sec_actions:'전투 행동', rules_sec_conditions:'상태이상',
     rules_sec_advitem:'고급 아이템 특성 (제작)', rules_sec_advfabrial:'고급 파브리알 특성 (제작)',
     rules_nomatches:'검색 결과가 없습니다.',
-    stances_hint:'현재 활성화된 항목을 전환하세요'
+    stances_hint:'현재 활성화된 항목을 전환하세요',
+    print_armorequipment:'방어구 & 장비', print_talentscontinued:'특성 (계속)',
+    print_none:'없음', print_campaignsetting:'캠페인 설정',
+    print_attack:'공격', print_damage:'피해', print_temp:'(임시)', print_charge:'충전량'
   },
   fr: {
     nav_home:'Accueil', nav_front:'Combat et stats', nav_back:'Récit et équipement', nav_social:'Groupe de campagne',
@@ -2202,7 +2208,10 @@ const I18N = {
     rules_sec_skills:'Compétences', rules_sec_actions:'Actions de combat', rules_sec_conditions:'États',
     rules_sec_advitem:'Caractéristiques avancées d’objets (artisanat)', rules_sec_advfabrial:'Caractéristiques avancées de fabriaux (artisanat)',
     rules_nomatches:'Aucun résultat pour cette recherche.',
-    stances_hint:'Activez ou désactivez ce qui est en vigueur'
+    stances_hint:'Activez ou désactivez ce qui est en vigueur',
+    print_armorequipment:'Armure et équipement', print_talentscontinued:'Talents (suite)',
+    print_none:'Aucun', print_campaignsetting:'Cadre de campagne',
+    print_attack:'Attaque', print_damage:'Dégâts', print_temp:'(temp.)', print_charge:'Charge'
   },
   /* See the header comment above and elvish_hint below: intentionally
      identical to English vocabulary-wise (styled in a serif "elvish hand"
@@ -4293,7 +4302,7 @@ function printAttrGroupHTML(c, d, realm){
 
 function printSkillColHTML(c, d, realm){
   const rows = realm.skills.map(([key, name, attr]) => `<div class="srow">
-      <span class="box"></span><span class="nm">${esc(name)} (${ATTRS[attr].short})</span><span class="pips">${pipsPlain(c.skills[key].ranks, 5)}</span>
+      <span class="box"></span><span class="nm">${esc(skillName(key))} (${ATTRS[attr].short})</span><span class="pips">${pipsPlain(c.skills[key].ranks, 5)}</span>
     </div>`).join('');
   const customKey = 'custom_' + realm.key;
   const custom = c.skills[customKey];
@@ -4313,77 +4322,78 @@ function printHeaderHTML(title, subtitle, c){
       <div><h1>${esc(title)}</h1><h2>${esc(subtitle)}</h2></div>
     </div>
     <div class="sidbox">
-      <div class="sbox"><span class="lbl">Character name</span><span class="val">${esc(c.name)}</span></div>
-      <div class="sbox"><span class="lbl">Level</span><span class="val">${c.level}</span></div>
-      <div class="sbox"><span class="lbl">Paths</span><span class="val">${esc(c.paths)}</span></div>
-      <div class="sbox"><span class="lbl">Ancestry</span><span class="val">${esc(c.ancestry)}</span></div>
+      <div class="sbox"><span class="lbl">${tFull('fld_charname')}</span><span class="val">${esc(c.name)}</span></div>
+      <div class="sbox"><span class="lbl">${tFull('fld_level')}</span><span class="val">${c.level}</span></div>
+      <div class="sbox"><span class="lbl">${tFull('fld_paths')}</span><span class="val">${esc(c.paths)}</span></div>
+      <div class="sbox"><span class="lbl">${tFull('fld_ancestry')}</span><span class="val">${esc(c.ancestry)}</span></div>
     </div>
   </div>
-  <div class="sbox" style="margin-bottom:.4rem"><span class="lbl">Player name</span><span class="val">${esc(c.playerName)}</span></div>`;
+  <div class="sbox" style="margin-bottom:.4rem"><span class="lbl">${tFull('fld_playername')}</span><span class="val">${esc(c.playerName)}</span></div>`;
 }
 
 function buildPrintSheetHTML(c, d){
-  const expertiseList = (c.expertises || []).map(e => `${esc(e.name)}${e.temporary ? ' (temp)' : ''}`).join(', ') || '—';
-  const conditionsOn = CONDITIONS.filter(n => c.conditions[n]).join(', ') || 'None';
-  const injuriesText = (c.injuries || []).filter(i => i.text).map(i => `${esc(i.text)} (${i.days}d)`).join('; ') || 'None';
+  const none = tFull('print_none');
+  const expertiseList = (c.expertises || []).map(e => `${esc(e.name)}${e.temporary ? ' ' + tFull('print_temp') : ''}`).join(', ') || '—';
+  const conditionsOn = CONDITIONS.filter(n => c.conditions[n]).map(condName).join(', ') || none;
+  const injuriesText = (c.injuries || []).filter(i => i.text).map(i => `${esc(i.text)} (${i.days}d)`).join('; ') || none;
   const weaponsText = (c.weapons || []).map(w => {
     const disp = weaponDisplay(c, d, w);
     const nm = w.name || (disp.catalog ? w.catalogName : 'Weapon');
-    return `<div class="item-line"><b>${esc(nm)}</b> — Attack ${sgn(disp.attackMod)}, Damage ${esc(disp.diceExpr)} ${sgn(disp.totalDamageMod)} ${esc(disp.damageType)}</div>`;
-  }).join('') || '<div class="item-line">None</div>';
+    return `<div class="item-line"><b>${esc(nm)}</b> — ${tFull('print_attack')} ${sgn(disp.attackMod)}, ${tFull('print_damage')} ${esc(disp.diceExpr)} ${sgn(disp.totalDamageMod)} ${esc(disp.damageType)}</div>`;
+  }).join('') || `<div class="item-line">${none}</div>`;
   const talentNames = (c.talentIds || []).length ? c.talentIds.join(', ') : (c.talents || '—');
-  const gearText = (c.gear || []).map(g => `<div class="item-line">${esc(g.name)}${g.qty > 1 ? ` ×${g.qty}` : ''} — ${g.weight} lbs, ${g.price} Marks</div>`).join('') || '<div class="item-line">None</div>';
-  const fabrialText = (c.fabrials || []).map(f => `<div class="item-line">${esc(f.name)} — Charge ${f.charge}/${f.maxCharge}${f.weight ? `, ${f.weight} lbs` : ''}</div>`).join('');
-  const goalsText = (c.goals || []).filter(g => g.text).map(g => `<div class="goal-line"><span>${esc(g.text)}</span><span>${pipsPlain(g.ticks.filter(Boolean).length, 3)}</span></div>`).join('') || '<div class="goal-line"><span>None</span></div>';
+  const gearText = (c.gear || []).map(g => `<div class="item-line">${esc(g.name)}${g.qty > 1 ? ` ×${g.qty}` : ''} — ${g.weight} lbs, ${g.price} Marks</div>`).join('') || `<div class="item-line">${none}</div>`;
+  const fabrialText = (c.fabrials || []).map(f => `<div class="item-line">${esc(f.name)} — ${tFull('print_charge')} ${f.charge}/${f.maxCharge}${f.weight ? `, ${f.weight} lbs` : ''}</div>`).join('');
+  const goalsText = (c.goals || []).filter(g => g.text).map(g => `<div class="goal-line"><span>${esc(g.text)}</span><span>${pipsPlain(g.ticks.filter(Boolean).length, 3)}</span></div>`).join('') || `<div class="goal-line"><span>${none}</span></div>`;
 
   const page1 = `<div class="sheet-page">
     ${printHeaderHTML('Cosmere Roleplaying Game', '', c)}
     <div class="attrrow">${REALMS.map(r => printAttrGroupHTML(c, d, r)).join('')}</div>
     <div class="poolrow">
-      <div class="poolbox"><span class="lbl">Health</span><span class="val">${c.health.current} / ${d.maxHealth}</span></div>
-      <div class="poolbox"><span class="lbl">Focus</span><span class="val">${c.focus.current} / ${d.maxFocus}</span></div>
-      <div class="poolbox"><span class="lbl">Investiture</span><span class="val">${c.investiture.current} / ${d.maxInvestiture}</span></div>
+      <div class="poolbox"><span class="lbl">${tFull('res_health')}</span><span class="val">${c.health.current} / ${d.maxHealth}</span></div>
+      <div class="poolbox"><span class="lbl">${tFull('res_focus')}</span><span class="val">${c.focus.current} / ${d.maxFocus}</span></div>
+      <div class="poolbox"><span class="lbl">${tFull('res_investiture')}</span><span class="val">${c.investiture.current} / ${d.maxInvestiture}</span></div>
     </div>
-    <div class="poolrow"><div class="poolbox"><span class="lbl">Deflect</span><span class="val">${d.deflect}</span></div></div>
+    <div class="poolrow"><div class="poolbox"><span class="lbl">${tFull('lbl_deflect')}</span><span class="val">${d.deflect}</span></div></div>
     <div class="skillcols">${REALMS.map(r => printSkillColHTML(c, d, r)).join('')}</div>
     <div class="rangerow">
-      <div class="sbox"><span class="lbl">Lifting capacity</span><span class="val">${d.lifting}</span></div>
-      <div class="sbox"><span class="lbl">Movement</span><span class="val">${d.movement}</span></div>
-      <div class="sbox"><span class="lbl">Recovery die</span><span class="val">${d.recovery}</span></div>
-      <div class="sbox"><span class="lbl">Senses range</span><span class="val">${d.senses}</span></div>
+      <div class="sbox"><span class="lbl">${tFull('fld_liftingcap')}</span><span class="val">${d.lifting}</span></div>
+      <div class="sbox"><span class="lbl">${tFull('lbl_movement')}</span><span class="val">${d.movement}</span></div>
+      <div class="sbox"><span class="lbl">${tFull('fld_recoverydie')}</span><span class="val">${d.recovery}</span></div>
+      <div class="sbox"><span class="lbl">${tFull('fld_sensesrange')}</span><span class="val">${d.senses}</span></div>
     </div>
     <div class="twinrow">
-      <div class="textbox"><span class="lbl">Conditions &amp; injuries</span><div class="body">${esc(conditionsOn)}${injuriesText !== 'None' ? '<br>' + injuriesText : ''}</div></div>
-      <div class="textbox"><span class="lbl">Expertises</span><div class="body">${expertiseList}</div></div>
+      <div class="textbox"><span class="lbl">${tFull('sec_conditions')}</span><div class="body">${esc(conditionsOn)}${injuriesText !== none ? '<br>' + injuriesText : ''}</div></div>
+      <div class="textbox"><span class="lbl">${tFull('sec_expertises')}</span><div class="body">${expertiseList}</div></div>
     </div>
     <div class="twinrow">
-      <div class="textbox"><span class="lbl">Weapons</span><div class="body">${weaponsText}</div></div>
-      <div class="textbox"><span class="lbl">Talents</span><div class="body">${esc(talentNames)}</div></div>
+      <div class="textbox"><span class="lbl">${tFull('sec_weapons')}</span><div class="body">${weaponsText}</div></div>
+      <div class="textbox"><span class="lbl">${tFull('sec_talents')}</span><div class="body">${esc(talentNames)}</div></div>
     </div>
     <div class="page-footer">Cosmere RPG Character Sheet · Radiant Sheet export</div>
   </div>`;
 
   const page2 = `<div class="sheet-page">
-    ${printHeaderHTML(c.campaign || 'Campaign Setting', 'Campaign Setting', c)}
+    ${printHeaderHTML(c.campaign || tFull('print_campaignsetting'), tFull('print_campaignsetting'), c)}
     <div class="attrrow">${REALMS.map(r => printAttrGroupHTML(c, d, r)).join('')}</div>
     <div class="threecol">
-      <div class="textbox" style="min-height:16rem"><span class="lbl">Character appearance</span><div class="body">${esc(c.appearance) || '—'}</div></div>
-      <div class="textbox" style="min-height:16rem"><span class="lbl">Armor &amp; equipment</span><div class="body">
-        <div class="item-line"><b>${esc(d.armor.name)}</b> — Deflect ${d.armor.deflect}</div>
+      <div class="textbox" style="min-height:16rem"><span class="lbl">${tFull('sec_appearance')}</span><div class="body">${esc(c.appearance) || '—'}</div></div>
+      <div class="textbox" style="min-height:16rem"><span class="lbl">${tFull('print_armorequipment')}</span><div class="body">
+        <div class="item-line"><b>${esc(d.armor.name)}</b> — ${tFull('lbl_deflect')} ${d.armor.deflect}</div>
         ${gearText}${fabrialText}
         ${esc(c.equipment) ? `<div class="item-line">${esc(c.equipment)}</div>` : ''}
-        <div class="item-line" style="margin-top:.3rem"><b>Spheres</b> — ${c.spheres.chips||0} chips, ${c.spheres.marks||0} marks, ${c.spheres.broams||0} broams</div>
+        <div class="item-line" style="margin-top:.3rem"><b>${tFull('sec_spheres')}</b> — ${c.spheres.chips||0} chips, ${c.spheres.marks||0} marks, ${c.spheres.broams||0} broams</div>
       </div></div>
       <div class="textbox" style="min-height:16rem">
-        <span class="lbl">Purpose</span><div class="body" style="margin-bottom:.3rem">${esc(c.purpose) || '—'}</div>
-        <span class="lbl">Obstacle</span><div class="body" style="margin-bottom:.3rem">${esc(c.obstacle) || '—'}</div>
-        <span class="lbl">Goals</span><div class="body">${goalsText}</div>
+        <span class="lbl">${tFull('sec_purpose')}</span><div class="body" style="margin-bottom:.3rem">${esc(c.purpose) || '—'}</div>
+        <span class="lbl">${tFull('sec_obstacle')}</span><div class="body" style="margin-bottom:.3rem">${esc(c.obstacle) || '—'}</div>
+        <span class="lbl">${tFull('sec_goals')}</span><div class="body">${goalsText}</div>
       </div>
     </div>
     <div class="threecol" style="margin-top:.3rem">
-      <div class="textbox"><span class="lbl">Talents, continued</span><div class="body">${(c.talentIds || []).length > 8 ? esc(c.talentIds.slice(8).join(', ')) : '—'}</div></div>
-      <div class="textbox"><span class="lbl">Notes</span><div class="body">${esc(c.notes) || '—'}</div></div>
-      <div class="textbox"><span class="lbl">Connections</span><div class="body">${esc(c.connections) || '—'}</div></div>
+      <div class="textbox"><span class="lbl">${tFull('print_talentscontinued')}</span><div class="body">${(c.talentIds || []).length > 8 ? esc(c.talentIds.slice(8).join(', ')) : '—'}</div></div>
+      <div class="textbox"><span class="lbl">${tFull('sph_notes')}</span><div class="body">${esc(c.notes) || '—'}</div></div>
+      <div class="textbox"><span class="lbl">${tFull('sec_connections')}</span><div class="body">${esc(c.connections) || '—'}</div></div>
     </div>
     <div class="page-footer">Cosmere RPG Character Sheet · Radiant Sheet export</div>
   </div>`;
