@@ -1902,7 +1902,8 @@ const I18N = {
     auth_err_emailinuse:'That email already has an account — sign in instead.',
     auth_err_invalidcredential:'Email or password did not match.',
     auth_err_notallowed:'Turn on email sign-in in your Firebase console.',
-    auth_err_somethingwrong:'Something went wrong.'
+    auth_err_somethingwrong:'Something went wrong.',
+    form_bonushint:'Forms apply temporary attribute bonuses'
   },
   ko: {
     nav_home:'홈', nav_front:'전투 & 능력치', nav_back:'서사 & 장비', nav_social:'모험단',
@@ -2195,7 +2196,8 @@ const I18N = {
     auth_err_emailinuse:'이미 해당 이메일로 등록된 계정이 있습니다 — 로그인해 주세요.',
     auth_err_invalidcredential:'이메일 또는 비밀번호가 일치하지 않습니다.',
     auth_err_notallowed:'Firebase 콘솔에서 이메일 로그인을 활성화하세요.',
-    auth_err_somethingwrong:'문제가 발생했습니다.'
+    auth_err_somethingwrong:'문제가 발생했습니다.',
+    form_bonushint:'형태는 일시적인 속성 보너스를 부여합니다'
   },
   fr: {
     nav_home:'Accueil', nav_front:'Combat et stats', nav_back:'Récit et équipement', nav_social:'Groupe de campagne',
@@ -2487,7 +2489,8 @@ const I18N = {
     auth_err_emailinuse:'Un compte existe déjà avec cet e-mail — connectez-vous plutôt.',
     auth_err_invalidcredential:'L’e-mail ou le mot de passe ne correspond pas.',
     auth_err_notallowed:'Activez la connexion par e-mail dans votre console Firebase.',
-    auth_err_somethingwrong:'Une erreur s’est produite.'
+    auth_err_somethingwrong:'Une erreur s’est produite.',
+    form_bonushint:'Les formes accordent des bonus d’attribut temporaires'
   },
   /* See the header comment above and elvish_hint below: intentionally
      identical to English vocabulary-wise (styled in a serif "elvish hand"
@@ -3072,9 +3075,9 @@ function openTalentModal(name){
 function singerFormHTML(c, d){
   const formOpts = Object.keys(SINGER_FORMS).map(f => `<option value="${esc(f)}" ${c.form === f ? 'selected' : ''}>${esc(f)}</option>`).join('');
   const bonusList = Object.entries(d.formBonus || {}).filter(([k, v]) => v && ATTRS[k]).map(([k, v]) => `${ATTRS[k].short} ${sgn(v)}`).join(', ');
-  const deflectBonusText = (d.formBonus || {}).deflect ? `Deflect +${d.formBonus.deflect}` : '';
+  const deflectBonusText = (d.formBonus || {}).deflect ? `${tFull('lbl_deflect')} +${d.formBonus.deflect}` : '';
   return `<div class="card">
-    <h3>${tFull('sec_ancestryform')} <span class="hint">Forms apply temporary attribute bonuses</span></h3><hr class="rule">
+    <h3>${tFull('sec_ancestryform')} <span class="hint">${tFull('form_bonushint')}</span></h3><hr class="rule">
     <div class="switchrow">
       <span>${t('form_singerancestry')}<span class="hint" style="display:block">${t('form_singerhint')}</span></span>
       <button class="switch" data-toggle="singer" aria-pressed="${c.singer}" aria-label="${t('tt_singerancestry')}"></button>
