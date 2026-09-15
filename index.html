@@ -1630,7 +1630,7 @@ const I18N = {
     scope_hint:'Interface only translates menus and labels. Interface + game text also translates section headers, attributes, and condition names — deep rules text (talents, weapon traits, item descriptions) stays in English, since it isn’t practical to translate and verify thousands of rules entries at once.',
     elvish_hint:'Sindarin and Quenya have no attested words for modern interface or game-mechanical terms, so Elvish keeps this vocabulary in English rather than inventing words that don’t come from Tolkien’s own writing — it’s a nod to the setting, styled in an elvish hand, not a functional translation.',
     btn_done:'Done', btn_close:'Close', btn_cancel:'Cancel', btn_delete:'Delete', btn_add:'Add',
-    btn_undo:'Undo', btn_accept:'Accept', btn_decline:'Decline', btn_areyousure:'Are you sure?',
+    btn_undo:'Undo', btn_accept:'Accept', btn_decline:'Decline', btn_areyousure:'Are you sure?', btn_remove:'Remove',
     attr_str:'Strength', attr_spd:'Speed', attr_int:'Intellect', attr_wil:'Willpower', attr_awa:'Awareness', attr_pre:'Presence',
     res_health:'Health', res_focus:'Focus', res_investiture:'Investiture',
     lbl_deflect:'Deflect', lbl_movement:'Movement', lbl_defense:'Defense',
@@ -1743,7 +1743,16 @@ const I18N = {
     tal_prereqwarning:'Warning: Prerequisite Not Met', tal_gmmayallow:'(GM may allow anyway.)',
     tal_viewdetails:'View talent details', tal_prerequisites:'Prerequisites', tal_narrative:'Narrative', tal_mechanicaleffect:'Mechanical Effect',
     travel_referenceonly:'Reference only', travel_mounts:'Mounts', travel_vehicles:'Vehicles', travel_lodging:'Lodging',
-    travel_name:'Name', travel_speed:'Speed', travel_capacity:'Capacity', travel_price:'Price', travel_rent:'Rent', travel_purchase:'Purchase'
+    travel_name:'Name', travel_speed:'Speed', travel_capacity:'Capacity', travel_price:'Price', travel_rent:'Rent', travel_purchase:'Purchase',
+    form_singerancestry:'Singer ancestry', form_singerhint:'Unlocks Form selection and Form-based bonuses', form_currentform:'Current form',
+    ideal_sprenname:'Spren name', ideal_order:'Order', ideal_unbonded:'— Unbonded —',
+    ideal_typicallybonded:'typically bonded to a', ideal_wordstext:'The words of this Ideal, once spoken', ideal_milestone:'Milestone',
+    sq_name:'Name', sq_type:'Type', sq_statblock:'Stat block / notes', sq_noneyet:'No squires or companions yet.',
+    sq_nameplaceholder:'Name', sq_typeplaceholder:'Squire / Companion', sq_notesplaceholder:'Health, key attributes, notes',
+    sq_addpreset:'Add preset companion', sq_addcustom:'Add squire or companion',
+    inj_title:'Injuries', inj_injury:'Injury', inj_dayslefth:'Days left', inj_dayslefttitle:'Days of recovery left',
+    inj_noneyet:'No injuries. Long rests reduce recovery days.', inj_addinjury:'Add injury',
+    cond_details:'details', cond_whatdoesitdo:'What does {name} do?'
   },
   ko: {
     nav_home:'홈', nav_front:'전투 & 능력치', nav_back:'서사 & 장비', nav_social:'모험단',
@@ -1765,7 +1774,7 @@ const I18N = {
     scope_hint:'인터페이스만 선택하면 메뉴와 레이블만 번역됩니다. 인터페이스 + 게임 용어를 선택하면 항목 제목, 능력치, 상태이상 이름도 함께 번역됩니다 — 특성, 무기 특성, 아이템 설명 등 방대한 규칙 원문은 한 번에 정확히 번역·검증하기 어려워 영어로 남겨둡니다.',
     elvish_hint:'신다린과 퀘냐에는 현대적인 인터페이스나 게임 용어에 해당하는 단어가 존재하지 않으므로, 엘프어는 톨킨의 원문에 없는 단어를 임의로 만들어내는 대신 이러한 용어를 영어로 유지합니다 — 실제 번역이라기보다 세계관에 대한 오마주이며, 엘프풍 서체로 표현됩니다.',
     btn_done:'완료', btn_close:'닫기', btn_cancel:'취소', btn_delete:'삭제', btn_add:'추가',
-    btn_undo:'실행 취소', btn_accept:'수락', btn_decline:'거절', btn_areyousure:'정말 진행하시겠습니까?',
+    btn_undo:'실행 취소', btn_accept:'수락', btn_decline:'거절', btn_areyousure:'정말 진행하시겠습니까?', btn_remove:'제거',
     attr_str:'힘', attr_spd:'속도', attr_int:'지능', attr_wil:'의지력', attr_awa:'감지력', attr_pre:'존재감',
     res_health:'체력', res_focus:'집중력', res_investiture:'인베스티처',
     lbl_deflect:'편향', lbl_movement:'이동력', lbl_defense:'방어도',
@@ -1878,7 +1887,16 @@ const I18N = {
     tal_prereqwarning:'경고: 전제 조건 미충족', tal_gmmayallow:'(GM이 허용할 수도 있습니다.)',
     tal_viewdetails:'특성 세부 정보 보기', tal_prerequisites:'전제 조건', tal_narrative:'서사', tal_mechanicaleffect:'메커니즘 효과',
     travel_referenceonly:'참고용', travel_mounts:'탈것', travel_vehicles:'차량', travel_lodging:'숙박',
-    travel_name:'이름', travel_speed:'속도', travel_capacity:'수용 인원', travel_price:'가격', travel_rent:'대여료', travel_purchase:'구매가'
+    travel_name:'이름', travel_speed:'속도', travel_capacity:'수용 인원', travel_price:'가격', travel_rent:'대여료', travel_purchase:'구매가',
+    form_singerancestry:'가수 혈통', form_singerhint:'형태 선택 및 형태 기반 보너스를 활성화합니다', form_currentform:'현재 형태',
+    ideal_sprenname:'스펜 이름', ideal_order:'기사단', ideal_unbonded:'— 결속되지 않음 —',
+    ideal_typicallybonded:'일반적으로 결속되는 대상:', ideal_wordstext:'한 번 말해진 이 이상의 말', ideal_milestone:'이정표',
+    sq_name:'이름', sq_type:'유형', sq_statblock:'능력치 / 메모', sq_noneyet:'아직 종자나 동료가 없습니다.',
+    sq_nameplaceholder:'이름', sq_typeplaceholder:'종자 / 동료', sq_notesplaceholder:'체력, 주요 능력치, 메모',
+    sq_addpreset:'사전 설정 동료 추가', sq_addcustom:'종자 또는 동료 추가',
+    inj_title:'부상', inj_injury:'부상', inj_dayslefth:'남은 일수', inj_dayslefttitle:'남은 회복 일수',
+    inj_noneyet:'부상이 없습니다. 긴 휴식은 회복 일수를 줄입니다.', inj_addinjury:'부상 추가',
+    cond_details:'세부 정보', cond_whatdoesitdo:'{name}은(는) 무엇을 하나요?'
   },
   fr: {
     nav_home:'Accueil', nav_front:'Combat et stats', nav_back:'Récit et équipement', nav_social:'Groupe de campagne',
@@ -1900,7 +1918,7 @@ const I18N = {
     scope_hint:'Interface seule ne traduit que les menus et libellés. Interface + textes de jeu traduit aussi les titres de section, les caractéristiques et les noms d’états — le texte de règles approfondi (talents, propriétés d’armes, descriptions d’objets) reste en anglais, car il n’est pas réaliste de traduire et vérifier des milliers d’entrées d’un coup.',
     elvish_hint:'Le sindarin et le quenya ne possèdent aucun mot attesté pour les termes d’interface ou de jeu modernes : plutôt que d’inventer des mots absents des écrits de Tolkien, l’elfique conserve ce vocabulaire en anglais — un clin d’œil à l’univers, présenté dans une graphie elfique, non une traduction fonctionnelle.',
     btn_done:'Terminé', btn_close:'Fermer', btn_cancel:'Annuler', btn_delete:'Supprimer', btn_add:'Ajouter',
-    btn_undo:'Annuler l’action', btn_accept:'Accepter', btn_decline:'Refuser', btn_areyousure:'Êtes-vous sûr ?',
+    btn_undo:'Annuler l’action', btn_accept:'Accepter', btn_decline:'Refuser', btn_areyousure:'Êtes-vous sûr ?', btn_remove:'Retirer',
     attr_str:'Force', attr_spd:'Vitesse', attr_int:'Intellect', attr_wil:'Volonté', attr_awa:'Vigilance', attr_pre:'Prestance',
     res_health:'Santé', res_focus:'Concentration', res_investiture:'Investiture',
     lbl_deflect:'Déviation', lbl_movement:'Déplacement', lbl_defense:'Défense',
@@ -2013,7 +2031,16 @@ const I18N = {
     tal_prereqwarning:'Attention : prérequis non rempli', tal_gmmayallow:'(Le MJ peut l’autoriser quand même.)',
     tal_viewdetails:'Voir les détails du talent', tal_prerequisites:'Prérequis', tal_narrative:'Récit', tal_mechanicaleffect:'Effet mécanique',
     travel_referenceonly:'Référence uniquement', travel_mounts:'Montures', travel_vehicles:'Véhicules', travel_lodging:'Logement',
-    travel_name:'Nom', travel_speed:'Vitesse', travel_capacity:'Capacité', travel_price:'Prix', travel_rent:'Location', travel_purchase:'Achat'
+    travel_name:'Nom', travel_speed:'Vitesse', travel_capacity:'Capacité', travel_price:'Prix', travel_rent:'Location', travel_purchase:'Achat',
+    form_singerancestry:'Ascendance chanteuse', form_singerhint:'Débloque le choix de forme et les bonus liés aux formes', form_currentform:'Forme actuelle',
+    ideal_sprenname:'Nom du spren', ideal_order:'Ordre', ideal_unbonded:'— Sans lien —',
+    ideal_typicallybonded:'généralement lié à un', ideal_wordstext:'Les mots de cet Idéal, une fois prononcés', ideal_milestone:'Jalon',
+    sq_name:'Nom', sq_type:'Type', sq_statblock:'Profil / notes', sq_noneyet:'Aucun écuyer ni compagnon pour l’instant.',
+    sq_nameplaceholder:'Nom', sq_typeplaceholder:'Écuyer / Compagnon', sq_notesplaceholder:'Santé, caractéristiques clés, notes',
+    sq_addpreset:'Ajouter un compagnon prédéfini', sq_addcustom:'Ajouter un écuyer ou un compagnon',
+    inj_title:'Blessures', inj_injury:'Blessure', inj_dayslefth:'Jours restants', inj_dayslefttitle:'Jours de récupération restants',
+    inj_noneyet:'Aucune blessure. Les repos longs réduisent les jours de récupération.', inj_addinjury:'Ajouter une blessure',
+    cond_details:'détails', cond_whatdoesitdo:'Que fait {name} ?'
   },
   /* See the header comment above and elvish_hint below: intentionally
      identical to English vocabulary-wise (styled in a serif "elvish hand"
@@ -2602,11 +2629,11 @@ function singerFormHTML(c, d){
   return `<div class="card">
     <h3>${tFull('sec_ancestryform')} <span class="hint">Forms apply temporary attribute bonuses</span></h3><hr class="rule">
     <div class="switchrow">
-      <span>Singer ancestry<span class="hint" style="display:block">Unlocks Form selection and Form-based bonuses</span></span>
+      <span>${t('form_singerancestry')}<span class="hint" style="display:block">${t('form_singerhint')}</span></span>
       <button class="switch" data-toggle="singer" aria-pressed="${c.singer}" aria-label="Singer ancestry"></button>
     </div>
     ${c.singer ? `
-    <div class="f" style="margin-top:.6rem"><label>Current form</label>
+    <div class="f" style="margin-top:.6rem"><label>${t('form_currentform')}</label>
       <select data-path="form">${formOpts}</select></div>
     <p class="hint" style="margin-top:.4rem">${esc((SINGER_FORMS[c.form] || {}).desc || '')}${bonusList ? ` — <b style="color:var(--accent)">${bonusList}</b>` : ''}${deflectBonusText ? ` <b style="color:var(--accent)">${deflectBonusText}</b>` : ''}</p>
     ` : ''}
@@ -2619,17 +2646,17 @@ function radiantIdealsHTML(c){
   const ideals = c.spren.ideals.map((ideal, i) => `<div class="ideal" data-iidx="${i}">
       <div class="row" style="grid-template-columns:1fr auto;align-items:center">
         <b>${esc(ideal.name)}</b>
-        <span class="ticks" data-idealticks="${i}">${[0, 1, 2].map(t => `<i class="${ideal.ticks[t] ? 'on' : ''}" data-t="${t}" role="button" tabindex="0" aria-label="Milestone ${t + 1}"></i>`).join('')}</span>
+        <span class="ticks" data-idealticks="${i}">${[0, 1, 2].map(tk => `<i class="${ideal.ticks[tk] ? 'on' : ''}" data-t="${tk}" role="button" tabindex="0" aria-label="${t('ideal_milestone')} ${tk + 1}"></i>`).join('')}</span>
       </div>
-      <input type="text" value="${esc(ideal.text)}" data-path="spren.ideals.${i}.text" placeholder="The words of this Ideal, once spoken">
+      <input type="text" value="${esc(ideal.text)}" data-path="spren.ideals.${i}.text" placeholder="${t('ideal_wordstext')}">
     </div>`).join('');
   return `<div class="card">
     <h3>${tFull('sec_idealsspren')}</h3><hr class="rule">
     <div class="grid2">
-      <div class="f"><label>Spren name</label><input type="text" value="${esc(c.spren.name)}" data-path="spren.name" placeholder="Syl, Pattern, Wyndle…"></div>
-      <div class="f"><label>Order</label><select data-path="spren.order"><option value="">— Unbonded —</option>${orderOpts}</select></div>
+      <div class="f"><label>${t('ideal_sprenname')}</label><input type="text" value="${esc(c.spren.name)}" data-path="spren.name" placeholder="Syl, Pattern, Wyndle…"></div>
+      <div class="f"><label>${t('ideal_order')}</label><select data-path="spren.order"><option value="">${t('ideal_unbonded')}</option>${orderOpts}</select></div>
     </div>
-    ${order ? `<p class="hint" style="margin-top:.4rem">Surges: ${esc(order.surges)} · typically bonded to a ${esc(order.spren)}</p>` : ''}
+    ${order ? `<p class="hint" style="margin-top:.4rem">${t('mc_surges')}: ${esc(order.surges)} · ${t('ideal_typicallybonded')} ${esc(order.spren)}</p>` : ''}
     <div class="rows" style="margin-top:.6rem">${ideals}</div>
   </div>`;
 }
@@ -2647,21 +2674,21 @@ const COMPANION_PRESETS = {
 
 function squiresHTML(c){
   const rows = c.squires.map((s, i) => `<div class="row" style="grid-template-columns:1fr 1fr 2fr auto" data-sqidx="${i}">
-      <input type="text" value="${esc(s.name)}" data-path="squires.${i}.name" placeholder="Name">
-      <input type="text" value="${esc(s.type)}" data-path="squires.${i}.type" placeholder="Squire / Companion">
-      <input type="text" value="${esc(s.notes)}" data-path="squires.${i}.notes" placeholder="Health, key attributes, notes">
-      <button class="iconbtn" data-action="del-squire" data-i="${i}" aria-label="Remove">✕</button>
+      <input type="text" value="${esc(s.name)}" data-path="squires.${i}.name" placeholder="${t('sq_nameplaceholder')}">
+      <input type="text" value="${esc(s.type)}" data-path="squires.${i}.type" placeholder="${t('sq_typeplaceholder')}">
+      <input type="text" value="${esc(s.notes)}" data-path="squires.${i}.notes" placeholder="${t('sq_notesplaceholder')}">
+      <button class="iconbtn" data-action="del-squire" data-i="${i}" aria-label="${t('btn_remove')}">✕</button>
     </div>`).join('');
   const presetOpts = Object.keys(COMPANION_PRESETS).map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
   return `<div class="card">
     <h3>${tFull('sec_squirescompanions')}</h3><hr class="rule">
-    <div class="row thead" style="grid-template-columns:1fr 1fr 2fr auto"><span>Name</span><span>Type</span><span>Stat block / notes</span><span></span></div>
-    <div class="rows">${rows || '<p class="empty">No squires or companions yet.</p>'}</div>
+    <div class="row thead" style="grid-template-columns:1fr 1fr 2fr auto"><span>${t('sq_name')}</span><span>${t('sq_type')}</span><span>${t('sq_statblock')}</span><span></span></div>
+    <div class="rows">${rows || `<p class="empty">${t('sq_noneyet')}</p>`}</div>
     <div class="row" style="grid-template-columns:1fr auto;margin-top:.5rem">
       <select id="companionPresetSel">${presetOpts}</select>
-      <button class="btn" data-action="add-companion-preset">Add preset companion</button>
+      <button class="btn" data-action="add-companion-preset">${t('sq_addpreset')}</button>
     </div>
-    <button class="btn addbtn" data-action="add-squire" style="margin-top:.4rem">Add squire or companion</button>
+    <button class="btn addbtn" data-action="add-squire" style="margin-top:.4rem">${t('sq_addcustom')}</button>
   </div>`;
 }
 
@@ -2694,20 +2721,20 @@ function openConditionModal(name){
 function conditionsHTML(c){
   const conds = CONDITIONS.map(n => `<span style="display:inline-flex;align-items:center;gap:.1rem">
       <button class="cond" data-cond="${n}" aria-pressed="${!!c.conditions[n]}" title="${esc(CONDITION_BLURBS[n] || '')}">${condName(n)}</button>
-      <button class="iconbtn" data-action="show-cond-info" data-cond-name="${n}" aria-label="${condName(n)} details" title="What does ${condName(n)} do?" style="padding:.15rem .35rem;font-size:.68rem">ⓘ</button>
+      <button class="iconbtn" data-action="show-cond-info" data-cond-name="${n}" aria-label="${condName(n)} ${t('cond_details')}" title="${t('cond_whatdoesitdo').replace('{name}', condName(n))}" style="padding:.15rem .35rem;font-size:.68rem">ⓘ</button>
     </span>`).join('');
   const injuries = c.injuries.map((inj, i) => `<div class="row" style="grid-template-columns:1fr 5.5rem auto" data-iidx="${i}">
-      <input type="text" value="${esc(inj.text)}" data-path="injuries.${i}.text" placeholder="Injury" aria-label="Injury">
-      <input type="number" value="${inj.days}" data-path="injuries.${i}.days" title="Days of recovery left" aria-label="Recovery days">
-      <button class="iconbtn" data-action="del-injury" data-i="${i}" aria-label="Remove injury">✕</button>
+      <input type="text" value="${esc(inj.text)}" data-path="injuries.${i}.text" placeholder="${t('inj_injury')}" aria-label="Injury">
+      <input type="number" value="${inj.days}" data-path="injuries.${i}.days" title="${t('inj_dayslefttitle')}" aria-label="Recovery days">
+      <button class="iconbtn" data-action="del-injury" data-i="${i}" aria-label="${t('btn_remove')} ${t('inj_injury')}">✕</button>
     </div>`).join('');
   return `<div class="card">
     <h3>${tFull('sec_conditions')}</h3><hr class="rule">
     <div class="conds">${conds}</div>
-    <h4 style="margin-top:.9rem;font-size:1rem">Injuries</h4>
-    <div class="row thead" style="grid-template-columns:1fr 5.5rem auto"><span>Injury</span><span>Days left</span><span></span></div>
-    <div class="rows">${injuries || '<p class="empty">No injuries. Long rests reduce recovery days.</p>'}</div>
-    <button class="btn addbtn" data-action="add-injury">Add injury</button>
+    <h4 style="margin-top:.9rem;font-size:1rem">${t('inj_title')}</h4>
+    <div class="row thead" style="grid-template-columns:1fr 5.5rem auto"><span>${t('inj_injury')}</span><span>${t('inj_dayslefth')}</span><span></span></div>
+    <div class="rows">${injuries || `<p class="empty">${t('inj_noneyet')}</p>`}</div>
+    <button class="btn addbtn" data-action="add-injury">${t('inj_addinjury')}</button>
   </div>`;
 }
 
