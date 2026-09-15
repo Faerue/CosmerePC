@@ -1881,7 +1881,12 @@ const I18N = {
     msg_invitesentto:'Invite sent to @{name}.',
     msg_nowyourcharacter:'{name} is now your character in this party.',
     msg_nowgm:'{name} is now the game master.',
-    msg_sentgift:'Sent {name} — it’ll land in their gear next time they’re online.'
+    msg_sentgift:'Sent {name} — it’ll land in their gear next time they’re online.',
+    tt_activechar:'Active character', tt_customskillattr:'Custom skill attribute', tt_radianttoggle:'Radiant',
+    tt_skillused:'Skill used', tt_attackbonustitle:'Extra attack bonus', tt_attackbonusaria:'Attack bonus',
+    tt_targetdefense:'Target defense', tt_singerancestry:'Singer ancestry',
+    tt_spendcharge:'Spend a charge', tt_restorecharge:'Restore a charge',
+    tt_showpassword:'Show password', tt_moveup:'Move up', tt_movedown:'Move down', tt_deleteparty:'Delete party'
   },
   ko: {
     nav_home:'홈', nav_front:'전투 & 능력치', nav_back:'서사 & 장비', nav_social:'모험단',
@@ -2154,7 +2159,12 @@ const I18N = {
     msg_invitesentto:'@{name}에게 초대를 보냈습니다.',
     msg_nowyourcharacter:'{name}이(가) 이제 이 파티에서 당신의 캐릭터입니다.',
     msg_nowgm:'{name}이(가) 이제 게임 마스터입니다.',
-    msg_sentgift:'{name}을(를) 보냈습니다 — 상대가 다음에 접속하면 장비에 추가됩니다.'
+    msg_sentgift:'{name}을(를) 보냈습니다 — 상대가 다음에 접속하면 장비에 추가됩니다.',
+    tt_activechar:'현재 캐릭터', tt_customskillattr:'사용자 지정 기술 속성', tt_radianttoggle:'레이션트',
+    tt_skillused:'사용 기술', tt_attackbonustitle:'추가 공격 보너스', tt_attackbonusaria:'공격 보너스',
+    tt_targetdefense:'대상 방어도', tt_singerancestry:'가수 혈통',
+    tt_spendcharge:'충전 사용', tt_restorecharge:'충전 복구',
+    tt_showpassword:'비밀번호 표시', tt_moveup:'위로 이동', tt_movedown:'아래로 이동', tt_deleteparty:'파티 삭제'
   },
   fr: {
     nav_home:'Accueil', nav_front:'Combat et stats', nav_back:'Récit et équipement', nav_social:'Groupe de campagne',
@@ -2426,7 +2436,12 @@ const I18N = {
     msg_invitesentto:'Invitation envoyée à @{name}.',
     msg_nowyourcharacter:'{name} est maintenant votre personnage dans ce groupe.',
     msg_nowgm:'{name} est maintenant le maître de jeu.',
-    msg_sentgift:'{name} envoyé — il arrivera dans son équipement à sa prochaine connexion.'
+    msg_sentgift:'{name} envoyé — il arrivera dans son équipement à sa prochaine connexion.',
+    tt_activechar:'Personnage actif', tt_customskillattr:'Attribut de compétence personnalisée', tt_radianttoggle:'Radiant',
+    tt_skillused:'Compétence utilisée', tt_attackbonustitle:'Bonus d’attaque supplémentaire', tt_attackbonusaria:'Bonus d’attaque',
+    tt_targetdefense:'Défense ciblée', tt_singerancestry:'Ascendance Chanteur',
+    tt_spendcharge:'Dépenser une charge', tt_restorecharge:'Restaurer une charge',
+    tt_showpassword:'Afficher le mot de passe', tt_moveup:'Monter', tt_movedown:'Descendre', tt_deleteparty:'Supprimer le groupe'
   },
   /* See the header comment above and elvish_hint below: intentionally
      identical to English vocabulary-wise (styled in a serif "elvish hand"
@@ -2653,7 +2668,7 @@ function customSkillRowHTML(c, d, realm){
     <div class="mod" data-derived="skill.${key}" data-test="${key}" role="button" tabindex="0" title="${t('fld_rollcustomskill')}">${sgn(d.skills[key])}</div>
     <div class="nm customline">
       <input type="text" value="${esc(s.name)}" data-path="skills.${key}.name" placeholder="${t('fld_customskillplaceholder')}" aria-label="Custom skill name">
-      <select data-path="skills.${key}.attr" aria-label="Custom skill attribute">${opts}</select>
+      <select data-path="skills.${key}.attr" aria-label="${t('tt_customskillattr')}">${opts}</select>
     </div>
     ${pipsHTML('skills.' + key + '.ranks', s.ranks)}
   </div>`;
@@ -2717,7 +2732,7 @@ function radiantToggleHTML(c){
   return `<div class="switchrow" style="padding-top:.5rem">
     <span style="font-size:.84rem">${t('fld_radianttoggle')}
       <span class="hint" style="display:block">${t('fld_radianthint')}</span></span>
-    <button class="switch" data-toggle="radiant" aria-pressed="${c.radiant}" aria-label="Radiant"></button>
+    <button class="switch" data-toggle="radiant" aria-pressed="${c.radiant}" aria-label="${t('tt_radianttoggle')}"></button>
   </div>`;
 }
 
@@ -2744,15 +2759,15 @@ function weaponsHTML(c, d){
       (disp.catalog && (/\bthrown\b/i.test(disp.catalog.range || '') || (disp.hasExpertise && /\bthrown\b/i.test(disp.catalog.expertTraits || ''))));
     return `<div class="row wrow" data-widx="${i}">
       <input type="text" value="${esc(w.name)}" data-path="weapons.${i}.name" placeholder="${t('wpn_th_weapon')}" aria-label="Weapon name">
-      <select data-path="weapons.${i}.skill" aria-label="Skill used">${skillOpts(w)}</select>
-      <input type="number" value="${w.bonus}" data-path="weapons.${i}.bonus" title="Extra attack bonus" aria-label="Attack bonus">
+      <select data-path="weapons.${i}.skill" aria-label="${t('tt_skillused')}">${skillOpts(w)}</select>
+      <input type="number" value="${w.bonus}" data-path="weapons.${i}.bonus" title="${t('tt_attackbonustitle')}" aria-label="${t('tt_attackbonusaria')}">
       ${isCatalog
         ? `<input type="text" value="${esc(disp.diceExpr)} ${esc(sgn(disp.totalDamageMod))} ${esc(disp.damageType)}" readonly title="Base ${esc(disp.catalog.damage)} + current skill/talent modifier" aria-label="Damage">`
         : `<input type="text" value="${esc(w.damage)}" data-path="weapons.${i}.damage" placeholder="1d6 + STR" aria-label="Damage">`}
       ${isCatalog
         ? `<input type="text" value="${esc(disp.traits)}" readonly title="Auto-computed from catalog and expertise" aria-label="Traits">`
         : `<input type="text" value="${esc(w.traits)}" data-path="weapons.${i}.traits" placeholder="${t('wpn_th_traits')}" aria-label="Traits">`}
-      <select data-path="weapons.${i}.defense" aria-label="Target defense">${defOpts(w)}</select>
+      <select data-path="weapons.${i}.defense" aria-label="${t('tt_targetdefense')}">${defOpts(w)}</select>
       <span style="display:flex;gap:.25rem">
         <button class="iconbtn" data-action="show-weapon-info" data-i="${i}" aria-label="${t('wpn_details')}" title="${t('wpn_viewtraits')}">ⓘ</button>
         ${state.settings.diceMode !== 'disabled' ? `<button class="iconbtn" data-action="roll-weapon-hit" data-i="${i}" title="${state.settings.diceMode === 'info' ? t('wpn_showwhattoroll') : t('wpn_rollahit')}">${state.settings.diceMode === 'info' ? t('wpn_showroll') : t('wpn_hit')}</button>` : ''}
@@ -3016,7 +3031,7 @@ function singerFormHTML(c, d){
     <h3>${tFull('sec_ancestryform')} <span class="hint">Forms apply temporary attribute bonuses</span></h3><hr class="rule">
     <div class="switchrow">
       <span>${t('form_singerancestry')}<span class="hint" style="display:block">${t('form_singerhint')}</span></span>
-      <button class="switch" data-toggle="singer" aria-pressed="${c.singer}" aria-label="Singer ancestry"></button>
+      <button class="switch" data-toggle="singer" aria-pressed="${c.singer}" aria-label="${t('tt_singerancestry')}"></button>
     </div>
     ${c.singer ? `
     <div class="f" style="margin-top:.6rem"><label>${t('form_currentform')}</label>
@@ -3178,9 +3193,9 @@ function renderFrontImpl(){
     ${c.armor === 'Shardplate' ? `
     <div class="f" style="margin-top:.5rem;max-width:14rem"><label>Shardplate charges</label>
       <div class="stepper">
-        <button data-adjust="shardplateCharges" data-by="-1" aria-label="Spend a charge">−</button>
+        <button data-adjust="shardplateCharges" data-by="-1" aria-label="${t('tt_spendcharge')}">−</button>
         <span class="val" data-derived="shardplateCharges">${c.shardplateCharges}</span>
-        <button data-adjust="shardplateCharges" data-by="1" aria-label="Restore a charge">+</button>
+        <button data-adjust="shardplateCharges" data-by="1" aria-label="${t('tt_restorecharge')}">+</button>
       </div>
     </div>` : ''}
     <p class="hint" id="armortags" style="margin:.5rem 0 0;${d.armor.tags && d.armor.tags.length ? '' : 'display:none'}">${armorTagsHTML(d.armor)}</p>
@@ -4820,7 +4835,7 @@ function openSettings(){
       ${s.diceMode !== 'disabled' ? `<div class="switchrow">
         <span>${t('settings_plotdie')}
           <span class="hint" style="display:block">${t('plotdie_hint')}</span></span>
-        <button class="switch" data-setbool="plotDie" aria-pressed="${s.plotDie}" aria-label="Plot die"></button>
+        <button class="switch" data-setbool="plotDie" aria-pressed="${s.plotDie}" aria-label="${t('dice_plotdie')}"></button>
       </div>` : ''}
     </section>
 
@@ -4923,6 +4938,8 @@ function applyLanguage(){
   }
   setAttrs('btnGoHome', 'tt_home');
   setAttrs('btnNewChar', 'tt_newchar');
+  const charpick = document.getElementById('charpick');
+  if (charpick) charpick.setAttribute('aria-label', t('tt_activechar'));
   setText('diceTitle', 'dice_title');
   setAttrs('btnClearLog', 'dice_clearlog');
   const btnClearLog = document.getElementById('btnClearLog');
@@ -5525,7 +5542,7 @@ function pwFieldHTML(id, label){
   return `<div class="f"><label>${esc(label)}</label>
     <div class="pwwrap">
       <input type="password" id="${id}" placeholder="••••••••" autocomplete="current-password">
-      <button type="button" class="pwtoggle" data-action="toggle-password" data-target="${id}" aria-label="Show password" tabindex="-1">
+      <button type="button" class="pwtoggle" data-action="toggle-password" data-target="${id}" aria-label="${t('tt_showpassword')}" tabindex="-1">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
       </button>
     </div>
@@ -5813,8 +5830,8 @@ function memberCardHTML(m, uidKey, opts){
 
   const reorder = (opts.isGM && (opts.scope === 'party' || opts.scope === 'local'))
     ? `<span style="display:inline-flex;gap:.15rem;margin-left:.4rem">
-        ${!opts.first ? `<button class="iconbtn" data-action="${opts.scope}-reorder" data-uid="${uidKey}" data-dir="-1" aria-label="Move up">↑</button>` : ''}
-        ${!opts.last ? `<button class="iconbtn" data-action="${opts.scope}-reorder" data-uid="${uidKey}" data-dir="1" aria-label="Move down">↓</button>` : ''}
+        ${!opts.first ? `<button class="iconbtn" data-action="${opts.scope}-reorder" data-uid="${uidKey}" data-dir="-1" aria-label="${t('tt_moveup')}">↑</button>` : ''}
+        ${!opts.last ? `<button class="iconbtn" data-action="${opts.scope}-reorder" data-uid="${uidKey}" data-dir="1" aria-label="${t('tt_movedown')}">↓</button>` : ''}
       </span>`
     : '';
 
@@ -5896,7 +5913,7 @@ function offlineSocialHTML(){
         ${parties.map(p => `<div class="listitem">
             <button class="btn ghost" data-action="select-local-party" data-pid="${p.id}" style="${p.id === pid ? 'border-color:var(--accent);color:var(--accent)' : ''}">${esc(p.name)}</button>
             <span class="hint">${p.charIds.length} ${t('local_atthetable')}
-              <button class="iconbtn" data-action="del-local-party" data-pid="${p.id}" aria-label="Delete party">✕</button></span>
+              <button class="iconbtn" data-action="del-local-party" data-pid="${p.id}" aria-label="${t('tt_deleteparty')}">✕</button></span>
           </div>`).join('') || `<p class="empty">${t('local_nopartiesyet')}</p>`}
       </div>
       <div class="row" style="grid-template-columns:1fr auto;margin-top:.6rem">
