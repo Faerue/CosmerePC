@@ -1889,7 +1889,8 @@ const I18N = {
     tt_showpassword:'Show password', tt_moveup:'Move up', tt_movedown:'Move down', tt_deleteparty:'Delete party',
     fld_customarmorname:'Custom armor name', fld_cumbersomestr:'Cumbersome (STR needed)',
     fld_shardplatecharges:'Shardplate charges', tt_viewdeflectrules:'View deflect and Cumbersome rules',
-    home_nocharsyet:'No characters yet'
+    home_nocharsyet:'No characters yet',
+    tt_loadcharfile:'Load a character file', tt_savecharfile:'Save a character file'
   },
   ko: {
     nav_home:'홈', nav_front:'전투 & 능력치', nav_back:'서사 & 장비', nav_social:'모험단',
@@ -2170,7 +2171,8 @@ const I18N = {
     tt_showpassword:'비밀번호 표시', tt_moveup:'위로 이동', tt_movedown:'아래로 이동', tt_deleteparty:'파티 삭제',
     fld_customarmorname:'사용자 지정 방어구 이름', fld_cumbersomestr:'무거움 (필요 힘)',
     fld_shardplatecharges:'Shardplate 충전량', tt_viewdeflectrules:'편향 및 무거움 규칙 보기',
-    home_nocharsyet:'아직 캐릭터가 없습니다'
+    home_nocharsyet:'아직 캐릭터가 없습니다',
+    tt_loadcharfile:'캐릭터 파일 불러오기', tt_savecharfile:'캐릭터 파일 저장'
   },
   fr: {
     nav_home:'Accueil', nav_front:'Combat et stats', nav_back:'Récit et équipement', nav_social:'Groupe de campagne',
@@ -2450,7 +2452,8 @@ const I18N = {
     tt_showpassword:'Afficher le mot de passe', tt_moveup:'Monter', tt_movedown:'Descendre', tt_deleteparty:'Supprimer le groupe',
     fld_customarmorname:'Nom de l’armure personnalisée', fld_cumbersomestr:'Encombrant (FOR requise)',
     fld_shardplatecharges:'Charges de Shardplate', tt_viewdeflectrules:'Voir les règles de déviation et d’encombrement',
-    home_nocharsyet:'Aucun personnage pour l’instant'
+    home_nocharsyet:'Aucun personnage pour l’instant',
+    tt_loadcharfile:'Charger un fichier de personnage', tt_savecharfile:'Enregistrer un fichier de personnage'
   },
   /* See the header comment above and elvish_hint below: intentionally
      identical to English vocabulary-wise (styled in a serif "elvish hand"
@@ -4934,6 +4937,8 @@ function applyLanguage(){
   setText('btnLongRest', 'btn_longrest');
   setText('btnImportHeader', 'btn_import');
   setText('btnExportHeader', 'btn_export');
+  setAttrs('btnImportHeader', 'tt_loadcharfile');
+  setAttrs('btnExportHeader', 'tt_savecharfile');
   setAttrs('notifbell', 'tt_notifications');
   setAttrs('btnRules', 'tt_rules');
   setAttrs('btnSettings', 'tt_settings');
