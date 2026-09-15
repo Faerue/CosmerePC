@@ -1903,7 +1903,10 @@ const I18N = {
     auth_err_invalidcredential:'Email or password did not match.',
     auth_err_notallowed:'Turn on email sign-in in your Firebase console.',
     auth_err_somethingwrong:'Something went wrong.',
-    form_bonushint:'Forms apply temporary attribute bonuses'
+    form_bonushint:'Forms apply temporary attribute bonuses',
+    tt_customskillname:'Custom skill name', tt_manualdefensebonus:'Manual defense bonus',
+    tt_defensebonussuffix:'defense bonus', tt_trackthrown:'Track whether this thrown weapon has left your hand',
+    tt_newnotetitle:'New note title', prof_chooseusername:'Choose a username'
   },
   ko: {
     nav_home:'홈', nav_front:'전투 & 능력치', nav_back:'서사 & 장비', nav_social:'모험단',
@@ -2197,7 +2200,10 @@ const I18N = {
     auth_err_invalidcredential:'이메일 또는 비밀번호가 일치하지 않습니다.',
     auth_err_notallowed:'Firebase 콘솔에서 이메일 로그인을 활성화하세요.',
     auth_err_somethingwrong:'문제가 발생했습니다.',
-    form_bonushint:'형태는 일시적인 속성 보너스를 부여합니다'
+    form_bonushint:'형태는 일시적인 속성 보너스를 부여합니다',
+    tt_customskillname:'사용자 지정 기술 이름', tt_manualdefensebonus:'수동 방어도 보너스',
+    tt_defensebonussuffix:'방어도 보너스', tt_trackthrown:'이 투척 무기가 손을 떠났는지 추적',
+    tt_newnotetitle:'새 노트 제목', prof_chooseusername:'사용자 이름 선택'
   },
   fr: {
     nav_home:'Accueil', nav_front:'Combat et stats', nav_back:'Récit et équipement', nav_social:'Groupe de campagne',
@@ -2490,7 +2496,10 @@ const I18N = {
     auth_err_invalidcredential:'L’e-mail ou le mot de passe ne correspond pas.',
     auth_err_notallowed:'Activez la connexion par e-mail dans votre console Firebase.',
     auth_err_somethingwrong:'Une erreur s’est produite.',
-    form_bonushint:'Les formes accordent des bonus d’attribut temporaires'
+    form_bonushint:'Les formes accordent des bonus d’attribut temporaires',
+    tt_customskillname:'Nom de la compétence personnalisée', tt_manualdefensebonus:'Bonus de défense manuel',
+    tt_defensebonussuffix:'bonus de défense', tt_trackthrown:'Suivre si cette arme de jet a quitté votre main',
+    tt_newnotetitle:'Titre de la nouvelle note', prof_chooseusername:'Choisissez un nom d’utilisateur'
   },
   /* See the header comment above and elvish_hint below: intentionally
      identical to English vocabulary-wise (styled in a serif "elvish hand"
@@ -2716,7 +2725,7 @@ function customSkillRowHTML(c, d, realm){
   return `<div class="skill">
     <div class="mod" data-derived="skill.${key}" data-test="${key}" role="button" tabindex="0" title="${t('fld_rollcustomskill')}">${sgn(d.skills[key])}</div>
     <div class="nm customline">
-      <input type="text" value="${esc(s.name)}" data-path="skills.${key}.name" placeholder="${t('fld_customskillplaceholder')}" aria-label="Custom skill name">
+      <input type="text" value="${esc(s.name)}" data-path="skills.${key}.name" placeholder="${t('fld_customskillplaceholder')}" aria-label="${t('tt_customskillname')}">
       <select data-path="skills.${key}.attr" aria-label="${t('tt_customskillattr')}">${opts}</select>
     </div>
     ${pipsHTML('skills.' + key + '.ranks', s.ranks)}
@@ -2766,7 +2775,7 @@ function realmHTML(c, d, realm){
           <span class="lbl">${tFull('lbl_defense')}</span>
           <span class="num" data-derived="${defKey}">${d[defKey]}</span>
         </div>
-        <div class="defbonus"><input type="number" value="${c.defenseBonus[realm.key]}" data-path="defenseBonus.${realm.key}" title="Manual defense bonus" aria-label="${tFull('realm_' + realm.key)} defense bonus" placeholder="+0"></div>
+        <div class="defbonus"><input type="number" value="${c.defenseBonus[realm.key]}" data-path="defenseBonus.${realm.key}" title="${t('tt_manualdefensebonus')}" aria-label="${tFull('realm_' + realm.key)} ${t('tt_defensebonussuffix')}" placeholder="+0"></div>
       </div>
       ${attrBox(a2)}
     </div>
@@ -2826,7 +2835,7 @@ function weaponsHTML(c, d){
     <p class="hint" style="margin:.1rem 0 0"><b>Attack ${sgn(disp.attackMod)} ${t('wpn_vs')} ${defenseLabel}${disp.disadvantage ? ' <span style="color:var(--warn)">⚠ Disadvantage</span>' : ''}</b> · <b>Damage ${esc(disp.diceExpr)} ${sgn(disp.totalDamageMod)} ${esc(disp.damageType)}</b></p>
     <p class="hint" style="margin:.05rem 0 ${isThrown ? '.3rem' : '.5rem'}">${notes.join(' · ')}</p>
     <span style="display:inline-flex;gap:.4rem;flex-wrap:wrap">
-      ${isThrown ? `<button class="cond" style="margin:0 0 .5rem" data-action="toggle-weapon-thrown" data-i="${i}" aria-pressed="${!!w.thrownUsed}" title="Track whether this thrown weapon has left your hand">${t('wpn_thrown')}: ${w.thrownUsed ? t('wpn_used') : t('wpn_inhand')}</button>` : ''}
+      ${isThrown ? `<button class="cond" style="margin:0 0 .5rem" data-action="toggle-weapon-thrown" data-i="${i}" aria-pressed="${!!w.thrownUsed}" title="${t('tt_trackthrown')}">${t('wpn_thrown')}: ${w.thrownUsed ? t('wpn_used') : t('wpn_inhand')}</button>` : ''}
       <button class="cond" style="margin:0 0 .5rem" data-action="toggle-weapon-raysium" data-i="${i}" aria-pressed="${!!w.raysium}" title="Raysium Inlaid: on hit or graze, drains 1 Investiture or charge from the target">${t('wpn_raysiumoverlay')}: ${w.raysium ? t('wpn_on') : t('wpn_off')}</button>
     </span>`;
   }).join('');
@@ -3448,7 +3457,7 @@ function notebookHTML(c){
     <h3>${tFull('sec_notebook')} <span class="hint">${t('note_clicktoopen')}</span></h3><hr class="rule">
     <div class="rows">${rows || `<p class="empty">${t('note_noneyet')}</p>`}</div>
     <form data-submit-action="add-note" class="row" style="grid-template-columns:1fr auto;margin-top:.5rem">
-      <input type="text" id="newNoteTitle" placeholder="${t('note_newtitle')}" aria-label="New note title" required>
+      <input type="text" id="newNoteTitle" placeholder="${t('note_newtitle')}" aria-label="${t('tt_newnotetitle')}" required>
       <button type="submit" class="btn addbtn">${t('note_addnote')}</button>
     </form>
   </div>`;
@@ -5436,7 +5445,7 @@ function openProfile(){
   const accountBody = mode === 'cloud' ? `
       <div class="f"><label>${t('prof_username')}</label>
         <div class="row" style="grid-template-columns:1fr auto">
-          <input type="text" id="profile-username" value="${esc(cloud.me.username || '')}" placeholder="Choose a username">
+          <input type="text" id="profile-username" value="${esc(cloud.me.username || '')}" placeholder="${t('prof_chooseusername')}">
           <button class="btn" data-action="save-username-cloud">${cloud.me.username ? t('prof_save') : t('prof_claim')}</button>
         </div></div>
       <p class="hint" style="margin-top:.4rem">${t('prof_signedinwith')} ${esc(cloud.user.email || t('prof_email'))}. ${t('prof_syncedacross')}</p>
