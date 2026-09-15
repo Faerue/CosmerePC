@@ -611,8 +611,8 @@ html[data-dice="disabled"] [data-test]{cursor:default;pointer-events:none;opacit
 <div class="drawer-overlay" id="draweroverlay" hidden></div>
 <aside class="drawer" id="rulesdrawer" aria-hidden="true">
   <header>
-    <h4>Rules lookup</h4>
-    <button class="iconbtn" data-action="close-rules" aria-label="Close rules lookup">✕</button>
+    <h4 id="rulesTitle">Rules lookup</h4>
+    <button class="iconbtn" id="btnCloseRules" data-action="close-rules" aria-label="Close rules lookup">✕</button>
   </header>
   <input type="text" id="rulessearch" placeholder="Search skills, actions, conditions, surges…" aria-label="Search rules">
   <div class="rulesbody" id="rulesbody"></div>
@@ -1801,7 +1801,12 @@ const I18N = {
     prof_password:'Password', prof_createaccount:'Create account',
     prof_changephoto:'Change photo', prof_removephoto:'Remove photo',
     prof_characters:'CHARACTERS', prof_campaigns:'CAMPAIGNS', prof_account:'ACCOUNT',
-    prof_cloud:'Cloud', prof_local:'Local', prof_guest:'Guest', prof_done:'Done'
+    prof_cloud:'Cloud', prof_local:'Local', prof_guest:'Guest', prof_done:'Done',
+    rules_close:'Close rules lookup', rules_searchplaceholder:'Search skills, actions, conditions, surges…', rules_searcharia:'Search rules',
+    rules_sec_skills:'Skills', rules_sec_actions:'Combat actions', rules_sec_conditions:'Conditions',
+    rules_sec_advitem:'Advanced Item Features (crafting)', rules_sec_advfabrial:'Advanced Fabrial Features (crafting)',
+    rules_nomatches:'No matches for that search.',
+    stances_hint:'Toggle what’s active right now'
   },
   ko: {
     nav_home:'홈', nav_front:'전투 & 능력치', nav_back:'서사 & 장비', nav_social:'모험단',
@@ -1994,7 +1999,12 @@ const I18N = {
     prof_password:'비밀번호', prof_createaccount:'계정 만들기',
     prof_changephoto:'사진 변경', prof_removephoto:'사진 제거',
     prof_characters:'캐릭터', prof_campaigns:'캠페인', prof_account:'계정',
-    prof_cloud:'클라우드', prof_local:'로컬', prof_guest:'게스트', prof_done:'완료'
+    prof_cloud:'클라우드', prof_local:'로컬', prof_guest:'게스트', prof_done:'완료',
+    rules_close:'규칙 조회 닫기', rules_searchplaceholder:'기술, 행동, 상태이상, Surges 검색…', rules_searcharia:'규칙 검색',
+    rules_sec_skills:'기술', rules_sec_actions:'전투 행동', rules_sec_conditions:'상태이상',
+    rules_sec_advitem:'고급 아이템 특성 (제작)', rules_sec_advfabrial:'고급 파브리알 특성 (제작)',
+    rules_nomatches:'검색 결과가 없습니다.',
+    stances_hint:'현재 활성화된 항목을 전환하세요'
   },
   fr: {
     nav_home:'Accueil', nav_front:'Combat et stats', nav_back:'Récit et équipement', nav_social:'Groupe de campagne',
@@ -2187,7 +2197,12 @@ const I18N = {
     prof_password:'Mot de passe', prof_createaccount:'Créer un compte',
     prof_changephoto:'Changer la photo', prof_removephoto:'Supprimer la photo',
     prof_characters:'PERSONNAGES', prof_campaigns:'CAMPAGNES', prof_account:'COMPTE',
-    prof_cloud:'Cloud', prof_local:'Local', prof_guest:'Invité', prof_done:'Terminé'
+    prof_cloud:'Cloud', prof_local:'Local', prof_guest:'Invité', prof_done:'Terminé',
+    rules_close:'Fermer la consultation des règles', rules_searchplaceholder:'Rechercher compétences, actions, états, Surges…', rules_searcharia:'Rechercher dans les règles',
+    rules_sec_skills:'Compétences', rules_sec_actions:'Actions de combat', rules_sec_conditions:'États',
+    rules_sec_advitem:'Caractéristiques avancées d’objets (artisanat)', rules_sec_advfabrial:'Caractéristiques avancées de fabriaux (artisanat)',
+    rules_nomatches:'Aucun résultat pour cette recherche.',
+    stances_hint:'Activez ou désactivez ce qui est en vigueur'
   },
   /* See the header comment above and elvish_hint below: intentionally
      identical to English vocabulary-wise (styled in a serif "elvish hand"
@@ -2849,7 +2864,7 @@ function stancesHTML(c){
     ['bloodstance', 'Bloodstance', '−2 Physical, −2 Cognitive, −2 Spiritual Defense']
   ];
   return `<div class="card">
-    <h3>${tFull('sec_stances')} <span class="hint">Toggle what's active right now</span></h3><hr class="rule">
+    <h3>${tFull('sec_stances')} <span class="hint">${tFull('stances_hint')}</span></h3><hr class="rule">
     ${items.map(([key, label, desc]) => `<div class="switchrow">
       <span>${esc(label)}<span class="hint" style="display:block">${esc(desc)}</span></span>
       <button class="switch" data-toggle="stances.${key}" aria-pressed="${!!st[key]}" aria-label="${esc(label)}"></button>
@@ -4443,19 +4458,19 @@ function renderRulesDrawer(q){
   if (!body) return;
   const match = x => !q || x.name.toLowerCase().includes(q) || (x.desc || '').toLowerCase().includes(q);
   const sections = [];
-  const skillItems = ALL_SKILLS.map(s => ({name:s.name, sub:ATTRS[s.attr].short, desc:SKILL_BLURBS[s.key] || ''})).filter(match);
-  if (skillItems.length) sections.push(ruleSection('Skills', skillItems));
+  const skillItems = ALL_SKILLS.map(s => ({name:skillName(s.key), sub:ATTRS[s.attr].short, desc:SKILL_BLURBS[s.key] || ''})).filter(match);
+  if (skillItems.length) sections.push(ruleSection(tFull('rules_sec_skills'), skillItems));
   const actionItems = COMBAT_ACTIONS.filter(match);
-  if (actionItems.length) sections.push(ruleSection('Combat actions', actionItems));
-  const condItems = CONDITIONS.map(n => ({name:n, desc:CONDITION_BLURBS[n] || ''})).filter(match);
-  if (condItems.length) sections.push(ruleSection('Conditions', condItems));
+  if (actionItems.length) sections.push(ruleSection(tFull('rules_sec_actions'), actionItems));
+  const condItems = CONDITIONS.map(n => ({name:condName(n), desc:CONDITION_BLURBS[n] || ''})).filter(match);
+  if (condItems.length) sections.push(ruleSection(tFull('rules_sec_conditions'), condItems));
   const surgeItems = SURGE_BLURBS.filter(match);
   if (surgeItems.length) sections.push(ruleSection('Surges', surgeItems));
   const itemFeatureItems = ADVANCED_ITEM_FEATURES.filter(match);
-  if (itemFeatureItems.length) sections.push(ruleSection('Advanced Item Features (crafting)', itemFeatureItems));
+  if (itemFeatureItems.length) sections.push(ruleSection(tFull('rules_sec_advitem'), itemFeatureItems));
   const fabrialFeatureItems = ADVANCED_FABRIAL_FEATURES.filter(match);
-  if (fabrialFeatureItems.length) sections.push(ruleSection('Advanced Fabrial Features (crafting)', fabrialFeatureItems));
-  body.innerHTML = sections.join('') || '<p class="empty">No matches for that search.</p>';
+  if (fabrialFeatureItems.length) sections.push(ruleSection(tFull('rules_sec_advfabrial'), fabrialFeatureItems));
+  body.innerHTML = sections.join('') || `<p class="empty">${t('rules_nomatches')}</p>`;
 }
 function openRules(){
   $('#rulesdrawer').classList.add('open');
@@ -4669,6 +4684,13 @@ function applyLanguage(){
   setAttrs('btnRules', 'tt_rules');
   setAttrs('btnSettings', 'tt_settings');
   setAttrs('profileBtn', 'tt_profile');
+  setText('rulesTitle', 'tt_rules');
+  setAttrs('btnCloseRules', 'rules_close');
+  const rulesSearch = document.getElementById('rulessearch');
+  if (rulesSearch){
+    rulesSearch.placeholder = t('rules_searchplaceholder');
+    rulesSearch.setAttribute('aria-label', t('rules_searcharia'));
+  }
 }
 
 /* ============================================================
