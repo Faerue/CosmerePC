@@ -1133,6 +1133,78 @@ const TALENT_TREE = Object.entries(TALENT_DATABASE).reduce((tree, [name, t]) => 
   return tree;
 }, {});
 
+/* Cosmere RPG reuses several talents across multiple Heroic Path trees (e.g.
+   "Mighty" appears under Agent/Spy, Warrior/Shardbearer, Warrior/Soldier,
+   Envoy/Mentor, Leader/Champion, and Hunter/Assassin). TALENT_DATABASE only
+   holds one canonical (category, path, specialty, reqText) per talent name,
+   so this lists each shared talent's ADDITIONAL valid locations beyond that
+   primary entry; TALENT_TREE below folds these in so the cascading picker
+   shows the talent under every tree it actually belongs to instead of only
+   its primary one. An optional per-location `reqText` overrides the primary
+   entry's prerequisite when the talent is being browsed from that specific
+   location (only supplied where a specific alternate prerequisite is known;
+   otherwise the canonical reqText is reused as a conservative default — the
+   existing "prerequisite not met, GM may allow" warning already covers a
+   character picking it anyway).
+   Two official specialties this app doesn't otherwise model (Hunter's
+   Sharpshooter and Hazekiller) are intentionally omitted rather than
+   fabricating a talent tree with no other content. */
+const TALENT_SHARED_LOCATIONS = {
+  'Mighty': [
+    {path:'Warrior', specialty:'Shardbearer', reqText:'Stonestance'},
+    {path:'Warrior', specialty:'Soldier'},
+    {path:'Envoy', specialty:'Mentor'},
+    {path:'Leader', specialty:'Champion'},
+    {path:'Hunter', specialty:'Assassin'}
+  ],
+  'Hardy': [
+    {path:'Warrior', specialty:'Soldier'},
+    {path:'Leader', specialty:'Champion'},
+    {path:'Hunter', specialty:'Archer'}
+  ],
+  'Composed': [
+    {path:'Leader', specialty:'Officer'},
+    {path:'Scholar', specialty:'Strategist'}
+  ],
+  'Collected': [
+    {path:'Scholar', specialty:'Surgeon'},
+    {path:'Envoy', specialty:'Diplomat'}
+  ],
+  'Customary Garb': [
+    {path:'Leader', specialty:'Officer'}
+  ]
+};
+Object.entries(TALENT_SHARED_LOCATIONS).forEach(([name, locations]) => {
+  locations.forEach(loc => {
+    const category = loc.category || 'Heroic Path';
+    (TALENT_TREE[category] = TALENT_TREE[category] || {});
+    (TALENT_TREE[category][loc.path] = TALENT_TREE[category][loc.path] || {});
+    const bucket = (TALENT_TREE[category][loc.path][loc.specialty] = TALENT_TREE[category][loc.path][loc.specialty] || []);
+    if (!bucket.includes(name)) bucket.push(name);
+  });
+});
+
+/* All (category, path, specialty) locations a talent is valid under — its
+   primary TALENT_DATABASE entry plus any TALENT_SHARED_LOCATIONS entries. */
+function talentAllLocations(name){
+  const tal = TALENT_DATABASE[name];
+  if (!tal) return [];
+  const primary = {category:tal.category, path:tal.path, specialty:tal.specialty};
+  const extra = (TALENT_SHARED_LOCATIONS[name] || []).map(loc => ({category:loc.category || 'Heroic Path', path:loc.path, specialty:loc.specialty}));
+  return [primary, ...extra];
+}
+
+/* Resolves the prerequisite text for a talent as browsed from a specific
+   (path, specialty) in the picker — its location-specific override if one is
+   defined for that spot, else the canonical primary reqText. */
+function talentReqTextFor(name, path, specialty){
+  const tal = TALENT_DATABASE[name];
+  if (!tal) return '';
+  if (tal.path === path && tal.specialty === specialty) return tal.reqText;
+  const loc = (TALENT_SHARED_LOCATIONS[name] || []).find(l => l.path === path && l.specialty === specialty);
+  return (loc && loc.reqText) || tal.reqText;
+}
+
 /* Display annotations for the Level 2 (Path) dropdown — cosmetic only.
    Heroic Path names map 1:1 onto TALENT_TREE path keys. Radiant Path and
    Singer Ancestry both only have one underlying data bucket ("All Orders"
@@ -1292,6 +1364,12 @@ const WEAPON_EXPERTISE_NAME = {
   'Anti-Stormlight Arrow':'Anti-Stormlight Arrows'
 };
 
+/* Unarmed Attack's expert traits (Momentum, Offhand) require one of these
+   expertises specifically — unlike every other weapon, which only checks
+   its single WEAPON_EXPERTISE_NAME entry, unarmed strikes can be trained
+   under any of a few different named disciplines. */
+const UNARMED_EXPERTISE_NAMES = ['Unarmed Attacks', 'Brawling', 'Martial Arts'];
+
 const TABLES = {
   lifting:[[0,'100 lbs'],[1,'200 lbs'],[3,'500 lbs'],[5,'1,000 lbs'],[7,'5,000 lbs'],[9,'10,000 lbs']],
   movement:[[0,'20 ft'],[1,'25 ft'],[3,'30 ft'],[5,'40 ft'],[7,'60 ft'],[9,'80 ft']],
@@ -1446,9 +1524,30 @@ function derive(c){
   const armor = resolveArmor(c);
   const stances = c.stances || {};
   const presentable = (armor.tags || []).includes('Presentable');
-  const stancePhys = (stances.customaryGarb && presentable ? 2 : 0) + (stances.vinestance ? 1 : 0) + (stances.bloodstance ? -2 : 0);
-  const stanceCog = (stances.collected ? 2 : 0) + (stances.ambitiousMind ? 2 : 0) + (stances.vinestance ? 1 : 0) + (stances.bloodstance ? -2 : 0);
-  const stanceSpirit = (stances.collected ? 2 : 0) + (stances.customaryGarb && presentable ? 2 : 0) + (stances.bloodstance ? -2 : 0);
+  /* Each stance/passive-defense talent's bonus only applies once the
+     character actually knows the talent — the switch state alone (which may
+     be stale from before the talent was removed, or from before this check
+     existed) is never enough on its own. */
+  const hasCollected = stances.collected && hasTalent(c, 'Collected');
+  const hasCustomaryGarb = stances.customaryGarb && presentable && hasTalent(c, 'Customary Garb');
+  const hasAmbitiousMind = stances.ambitiousMind && hasTalent(c, 'Ambitious Mind');
+  const hasVinestance = stances.vinestance && hasTalent(c, 'Vinestance');
+  const hasBloodstance = stances.bloodstance && hasTalent(c, 'Bloodstance');
+  const hasStonestance = stances.stonestance && hasTalent(c, 'Stonestance');
+  const stancePhys = (hasCustomaryGarb ? 2 : 0) + (hasVinestance ? 1 : 0) + (hasBloodstance ? -2 : 0);
+  const stanceCog = (hasCollected ? 2 : 0) + (hasAmbitiousMind ? 2 : 0) + (hasVinestance ? 1 : 0) + (hasBloodstance ? -2 : 0);
+  const stanceSpirit = (hasCollected ? 2 : 0) + (hasCustomaryGarb ? 2 : 0) + (hasBloodstance ? -2 : 0);
+
+  /* The "Enhanced" condition temporarily raises one attribute for skill
+     tests, movement, and lifting purposes only — per the rules it never
+     alters max Health/Focus/Investiture or Defenses, so it deliberately
+     boosts a separate `askill` copy rather than the shared `a` used for
+     those above. */
+  const enhanced = (c.conditions.Enhanced && typeof c.conditions.Enhanced === 'object') ? c.conditions.Enhanced : null;
+  const enhancedAttr = enhanced && ATTRS[enhanced.attr] ? enhanced.attr : null;
+  const enhancedAmount = enhancedAttr ? (parseInt(enhanced.amount, 10) || 0) : 0;
+  const askill = {...a};
+  if (enhancedAttr) askill[enhancedAttr] = (askill[enhancedAttr] || 0) + enhancedAmount;
 
   const d = {
     tier,
@@ -1456,13 +1555,17 @@ function derive(c){
     physicalDefense: 10 + a.str + a.spd + (c.defenseBonus.physical|0) + stancePhys,
     cognitiveDefense: 10 + a.int + a.wil + (c.defenseBonus.cognitive|0) + stanceCog,
     spiritualDefense: 10 + a.awa + a.pre + (c.defenseBonus.spiritual|0) + stanceSpirit,
-    lifting: lookup(TABLES.lifting, a.str),
+    lifting: lookup(TABLES.lifting, askill.str),
     movement: lookup(TABLES.movement, a.spd),
     recovery: lookup(TABLES.recovery, a.wil),
     senses: lookup(TABLES.senses, a.awa),
     skillRankCap: tierSkillRankCap(tier),
     skills:{}
   };
+  if (enhancedAttr === 'spd' && enhancedAmount){
+    const baseFt = parseInt(d.movement.replace(/[^0-9]/g, ''), 10) || 0;
+    d.movement = `${baseFt + enhancedAmount * 10} ft`;
+  }
   d.liftingLbs = parseInt(d.lifting.replace(/[^0-9]/g, ''), 10) || 0;
 
   d.maxHealth = baseHealthForLevel(c.level, a.str) + (c.health.bonus|0) + (hasTalent(c, 'Hardy') ? c.level : 0);
@@ -1476,7 +1579,7 @@ function derive(c){
     : 0;
 
   d.armor = armor;
-  d.deflect = Math.max(armor.deflect, fb.deflect || 0) + (c.deflectBonus|0);
+  d.deflect = Math.max(armor.deflect, fb.deflect || 0) + (c.deflectBonus|0) + (hasStonestance ? 1 : 0);
   const hasArmorExpertise = hasExpertiseNamed(c, armor.name);
   const depleted = armor.name === 'Shardplate' && (c.shardplateCharges|0) <= 0;
   const cumbersomeThreshold = depleted ? (armor.cumbersomeDepleted || 0) : (armor.cumbersome || 0);
@@ -1504,11 +1607,11 @@ function derive(c){
 
   ALL_SKILLS.forEach(sk => {
     const s = c.skills[sk.key];
-    d.skills[sk.key] = s.ranks + a[sk.attr] + (s.bonus|0);
+    d.skills[sk.key] = s.ranks + askill[sk.attr] + (s.bonus|0);
   });
   REALMS.forEach(r => {
     const s = c.skills['custom_' + r.key];
-    d.skills['custom_' + r.key] = s.ranks + (a[s.attr] || 0) + (s.bonus|0);
+    d.skills['custom_' + r.key] = s.ranks + (askill[s.attr] || 0) + (s.bonus|0);
   });
   return d;
 }
@@ -1532,8 +1635,12 @@ function splitDamageString(raw){
 
 function weaponDisplay(c, d, w){
   const catalog = !w.handKey && w.catalogName ? GAME_DATABASE.weapons[w.catalogName] : null;
-  const expertiseName = catalog ? WEAPON_EXPERTISE_NAME[w.catalogName] : null;
-  const hasExpertise = expertiseName && hasExpertiseNamed(c, expertiseName);
+  const isUnarmed = w.catalogName === 'Unarmed Attack';
+  const matchedUnarmedExpertise = isUnarmed ? UNARMED_EXPERTISE_NAMES.find(n => hasExpertiseNamed(c, n)) : null;
+  const expertiseName = isUnarmed
+    ? (matchedUnarmedExpertise || UNARMED_EXPERTISE_NAMES.join(' / '))
+    : (catalog ? WEAPON_EXPERTISE_NAME[w.catalogName] : null);
+  const hasExpertise = isUnarmed ? !!matchedUnarmedExpertise : (expertiseName && hasExpertiseNamed(c, expertiseName));
   let traits = w.traits || '';
   if (catalog && hasExpertise && catalog.expertTraits){
     traits = traits ? `${traits}, ${catalog.expertTraits} (expert)` : `${catalog.expertTraits} (expert)`;
@@ -1909,7 +2016,12 @@ const I18N = {
     tt_newnotetitle:'New note title', prof_chooseusername:'Choose a username',
     fld_customskillfallback:'Custom skill', tt_hidepassword:'Hide password',
     btn_deletenote:'Delete note', social_charimported:'Character imported.', social_charsimported:'{n} characters imported.',
-    social_signedin_fallback:'Signed in', social_thatplayer:'That player'
+    social_signedin_fallback:'Signed in', social_thatplayer:'That player',
+    stances_none:'No stances or passive defense bonuses unlocked yet — learn a talent like Collected, Vinestance, or Stonestance to see it here.',
+    cond_enhancedattr:'Enhanced attribute', cond_enhancedamount:'Bonus amount',
+    btn_confirm:'Confirm',
+    msg_shortrestconfirm:'Take a Short Rest? This will allow you to spend recovery dice to heal Health/Focus and reset short-rest talent limits.',
+    msg_longrestconfirm:'Take a Long Rest? This will fully restore Health, Focus, and Investiture, reset all talent limits, and allow Erudition/Scholarly reallocations.'
   },
   ko: {
     nav_home:'홈', nav_front:'전투 & 능력치', nav_back:'서사 & 장비', nav_social:'모험단',
@@ -2209,7 +2321,12 @@ const I18N = {
     tt_newnotetitle:'새 노트 제목', prof_chooseusername:'사용자 이름 선택',
     fld_customskillfallback:'사용자 지정 기술', tt_hidepassword:'비밀번호 숨기기',
     btn_deletenote:'노트 삭제', social_charimported:'캐릭터를 가져왔습니다.', social_charsimported:'캐릭터 {n}개를 가져왔습니다.',
-    social_signedin_fallback:'로그인됨', social_thatplayer:'해당 플레이어'
+    social_signedin_fallback:'로그인됨', social_thatplayer:'해당 플레이어',
+    stances_none:'아직 해금된 태세나 수동 방어 보너스가 없습니다 — Collected, Vinestance, Stonestance 같은 특성을 배우면 여기에 표시됩니다.',
+    cond_enhancedattr:'증진된 속성', cond_enhancedamount:'보너스 수치',
+    btn_confirm:'확인',
+    msg_shortrestconfirm:'짧은 휴식을 취하시겠습니까? 회복 주사위를 사용해 체력/초점을 회복하고 짧은 휴식 특성 제한이 초기화됩니다.',
+    msg_longrestconfirm:'긴 휴식을 취하시겠습니까? 체력, 초점, 투영력이 완전히 회복되고 모든 특성 제한이 초기화되며 학자/학구 재배치가 가능해집니다.'
   },
   fr: {
     nav_home:'Accueil', nav_front:'Combat et stats', nav_back:'Récit et équipement', nav_social:'Groupe de campagne',
@@ -2508,7 +2625,12 @@ const I18N = {
     tt_newnotetitle:'Titre de la nouvelle note', prof_chooseusername:'Choisissez un nom d’utilisateur',
     fld_customskillfallback:'Compétence personnalisée', tt_hidepassword:'Masquer le mot de passe',
     btn_deletenote:'Supprimer la note', social_charimported:'Personnage importé.', social_charsimported:'{n} personnages importés.',
-    social_signedin_fallback:'Connecté', social_thatplayer:'Ce joueur'
+    social_signedin_fallback:'Connecté', social_thatplayer:'Ce joueur',
+    stances_none:'Aucune posture ni bonus de défense passif débloqué pour l’instant — apprenez un talent comme Collected, Vinestance ou Stonestance pour le voir apparaître ici.',
+    cond_enhancedattr:'Attribut amélioré', cond_enhancedamount:'Valeur du bonus',
+    btn_confirm:'Confirmer',
+    msg_shortrestconfirm:'Prendre un repos court ? Vous pourrez dépenser des dés de récupération pour soigner Santé/Focus, et les limites des talents de repos court seront réinitialisées.',
+    msg_longrestconfirm:'Prendre un repos long ? Cela restaure entièrement Santé, Focus et Investiture, réinitialise toutes les limites de talents, et permet les réaffectations Erudition/Scholarly.'
   },
   /* See the header comment above and elvish_hint below: intentionally
      identical to English vocabulary-wise (styled in a serif "elvish hand"
@@ -3030,7 +3152,8 @@ function talentPickerHTML(c, d){
     ? TALENT_TREE[talentPick.category][dataPathKey][talentPick.specialty] : [];
   const talentOpts = talents.map(n => `<option value="${esc(n)}" ${talentPick.talent === n ? 'selected' : ''}>${esc(n)}${(c.talentIds||[]).includes(n) ? ' ' + t('tal_known') : ''}</option>`).join('');
   const preview = talentPick.talent && TALENT_DATABASE[talentPick.talent] ? TALENT_DATABASE[talentPick.talent] : null;
-  const previewPrereq = preview ? checkPrereq(c, preview.reqText) : null;
+  const previewReqText = preview ? talentReqTextFor(talentPick.talent, talentPick.path, talentPick.specialty) : null;
+  const previewPrereq = preview ? checkPrereq(c, previewReqText) : null;
 
   return `<div class="card">
     <h3>${tFull('sec_talents')} <span class="hint">${t('tal_cascadinghint')}</span></h3><hr class="rule">
@@ -3079,9 +3202,11 @@ function openTalentModal(name){
   const tal = TALENT_DATABASE[name];
   if (!tal) return;
   const prereq = checkPrereq(activeChar(), tal.reqText);
+  const locations = talentAllLocations(name);
+  const locText = locations.map(l => `${esc(l.path)} — ${esc(l.specialty)}`).join(' · ');
   openModal(`
     <h2>${tal.activation} ${esc(name)}</h2>
-    <p class="hint">${esc(tal.path)} — ${esc(tal.specialty)} · ${esc(ACTIVATION_ICONS[tal.activation] || '')}</p>
+    <p class="hint">${locText} · ${esc(ACTIVATION_ICONS[tal.activation] || '')}</p>
     <hr class="rule">
     <section><h4>${t('tal_prerequisites')}</h4><p>${esc(tal.reqText)}${!prereq.met ? ` — <span style="color:var(--warn)">⚠️ ${t('tal_prereqwarning')} (${esc(prereq.reason)})</span>` : ''}</p></section>
     <section><h4>${t('tal_narrative')}</h4><p>${esc(tal.flavor)}</p></section>
@@ -3162,19 +3287,23 @@ function squiresHTML(c){
 
 function stancesHTML(c){
   const st = c.stances || {};
+  /* Each entry's talent name gates whether it can even be toggled at all —
+     a character who hasn't learned the talent never sees the switch, so
+     stances/passive defense bonuses can't be granted for free. */
   const items = [
-    ['collected', 'Collected', '+2 Cognitive, +2 Spiritual Defense'],
-    ['customaryGarb', 'Customary Garb', '+2 Physical, +2 Spiritual Defense while wearing Presentable armor'],
-    ['ambitiousMind', 'Ambitious Mind', '+2 Cognitive Defense'],
-    ['vinestance', 'Vinestance', '+1 Physical, +1 Cognitive Defense'],
-    ['bloodstance', 'Bloodstance', '−2 Physical, −2 Cognitive, −2 Spiritual Defense']
-  ];
+    ['collected', 'Collected', '+2 Cognitive, +2 Spiritual Defense', 'Collected'],
+    ['customaryGarb', 'Customary Garb', '+2 Physical, +2 Spiritual Defense while wearing Presentable armor', 'Customary Garb'],
+    ['ambitiousMind', 'Ambitious Mind', '+2 Cognitive Defense', 'Ambitious Mind'],
+    ['vinestance', 'Vinestance', '+1 Physical, +1 Cognitive Defense', 'Vinestance'],
+    ['bloodstance', 'Bloodstance', '−2 Physical, −2 Cognitive, −2 Spiritual Defense', 'Bloodstance'],
+    ['stonestance', 'Stonestance', '+1 Deflect', 'Stonestance']
+  ].filter(([, , , talentName]) => hasTalent(c, talentName));
   return `<div class="card">
     <h3>${tFull('sec_stances')} <span class="hint">${tFull('stances_hint')}</span></h3><hr class="rule">
-    ${items.map(([key, label, desc]) => `<div class="switchrow">
+    ${items.length ? items.map(([key, label, desc]) => `<div class="switchrow">
       <span>${esc(label)}<span class="hint" style="display:block">${esc(desc)}</span></span>
       <button class="switch" data-toggle="stances.${key}" aria-pressed="${!!st[key]}" aria-label="${esc(label)}"></button>
-    </div>`).join('')}
+    </div>`).join('') : `<p class="empty">${t('stances_none')}</p>`}
   </div>`;
 }
 
@@ -3186,11 +3315,41 @@ function openConditionModal(name){
   `);
 }
 
+/* Enhanced increases one attribute (for skill/movement/lifting purposes —
+   never max Health/Focus/Investiture or Defenses, see derive()'s `askill`)
+   by +1 or +2 for as long as the condition is active, so unlike a plain
+   on/off condition it needs the player to pick which attribute and by how
+   much. */
+function openEnhancedModal(c){
+  const enh = (c.conditions.Enhanced && typeof c.conditions.Enhanced === 'object') ? c.conditions.Enhanced : {attr:'spd', amount:1};
+  const attrOpts = Object.keys(ATTRS).map(k => `<option value="${k}" ${enh.attr === k ? 'selected' : ''}>${esc(attrName(k))}</option>`).join('');
+  openModal(`
+    <h2>${esc(condName('Enhanced'))}</h2><hr class="rule">
+    <p class="hint">${esc(CONDITION_BLURBS.Enhanced || '')}</p>
+    <div class="grid2" style="margin-top:.6rem">
+      <div class="f"><label>${t('cond_enhancedattr')}</label><select id="enhancedAttrSel">${attrOpts}</select></div>
+      <div class="f"><label>${t('cond_enhancedamount')}</label><select id="enhancedAmountSel">
+        <option value="1" ${enh.amount === 1 ? 'selected' : ''}>+1</option>
+        <option value="2" ${enh.amount === 2 ? 'selected' : ''}>+2</option>
+      </select></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem">
+      <button class="btn" data-action="close-modal">${t('btn_cancel')}</button>
+      <button class="btn primary" data-action="save-enhanced">${t('btn_done')}</button>
+    </div>
+  `);
+}
+
 function conditionsHTML(c){
-  const conds = CONDITIONS.map(n => `<span style="display:inline-flex;align-items:center;gap:.1rem">
-      <button class="cond" data-cond="${n}" aria-pressed="${!!c.conditions[n]}" title="${esc(CONDITION_BLURBS[n] || '')}">${condName(n)}</button>
+  const enh = c.conditions.Enhanced;
+  const conds = CONDITIONS.map(n => {
+    const enhancedLabel = n === 'Enhanced' && enh && typeof enh === 'object'
+      ? ` (${esc(ATTRS[enh.attr] ? ATTRS[enh.attr].short : enh.attr)} +${enh.amount})` : '';
+    return `<span style="display:inline-flex;align-items:center;gap:.1rem">
+      <button class="cond" data-cond="${n}" aria-pressed="${!!c.conditions[n]}" title="${esc(CONDITION_BLURBS[n] || '')}">${condName(n)}${enhancedLabel}</button>
       <button class="iconbtn" data-action="show-cond-info" data-cond-name="${n}" aria-label="${condName(n)} ${t('cond_details')}" title="${t('cond_whatdoesitdo').replace('{name}', condName(n))}" style="padding:.15rem .35rem;font-size:.68rem">ⓘ</button>
-    </span>`).join('');
+    </span>`;
+  }).join('');
   const injuries = c.injuries.map((inj, i) => `<div class="row" style="grid-template-columns:1fr 5.5rem auto" data-iidx="${i}">
       <input type="text" value="${esc(inj.text)}" data-path="injuries.${i}.text" placeholder="${t('inj_injury')}" aria-label="Injury">
       <input type="number" value="${inj.days}" data-path="injuries.${i}.days" title="${t('inj_dayslefttitle')}" aria-label="Recovery days">
@@ -4134,10 +4293,20 @@ document.addEventListener('click', e => {
   const cond = e.target.closest('[data-cond]');
   if (cond && !cond.dataset.action){
     const n = cond.dataset.cond;
+    if (n === 'Enhanced'){
+      if (c.conditions.Enhanced){
+        delete c.conditions.Enhanced;
+        cond.setAttribute('aria-pressed', 'false');
+        renderFront(); syncDerived(); save();
+      } else {
+        openEnhancedModal(c);
+      }
+      return;
+    }
     c.conditions[n] = !c.conditions[n];
     if (!c.conditions[n]) delete c.conditions[n];
     cond.setAttribute('aria-pressed', String(!!c.conditions[n]));
-    save();
+    syncDerived(); save();
     return;
   }
 
@@ -4146,6 +4315,14 @@ document.addEventListener('click', e => {
     const k = toggle.dataset.toggle;
     const next = !getPath(c, k);
     setPath(c, k, next);
+    /* Vinestance/Bloodstance/Stonestance represent alternate battle postures
+       — a character can only be in one at a time, so entering one drops any
+       other that was active. */
+    const ACTIVE_STANCE_KEYS = ['vinestance', 'bloodstance', 'stonestance'];
+    const stanceKey = k.startsWith('stances.') ? k.slice('stances.'.length) : null;
+    if (stanceKey && next && ACTIVE_STANCE_KEYS.includes(stanceKey)){
+      ACTIVE_STANCE_KEYS.forEach(other => { if (other !== stanceKey) setPath(c, `stances.${other}`, false); });
+    }
     toggle.setAttribute('aria-pressed', String(next));
     if (k === 'radiant' && next) c.investiture.current = derive(c).maxInvestiture;
     renderFront(); syncDerived(); save();
@@ -4279,8 +4456,8 @@ function handleAction(action, node, c){
     }
     case 'create-campaign-home': createCampaignHome(val('homecampaignname')); break;
     case 'join-campaign-home': joinCampaignHome(val('joincode')); break;
-    case 'short-rest': shortRest(); break;
-    case 'long-rest': longRest(); break;
+    case 'short-rest': confirmDialog(t('msg_shortrestconfirm'), () => shortRest(), {okLabel:t('btn_confirm'), okClass:'primary'}); break;
+    case 'long-rest': confirmDialog(t('msg_longrestconfirm'), () => longRest(), {okLabel:t('btn_confirm'), okClass:'primary'}); break;
     case 'export': openExportModal(c); break;
     case 'export-json': exportCharacter(c); closeModal(); break;
     case 'export-pdf': preparePrintSheet(); closeModal(); setTimeout(() => window.print(), 150); break;
@@ -4339,7 +4516,19 @@ function handleAction(action, node, c){
     case 'roll-weapon-crit': rollWeaponAction(parseInt(node.dataset.i, 10), 'crit'); break;
     case 'show-weapon-info': openWeaponModal(c, parseInt(node.dataset.i, 10)); break;
     case 'show-armor-info': openArmorModal(c); break;
-    case 'show-cond-info': openConditionModal(node.dataset.condName); break;
+    case 'show-cond-info':
+      if (node.dataset.condName === 'Enhanced' && c.conditions.Enhanced) openEnhancedModal(c);
+      else openConditionModal(node.dataset.condName);
+      break;
+    case 'save-enhanced': {
+      const attrSel = $('#enhancedAttrSel'), amountSel = $('#enhancedAmountSel');
+      const attr = attrSel && ATTRS[attrSel.value] ? attrSel.value : 'spd';
+      const amount = amountSel && parseInt(amountSel.value, 10) === 2 ? 2 : 1;
+      c.conditions.Enhanced = {attr, amount};
+      closeModal();
+      renderFront(); syncDerived(); save();
+      break;
+    }
     case 'add-injury': c.injuries.push({text:'', days:1}); renderFront(); save(); break;
     case 'del-injury': c.injuries.splice(parseInt(node.dataset.i, 10), 1); renderFront(); save(); break;
     case 'add-squire': c.squires.push({name:'', type:'Squire', notes:''}); renderFront(); save(); break;
@@ -4837,7 +5026,7 @@ function confirmDialog(message, onConfirm, opts){
     <p style="margin:.5rem 0 1.3rem">${message}</p>
     <div style="display:flex;justify-content:flex-end;gap:.5rem">
       <button class="btn" data-action="confirm-cancel">${t('btn_cancel')}</button>
-      <button class="btn danger" data-action="confirm-ok">${esc(opts.okLabel || t('btn_delete'))}</button>
+      <button class="btn ${opts.okClass || 'danger'}" data-action="confirm-ok">${esc(opts.okLabel || t('btn_delete'))}</button>
     </div>
   `);
 }
